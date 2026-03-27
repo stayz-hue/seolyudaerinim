@@ -740,45 +740,52 @@ if (v) names.push(v);
 }
 return names.join(' / ');
 }
+// GAS 웹앱 URL — 배포 후 실제 URL로 교체
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzaE8Gchuw4pQRolD2Amlpo4Jj-IhxQvhH6Jdrb29WdgXtVBJX-Ejs0Fn35n8G-00de/exec';
+
 function _doSendMail(fd, idBase64, idMime, idName, orderId, impUid) {
 const extraNote = buildExtraNote(fd.hospitalCount);
-if (typeof google === 'undefined' || !google.script) {
-alert('테스트 환경입니다. 실제 GAS 환경에서 실행해주세요.');
-document.getElementById('loading').style.display = 'none';
-document.getElementById('buttons').style.display = 'flex';
-return;
-}
-google.script.run
-.withSuccessHandler(function(result) {
-document.getElementById('loading').style.display = 'none';
-document.getElementById('successMessage').style.display = 'block';
-if (result && result.receiptNo) {
-document.getElementById('receiptDisplay').textContent = result.receiptNo;
-}
+const payload = {
+  action:        'sendMail',
+  patientName:   fd.patientName,
+  patientBirth:  fd.patientBirth,
+  patientPhone:  fd.patientPhone,
+  patientAddress:fd.patientAddress,
+  agentName:     fd.agentName,
+  hospitalName:  fd.hospitalName,
+  treatmentStart:fd.treatmentStart,
+  treatmentEnd:  fd.treatmentEnd,
+  reason:        fd.reason,
+  documents:     fd.documents,
+  signature:     fd.signature,
+  idCardBase64:  idBase64,
+  idCardMime:    idMime,
+  idCardName:    idName,
+  urgentFlags:   fd.urgentFlags,
+  orderId:       orderId,
+  impUid:        impUid,
+  extraNote:     extraNote
+};
+
+fetch(GAS_URL, {
+  method: 'POST',
+  headers: { 'Content-Type': 'text/plain' },
+  body: JSON.stringify(payload)
 })
-.withFailureHandler(function(err) {
-document.getElementById('loading').style.display = 'none';
-document.getElementById('buttons').style.display = 'flex';
-document.getElementById('step' + (TOTAL_STEPS-1)).classList.add('active');
-alert('오류가 발생했습니다.\n' + (err.message || err));
+.then(function(res) { return res.json(); })
+.then(function(result) {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('successMessage').style.display = 'block';
+  if (result && result.receiptNo) {
+    document.getElementById('receiptDisplay').textContent = result.receiptNo;
+  }
 })
-.sendMail(
-fd.patientName,
-fd.patientBirth,
-fd.patientPhone,
-fd.patientAddress,
-fd.agentName,
-fd.hospitalName,
-fd.treatmentStart,
-fd.treatmentEnd,
-fd.reason,
-fd.documents,
-fd.signature,
-idBase64,
-idMime,
-idName,
-fd.urgentFlags
-);
+.catch(function(err) {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('buttons').style.display = 'flex';
+  document.getElementById('step' + (TOTAL_STEPS-1)).classList.add('active');
+  alert('오류가 발생했습니다.\n' + err.message);
+});
 }
 function buildExtraNote(count) {
 if (count <= 1) return '';
