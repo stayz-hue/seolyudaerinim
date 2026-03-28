@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>서류대리님 - 실비 결제</title>
+  <script src="https://cdn.iamport.kr/v1/iamport.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif; background: #f5f5f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+    .card { background: #fff; border-radius: 16px; padding: 32px 28px; max-width: 420px; width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    .logo { font-size: 13px; color: #888; margin-bottom: 24px; }
+    h1 { font-size: 20px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
+    .desc { font-size: 14px; color: #666; margin-bottom: 28px; line-height: 1.6; }
+    .info-box { background: #f8f9fa; border-radius: 10px; padding: 18px; margin-bottom: 24px; }
+    .info-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: #444; padding: 5px 0; }
+    .info-row .label { color: #888; }
+    .info-row.total { border-top: 1px solid #e0e0e0; margin-top: 10px; padding-top: 14px; font-weight: 700; font-size: 17px; color: #1a1a1a; }
+    .info-row.total .amount { color: #2563eb; }
+    .pay-btn { width: 100%; background: #2563eb; color: #fff; border: none; border-radius: 10px; padding: 16px; font-size: 16px; font-weight: 600; cursor: pointer; }
+    .pay-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+    .notice { font-size: 12px; color: #aaa; text-align: center; margin-top: 16px; line-height: 1.6; }
+    .result-screen { display: none; text-align: center; padding: 20px 0; }
+    .result-icon { font-size: 56px; margin-bottom: 16px; }
+    .result-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .result-msg { font-size: 14px; color: #666; line-height: 1.6; }
+    .error-screen { text-align: center; padding: 20px 0; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div id="payScreen">
+    <div class="logo">서류대리님</div>
+    <h1>실비 청구 서류 대행</h1>
+    <p class="desc">서류 수령이 완료되었습니다.<br>아래 금액을 확인 후 결제해 주세요.</p>
+    <div class="info-box">
+      <div class="info-row"><span class="label">고객명</span><span id="dispName">-</span></div>
+      <div class="info-row"><span class="label">주문번호</span><span id="dispOrderId" style="font-size:12px;color:#888;">-</span></div>
+      <div class="info-row"><span class="label">서비스</span><span id="dispService">실비 청구 서류 대행</span></div>
+      <div class="info-row total"><span class="label">결제 금액</span><span class="amount" id="dispAmount">-</span></div>
+    </div>
+    <button class="pay-btn" id="payBtn" onclick="startPayment()">카드로 결제하기</button>
+    <p class="notice">KG이니시스 안전결제 · 개인정보 암호화 처리<br>문의: 카카오채널 서류대리님</p>
+  </div>
+  <div class="result-screen" id="successScreen">
+    <div class="result-icon">완료</div>
+    <div class="result-title">결제 완료!</div>
+    <div class="result-msg">감사합니다.<br>서류는 카카오채널로 전송해 드릴게요.<br><br><strong id="successAmount"></strong></div>
+  </div>
+  <div class="result-screen" id="failScreen">
+    <div class="result-icon">오류</div>
+    <div class="result-title">결제 실패</div>
+    <div class="result-msg" id="failMsg">다시 시도해 주세요.</div>
+  </div>
+  <div class="error-screen" id="errorScreen" style="display:none;">
+    <div class="result-icon">경고</div>
+    <div class="result-title">잘못된 링크입니다</div>
+    <div class="result-msg">배대리에게 링크를 다시 요청해 주세요.</div>
+  </div>
+</div>
+<script>
+var IMP_CODE='imp36663501';
+var PG='html5_inicis.INIpayTest';
+var GAS_URL='https://script.google.com/macros/s/AKfycbwcOjgmyqA4D7PP1AzYp05sNLsBWcdqbnqcKh9acXwJNeqzaS6e3Il08DzTPxz41R77/exec';
+var params=new URLSearchParams(window.location.search);
+var orderId=params.get('order_id');
+var amount=parseInt(params.get('amount'),10);
+var name=params.get('name')||'고객';
+var service=params.get('service')||'실비 청구 서류 대행';
+if(!orderId||isNaN(amount)||amount<100){
+  document.getElementById('payScreen').style.display='none';
+  document.getElementById('errorScreen').style.display='block';
+}else{
+  document.getElementById('dispName').textContent=name;
+  document.getElementById('dispOrderId').textContent=orderId;
+  document.getElementById('dispService').textContent=service;
+  document.getElementById('dispAmount').textContent=amount.toLocaleString('ko-KR')+'원';
+}
+function startPayment(){
+  var btn=document.getElementById('payBtn');
+  btn.disabled=true;btn.textContent='결제 연결 중...';
+  IMP.init(IMP_CODE);
+  IMP.request_pay({pg:PG,pay_method:'card',merchant_uid:orderId,name:service,amount:amount,buyer_name:name,m_redirect_url:window.location.href},function(rsp){
+    if(rsp.success){notifyGas(rsp);showSuccess(rsp);}
+    else{showFail(rsp.error_msg||'결제 취소');btn.disabled=false;btn.textContent='카드로 결제하기';}
+  });
+}
+function notifyGas(rsp){
+  fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'payment_complete',order_id:rsp.merchant_uid,imp_uid:rsp.imp_uid,paid_amount:rsp.paid_amount,status:rsp.status,paid_at:rsp.paid_at}),mode:'no-cors'}).catch(function(){});
+}
+function showSuccess(rsp){document.getElementById('payScreen').style.display='none';document.getElementById('successScreen').style.display='block';document.getElementById('successAmount').textContent=rsp.paid_amount.toLocaleString('ko-KR')+'원 결제 완료';}
+function showFail(msg){document.getElementById('payScreen').style.display='none';document.getElementById('failScreen').style.display='block';document.getElementById('failMsg').textContent=msg;}
+var ok=params.get('imp_success');
+if(ok==='true'){notifyGas({merchant_uid:orderId,imp_uid:params.get('imp_uid'),paid_amount:amount,status:'paid',paid_at:Math.floor(Date.now()/1000)});showSuccess({paid_amount:amount});}
+else if(ok==='false'){showFail(params.get('error_msg')||'결제 취소');}
+</script>
+</body>
+</html>
