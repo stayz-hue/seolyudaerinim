@@ -1176,11 +1176,11 @@ function buildHospitalBlocks() {
           <div class="two-col">
             <div class="field">
               <label class="field-label">진료 시작일 <span class="req">*</span></label>
-              <input type="text" id="treatStart_${i}" placeholder="2022-01-15" maxlength="10" oninput="autoDate(this)">
+              <input type="text" id="treatStart_${i}" placeholder="2022-01-15" maxlength="10" inputmode="numeric" oninput="autoDate(this)">
             </div>
             <div class="field">
               <label class="field-label">진료 종료일 <span class="req">*</span></label>
-              <input type="text" id="treatEnd_${i}" placeholder="2023-02-12" maxlength="10" oninput="autoDate(this)">
+              <input type="text" id="treatEnd_${i}" placeholder="2023-02-12" maxlength="10" inputmode="numeric" oninput="autoDate(this)">
             </div>
           </div>
           <div class="field">
@@ -1227,7 +1227,7 @@ function toggleDoc(el, event) {
     setTimeout(() => {
       showDocAlert(
         '진단서 선택 전 확인해줘 ⚠️',
-        '⚠️ 진단서 최초 발급은 의사 대면이 원칙이라 <b>재발급만 신청 가능해.</b><br>꼭 병원에 먼저 확인해줘.<br><br>💡 <b>진단명을 증빙할 서류가 필요하다면</b><br>병원에 &quot;진단명을 확인할 수 있는 가장 저렴한 서류&quot;가 무엇인지 물어보는 것도 방법이야!'
+        '⚠️ 진단서 최초 발급은 의사 대면이 원칙이라 <b>신청 가능해. 꼭 병원에 먼저 확인해줘.</b><br><br>💡 <b>진단명을 증빙할 서류가 필요하다면</b><br>병원에 &quot;진단명을 확인할 수 있는 가장 저렴한 서류&quot;가 무엇인지 물어보는 것도 방법이야!'
       );
     }, 100);
   }
@@ -1337,6 +1337,8 @@ function closeMaskModal(confirmed) {
     exportMasked();
     const sub = document.getElementById('uploadSub');
     if (sub) { sub.className='upload-ok'; sub.textContent='✅ 마스킹 완료'; }
+    // 마스킹 완료 → 바로 서명 스텝으로 이동
+    setTimeout(() => goToStep(6), 200);
   }
 }
 
@@ -1783,7 +1785,4 @@ function confirmAndApply() {
     <div style="font-weight:700;color:var(--t2);font-size:12px;margin-bottom:6px;">사업자 정보</div>
     상호명 : 서류대리님 · 대표자 : 배승휴 · 사업자등록번호 : 826-21-02496<br>
     주소 : 경기도 남양주시 진접읍 부평로48번길 140, 109동 2501호<br>
-    대표 전화 : 010-9536-2940 · daeriseo@gmail.com<!-- email -->
-<script src="https://cdn.iamport.kr/v1/iamport.js"></script>
-</body>
-</html>
+    대표 전화 : 010-9536-2940 · <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="73171216011a00161c33141e121a1f5d101c
