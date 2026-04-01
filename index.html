@@ -721,10 +721,6 @@ canvas#signaturePad1{
       <div class="success-icon">✅</div>
       <h2 class="success-h">접수 완료!</h2>
       <p class="success-p">아래 계좌로 대행료를 입금해줘.<br>입금 확인되면 바로 시작할게.</p>
-      <div class="receipt-box">
-        <div class="receipt-label">접수 번호</div>
-        <div class="receipt-num" id="receiptNum">-</div>
-      </div>
       <div style="background:var(--amber-pale);border:.5px solid rgba(182,141,97,.3);border-radius:var(--r);padding:20px;margin-bottom:12px;text-align:center;">
         <div style="font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--amber);margin-bottom:12px;">입금 계좌</div>
         <div style="font-size:14px;font-weight:600;color:var(--t1);margin-bottom:4px;">IBK기업은행</div>
@@ -734,7 +730,11 @@ canvas#signaturePad1{
         <div style="font-size:13px;color:var(--amber);font-weight:600;margin-bottom:12px;">입금자명: <strong id="successDepositor">-</strong></div>
         <button onclick="navigator.clipboard.writeText(document.getElementById('successAccount').textContent.replace(/[^0-9]/g,''))" style="margin-top:4px;padding:10px 20px;background:var(--btn);color:var(--btn-txt);border:none;border-radius:var(--r-sm);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">계좌번호 복사</button>
       </div>
-      <div class="contact-txt">문의: 010-9536-2940 · 카카오 <a href="http://pf.kakao.com/_XxjhEX" style="color:var(--amber);text-decoration:underline;">[서류대리님]</a></div>
+      <div class="receipt-box">
+        <div class="receipt-label">접수 번호</div>
+        <div class="receipt-num" id="receiptNum">-</div>
+      </div>
+      <div class="contact-txt">문의: 카카오 <a href="http://pf.kakao.com/_XxjhEX" style="color:var(--amber);text-decoration:underline;">[서류대리님]</a></div>
     </div>
 
     <!-- ────────────────────────
