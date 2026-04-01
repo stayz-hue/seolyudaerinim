@@ -9,8 +9,7 @@
 <title>서류대리님 — 진료기록 발급 대행</title>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/4.1.7/signature_pad.umd.js"></script>
-<!-- 카카오 로컬 검색 SDK (JavaScript 앱 키) -->
-<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=c35005d7c681b7d92562136a8eebcf2e&libraries=services&autoload=false"></script>
+<!-- 카카오 로컬 검색: GAS proxy 방식 (SDK 불필요) -->
 <style>
 
 /* ============================================
@@ -1071,15 +1070,12 @@ const URGENT_MAX  = 3;
 // ── 병원 좌표 + 묶음 판정 ──
 let hospitalCoords = []; // [{lat, lng, name, address}] 인덱스=병원순서(0-based)
 let bundleResult   = null; // {isBundled, routeMinutes, failed}
-let kakaoReady     = false;
+let kakaoReady     = true;  // GAS proxy 방식 — 항상 준비됨
 let searchTimers   = {};   // debounce용
 
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwcOjgmyqA4D7PP1AzYp05sNLsBWcdqbnqcKh9acXwJNeqzaS6e3Il08DzTPxz41R77/exec';
 
-// ── 카카오 SDK 초기화 ──
-if (typeof kakao !== 'undefined' && kakao.maps) {
-  kakao.maps.load(function() { kakaoReady = true; });
-}
+// ── 카카오 로컬 검색: GAS proxy (SDK 불필요) ──
 
 /* ================================================
    입금자명 토글
@@ -1433,38 +1429,42 @@ function onHospFocus(idx) {
 }
 
 function searchHospital(query, idx) {
-  if (!kakaoReady) return;
-  var ps = new kakao.maps.services.Places();
   var drop = document.getElementById('hospDrop_' + idx);
   drop.innerHTML = '<div class="hosp-searching">검색 중...</div>';
   drop.classList.add('show');
 
-  ps.keywordSearch(query, function(data, status) {
-    drop.innerHTML = '';
-    if (status !== kakao.maps.services.Status.OK || !data.length) {
-      drop.innerHTML = '<div class="hosp-searching">검색 결과 없음</div>';
+  var url = GAS_URL + '?action=searchHospital&q=' + encodeURIComponent(query);
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      drop.innerHTML = '';
+      if (!res.ok || !res.places || res.places.length === 0) {
+        drop.innerHTML = '<div class="hosp-searching">검색 결과 없음</div>';
+        setTimeout(function() { drop.classList.remove('show'); }, 1500);
+        return;
+      }
+      res.places.forEach(function(place) {
+        var div = document.createElement('div');
+        div.className = 'hosp-item';
+        div.innerHTML = '<div class="hosp-item-name">' + place.name + '</div>'
+          + '<div class="hosp-item-addr">' + place.address + '</div>';
+        div.onclick = function(e) {
+          e.stopPropagation();
+          selectHospital(idx, {
+            place_name: place.name,
+            y: place.lat,
+            x: place.lng,
+            road_address_name: place.address,
+            address_name: place.address
+          });
+        };
+        drop.appendChild(div);
+      });
+    })
+    .catch(function() {
+      drop.innerHTML = '<div class="hosp-searching">검색 실패</div>';
       setTimeout(function() { drop.classList.remove('show'); }, 1500);
-      return;
-    }
-    // 병원/의원 우선 + 최대 6개
-    var items = data.filter(function(d) {
-      return d.category_group_code === 'HP8' || d.category_name.indexOf('병원') >= 0 || d.category_name.indexOf('의원') >= 0;
     });
-    if (items.length === 0) items = data; // 병원 필터 결과 없으면 전체
-    items = items.slice(0, 6);
-
-    items.forEach(function(place) {
-      var div = document.createElement('div');
-      div.className = 'hosp-item';
-      div.innerHTML = '<div class="hosp-item-name">' + place.place_name + '</div>'
-        + '<div class="hosp-item-addr">' + (place.road_address_name || place.address_name) + '</div>';
-      div.onclick = function(e) {
-        e.stopPropagation();
-        selectHospital(idx, place);
-      };
-      drop.appendChild(div);
-    });
-  }, { size: 10 });
 }
 
 function selectHospital(idx, place) {
