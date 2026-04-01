@@ -68,7 +68,6 @@ body{
   max-width:390px;
   margin:0 auto;
   min-height:100dvh;
-  max-height:100dvh;
   background:var(--base);
   display:flex;
   flex-direction:column;
@@ -78,10 +77,9 @@ body{
 }
 @media (min-width:768px) {
   .shell{
-    max-height:844px;
-    min-height:auto;
     margin:24px auto;
     border-radius:20px;
+    min-height:calc(100vh - 48px);
   }
 }
 
