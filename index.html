@@ -428,6 +428,8 @@ textarea{resize:none;min-height:76px;}
 .hosp-item:active,.hosp-item:hover{background:var(--amber-pale);}
 .hosp-item-name{font-size:13.5px;font-weight:600;color:var(--t1);margin-bottom:2px;}
 .hosp-item-addr{font-size:11.5px;color:var(--t3);}
+.hosp-cat-badge{display:inline-block;font-size:10px;font-weight:600;color:var(--amber);background:var(--amber-pale);padding:1px 6px;border-radius:8px;margin-left:6px;vertical-align:middle;}
+.hosp-item-tel{margin-left:8px;color:var(--t3);font-size:10.5px;}
 .hosp-selected-badge{
   display:inline-flex;align-items:center;gap:4px;
   font-size:10.5px;font-weight:600;color:var(--ok);background:var(--ok-pale);
@@ -690,7 +692,6 @@ canvas#signaturePad1{
           <div class="w-frow"><span class="w-flabel">병원 추가할 때마다</span><span class="w-fval">+ 20,000원</span></div>
           <div class="w-frow"><span class="w-flabel">당일 특급 처리</span><span class="w-fval">+ 20,000원</span></div>
         </div>
-        <p style="font-size:11.5px;color:var(--t3);margin-top:10px;line-height:1.7;text-align:center;">💡 인근 지역 병원이면 한 번에 돌 수 있어서<br>추가 특급 요금 없이 처리해줄게!</p>
       </div>
       <div class="w-cta">
         <button class="btn-next" style="border-radius:var(--r);padding:17px;" onclick="openCheckModal()">
@@ -1081,7 +1082,6 @@ let kakaoReady     = true;  // GAS proxy 방식 — 항상 준비됨
 let searchTimers   = {};   // debounce용
 
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwcOjgmyqA4D7PP1AzYp05sNLsBWcdqbnqcKh9acXwJNeqzaS6e3Il08DzTPxz41R77/exec';
-const PROXY_URL = '/.netlify/functions'; // Netlify Functions proxy
 
 // ── 카카오 로컬 검색: GAS proxy (SDK 불필요) ──
 
@@ -1372,7 +1372,7 @@ function buildHospitalBlocks() {
             <label class="field-label">의료기관 이름 <span class="req">*</span></label>
             <div class="hosp-search-wrap" id="hospWrap_${i}">
               <input type="text" id="hospital_${i}" placeholder="예: 서울대학교병원" autocomplete="off"
-                     oninput="onHospInput(${i})" onkeyup="onHospInput(${i})" onfocus="onHospFocus(${i})">
+                     oninput="onHospInput(${i})" onfocus="onHospFocus(${i})">
               <div class="hosp-dropdown" id="hospDrop_${i}"></div>
             </div>
             <div id="hospBadge_${i}" class="hosp-selected-badge" style="${saved ? '' : 'display:none;'}">
@@ -1424,25 +1424,26 @@ function onHospInput(idx) {
   var badge = document.getElementById('hospBadge_' + idx);
   if (badge) { badge.style.display = 'none'; badge.textContent = ''; }
 
-  if (!kakaoReady || q.length < 1) {
+  if (!kakaoReady || q.length < 2) {
     closeDropdown(idx);
     return;
   }
   clearTimeout(searchTimers[idx]);
-  searchTimers[idx] = setTimeout(function() { searchHospital(q, idx); }, 300);
+  searchTimers[idx] = setTimeout(function() { searchHospital(q, idx); }, 500);
 }
 
 function onHospFocus(idx) {
   var q = v('hospital_' + idx).trim();
-  if (kakaoReady && q.length >= 1) searchHospital(q, idx);
+  if (kakaoReady && q.length >= 2) searchHospital(q, idx);
 }
 
 function searchHospital(query, idx) {
   var drop = document.getElementById('hospDrop_' + idx);
-  drop.innerHTML = '<div class="hosp-searching">검색 중...</div>';
+  drop.innerHTML = '<div class="hosp-searching">🔍 검색 중...</div>';
   drop.classList.add('show');
 
-  var url = PROXY_URL + '/search?q=' + encodeURIComponent(query);
+  // Netlify Function — Claude 정규화 + 네이버 지역검색
+  var url = '/.netlify/functions/search?q=' + encodeURIComponent(query);
   fetch(url)
     .then(function(r) { return r.json(); })
     .then(function(res) {
@@ -1455,8 +1456,21 @@ function searchHospital(query, idx) {
       res.places.forEach(function(place) {
         var div = document.createElement('div');
         div.className = 'hosp-item';
-        div.innerHTML = '<div class="hosp-item-name">' + place.name + '</div>'
-          + '<div class="hosp-item-addr">' + place.address + '</div>';
+        // 종별 배지 (네이버: "병원>종합병원", 심평원: "상급종합")
+        var badge = '';
+        if (place.category) {
+          var catText = place.category;
+          if (catText.includes('>')) {
+            var parts = catText.split('>');
+            catText = parts[parts.length - 1].trim();
+          }
+          if (/상급종합|종합병원|병원|의원|치과|한의원/.test(catText)) {
+            badge = '<span class="hosp-cat-badge">' + catText + '</span>';
+          }
+        }
+        var telLine = place.tel ? '<span class="hosp-item-tel">' + place.tel + '</span>' : '';
+        div.innerHTML = '<div class="hosp-item-name">' + place.name + badge + '</div>'
+          + '<div class="hosp-item-addr">' + place.address + telLine + '</div>';
         div.onclick = function(e) {
           e.stopPropagation();
           selectHospital(idx, {
@@ -1513,7 +1527,7 @@ function checkBundleRoute(urgentHospitals, callback) {
   showRouteLoading(true);
 
   var coords = urgentHospitals.map(function(h) { return h.lat + ',' + h.lng; }).join(';');
-  var url = PROXY_URL + '/route?coords=' + encodeURIComponent(coords);
+  var url = '/.netlify/functions/route?coords=' + encodeURIComponent(coords);
 
   fetch(url)
     .then(function(r) { return r.json(); })
