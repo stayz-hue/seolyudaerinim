@@ -9,6 +9,8 @@
 <title>서류대리님 — 진료기록 발급 대행</title>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/4.1.7/signature_pad.umd.js"></script>
+<!-- 카카오 로컬 검색 SDK (JavaScript 앱 키) -->
+<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=e4bd686f3e6d02318278677f13153640&libraries=services&autoload=false"></script>
 <style>
 
 /* ============================================
@@ -401,6 +403,40 @@ textarea{resize:none;min-height:76px;}
 .consent-text{font-size:13.5px;color:var(--t2);line-height:1.6;}
 
 /* ── STEP 4 — 병원 정보 ── */
+/* 병원 검색 자동완성 */
+.hosp-search-wrap{position:relative;}
+.hosp-dropdown{
+  position:absolute;top:100%;left:0;right:0;z-index:100;
+  background:var(--base);border:.5px solid var(--br);border-radius:0 0 var(--r-sm) var(--r-sm);
+  max-height:220px;overflow-y:auto;
+  box-shadow:0 8px 24px rgba(28,20,9,.12);
+  display:none;
+}
+.hosp-dropdown.show{display:block;}
+.hosp-item{
+  padding:12px 14px;cursor:pointer;
+  border-bottom:.5px solid var(--br-l);
+  transition:background .1s;
+}
+.hosp-item:last-child{border-bottom:none;}
+.hosp-item:active,.hosp-item:hover{background:var(--amber-pale);}
+.hosp-item-name{font-size:13.5px;font-weight:600;color:var(--t1);margin-bottom:2px;}
+.hosp-item-addr{font-size:11.5px;color:var(--t3);}
+.hosp-selected-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:10.5px;font-weight:600;color:var(--ok);background:var(--ok-pale);
+  padding:3px 8px;border-radius:20px;margin-top:6px;
+}
+.hosp-searching{padding:14px;text-align:center;font-size:12px;color:var(--t3);}
+/* 묶음 판정 배너 */
+.bundle-banner{
+  background:var(--amber-pale);border:.5px solid rgba(182,141,97,.3);
+  border-radius:var(--r-sm);padding:10px 14px;margin-top:4px;
+  font-size:12px;color:var(--amber);font-weight:600;
+  display:none;
+}
+.bundle-banner.show{display:block;}
+.bundle-banner.individual{background:var(--danger-pale);border-color:rgba(184,64,64,.15);color:var(--danger);}
 .doc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
 .doc-chip{
   display:flex;align-items:center;gap:8px;
@@ -612,7 +648,6 @@ canvas#signaturePad1{
   .fp-total-val{font-size:19px;}
 }
 </style>
-<script src="https://cdn.iamport.kr/js/iamport.payment-1.2.0.js"></script>
 </head>
 <body>
 <div class="shell" id="app">
@@ -648,13 +683,14 @@ canvas#signaturePad1{
           <div class="w-frow"><span class="w-flabel">기본 대행 — 1개 병원</span><span class="w-fval lead">25,000원</span></div>
           <div class="w-frow"><span class="w-flabel">병원 추가할 때마다</span><span class="w-fval">+ 20,000원</span></div>
           <div class="w-frow"><span class="w-flabel">당일 특급 처리</span><span class="w-fval">+ 20,000원</span></div>
+          <div class="w-frow" style="font-size:11px;color:var(--t3);padding-top:2px;"><span class="w-flabel">└ 가까운 병원끼리는 묶음 할인</span><span class="w-fval" style="font-size:11px;">2곳 = +20,000원</span></div>
         </div>
       </div>
       <div class="w-cta">
         <button class="btn-next" style="border-radius:var(--r);padding:17px;" onclick="openCheckModal()">
           신청하기 <span style="font-size:17px;">→</span>
         </button>
-        <p class="w-fine">카드 결제만 가능 · 병원 서류 발급 비용은 실비로 별도 청구돼</p>
+        <p class="w-fine">계좌이체 · 병원 서류 발급 비용은 실비로 별도 청구돼</p>
       </div>
     </div>
   </div>
@@ -674,12 +710,21 @@ canvas#signaturePad1{
     <div class="success" id="success">
       <div class="success-icon">✅</div>
       <h2 class="success-h">접수 완료!</h2>
-      <p class="success-p">신청이 잘 들어왔어.<br>확인하고 빠르게 연락할게.</p>
+      <p class="success-p">아래 계좌로 대행료를 입금해줘.<br>입금 확인되면 바로 시작할게.</p>
       <div class="receipt-box">
         <div class="receipt-label">접수 번호</div>
         <div class="receipt-num" id="receiptNum">-</div>
       </div>
-      <div class="contact-txt">문의: 010-9536-2940 · 카카오 [서류대리님]</div>
+      <div style="background:var(--amber-pale);border:.5px solid rgba(182,141,97,.3);border-radius:var(--r);padding:20px;margin-bottom:12px;text-align:center;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--amber);margin-bottom:12px;">입금 계좌</div>
+        <div style="font-size:14px;font-weight:600;color:var(--t1);margin-bottom:4px;">IBK기업은행</div>
+        <div id="successAccount" style="font-size:22px;font-weight:800;color:var(--t1);letter-spacing:.02em;margin-bottom:4px;">523-082856-04-011</div>
+        <div style="font-size:12px;color:var(--t3);margin-bottom:14px;">예금주: 배승휴(서류대리님)</div>
+        <div style="font-size:14px;font-weight:700;color:var(--t1);margin-bottom:6px;">입금 금액: <span id="successFee">-</span></div>
+        <div style="font-size:13px;color:var(--amber);font-weight:600;margin-bottom:12px;">입금자명: <strong id="successDepositor">-</strong></div>
+        <button onclick="navigator.clipboard.writeText(document.getElementById('successAccount').textContent.replace(/[^0-9]/g,''))" style="margin-top:4px;padding:10px 20px;background:var(--btn);color:var(--btn-txt);border:none;border-radius:var(--r-sm);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">계좌번호 복사</button>
+      </div>
+      <div class="contact-txt">문의: 010-9536-2940 · 카카오 <a href="http://pf.kakao.com/_XxjhEX" style="color:var(--amber);text-decoration:underline;">[서류대리님]</a></div>
     </div>
 
     <!-- ────────────────────────
@@ -709,7 +754,7 @@ canvas#signaturePad1{
         </div>
         <!-- 당일 특급 토글 -->
         <div style="margin-bottom:8px;">
-          <div style="font-size:11.5px;font-weight:700;color:var(--t3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:10px;">⚡ 당일 특급 <span style="font-weight:400;font-size:10.5px;">(각 +20,000원 · 오후 12시 전 신청만)</span></div>
+          <div style="font-size:11.5px;font-weight:700;color:var(--t3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:10px;">⚡ 당일 특급 <span style="font-weight:400;font-size:10.5px;">(+20,000원 · 가까운 병원은 묶음 할인 · 오후 12시 전)</span></div>
           <div id="urgentToggles"></div>
         </div>
         <!-- 마감 배너 -->
@@ -901,6 +946,10 @@ canvas#signaturePad1{
           <div class="upload-sub" id="uploadSub">탭해서 사진 선택하거나 파일 드래그</div>
         </div>
 
+        <div style="margin-top:16px;font-size:13px;color:#9A3412;line-height:1.7;text-align:center;">
+          어... 혹시 신청인(환자명)과 입금하는 분이 다를까? 🤔
+        </div>
+
       </div>
       <div class="bottom">
         <button class="btn-back" onclick="goToStep(4)">←</button>
@@ -921,6 +970,9 @@ canvas#signaturePad1{
         <p class="step-sub">손가락이나 터치펜으로 서명해줘.</p>
       </div>
       <div class="fscroll">
+        <div class="info-notice" style="margin-bottom:14px;">
+          ✍️ 이 서명은 <strong>위임장 및 동의서</strong> 작성에 사용돼.
+        </div>
         <div class="sig-wrap">
           <div class="sig-bar">
             <span class="sig-hint">또렷하게 서명해줘</span>
@@ -928,8 +980,9 @@ canvas#signaturePad1{
           </div>
           <canvas id="signaturePad1" style="display:block;width:100%;height:200px;background:var(--base);cursor:crosshair;touch-action:none;"></canvas>
         </div>
-        <div class="info-notice" style="margin-top:0;">
-          이 서명은 위임장 및 동의서 작성에 사용돼.
+        <div style="background:#FFF7ED;border:.5px solid #FDBA74;border-radius:var(--r-sm);padding:12px 14px;margin-top:14px;font-size:13px;color:#9A3412;line-height:1.7;text-align:center;">
+          ⚠️ 신청인(환자명)과 입금자가 다르면<br>
+          <strong>다음 페이지에 꼭 다르다고 체크해줘야해!!!!</strong>
         </div>
       </div>
       <div class="bottom">
@@ -948,9 +1001,19 @@ canvas#signaturePad1{
           <div class="step-num" style="background:var(--ok);">✓</div>
           <div class="step-title">최종 확인</div>
         </div>
-        <p class="step-sub">내용 확인하고 결제하면 바로 시작할게.</p>
+        <p class="step-sub">내용 확인하고 신청하면 계좌 안내해줄게.</p>
       </div>
       <div class="fscroll">
+        <!-- 입금자명 확인 (맨 위) -->
+        <div style="margin-bottom:16px;padding:16px;background:#FFF7ED;border:1.5px solid #FDBA74;border-radius:var(--r-sm);">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;color:#9A3412;font-weight:700;">
+            <input type="checkbox" id="diffDepositor" onchange="toggleDepositorInput()" style="width:22px;height:22px;accent-color:#EA580C;">
+            신청인(환자명)과 입금자가 다릅니다
+          </label>
+          <div id="depositorBox" style="display:none;margin-top:12px;">
+            <input type="text" id="depositorName" placeholder="실제 입금하시는 분 이름" style="width:100%;padding:12px 14px;border:1px solid rgba(182,141,97,.3);border-radius:var(--r-sm);font-family:inherit;font-size:15px;background:#fff;">
+          </div>
+        </div>
         <div class="confirm-section">
           <div class="cs-cap">환자 정보</div>
           <div class="cs-rows">
@@ -975,16 +1038,16 @@ canvas#signaturePad1{
             <div class="tb-val" id="cf-total">-</div>
             <div class="tb-note">병원 서류 발급 수수료 별도</div>
           </div>
-          <div style="font-size:28px;">💳</div>
+          <div style="font-size:28px;">🏦</div>
         </div>
         <div class="info-notice">
-          결제 완료 즉시 서비스가 시작돼.<br>
+          입금 확인 후 서비스가 시작돼.<br>
           <strong>단순 변심은 환불이 안 돼</strong> — 꼼꼼히 확인해줘.
         </div>
       </div>
       <div class="bottom" id="finalButtons">
         <button class="btn-back" onclick="goToStep(6)">←</button>
-        <button class="btn-next submit" onclick="submitForm()">💳 결제하고 신청하기</button>
+        <button class="btn-next submit" onclick="submitForm()">신청하기 →</button>
       </div>
     </div>
 
@@ -1005,7 +1068,27 @@ let idCardFileObj = null;
 let deliveryMethod = 'digital'; // digital | post
 const URGENT_MAX  = 3;
 
+// ── 병원 좌표 + 묶음 판정 ──
+let hospitalCoords = []; // [{lat, lng, name, address}] 인덱스=병원순서(0-based)
+let bundleResult   = null; // {isBundled, routeMinutes, failed}
+let kakaoReady     = false;
+let searchTimers   = {};   // debounce용
+
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwcOjgmyqA4D7PP1AzYp05sNLsBWcdqbnqcKh9acXwJNeqzaS6e3Il08DzTPxz41R77/exec';
+
+// ── 카카오 SDK 초기화 ──
+if (typeof kakao !== 'undefined' && kakao.maps) {
+  kakao.maps.load(function() { kakaoReady = true; });
+}
+
+/* ================================================
+   입금자명 토글
+   ================================================ */
+function toggleDepositorInput() {
+  var checked = document.getElementById('diffDepositor').checked;
+  document.getElementById('depositorBox').style.display = checked ? 'block' : 'none';
+  if (!checked) document.getElementById('depositorName').value = '';
+}
 
 /* ================================================
    NAVIGATION
@@ -1039,6 +1122,30 @@ function goToStep(n) {
 
 function nextStep(from) {
   if (!validate(from)) return;
+
+  // Step 4→5: 특급 병원 2곳+ → 묶음 판정 실행
+  if (from === 4) {
+    var urgCnt = urgentFlags.filter(function(f){return f;}).length;
+    if (urgCnt >= 2) {
+      var urgentHospitals = [];
+      for (var i = 0; i < hospitalCount; i++) {
+        if (urgentFlags[i] && hospitalCoords[i]) {
+          urgentHospitals.push(hospitalCoords[i]);
+        }
+      }
+      if (urgentHospitals.length >= 2) {
+        // 좌표 있는 특급 병원 2곳+ → API 호출
+        checkBundleRoute(urgentHospitals, function() {
+          goToStep(from + 1);
+        });
+        return;
+      }
+      // 좌표 없는 특급 병원 → fallback (개별 특급)
+      bundleResult = { isBundled: false, routeMinutes: -1, failed: true };
+      refreshFeePreview();
+    }
+  }
+
   goToStep(from + 1);
 }
 
@@ -1133,6 +1240,9 @@ function adjustCount(d) {
   hospitalCount = next;
   while (urgentFlags.length < hospitalCount) urgentFlags.push(false);
   urgentFlags = urgentFlags.slice(0, hospitalCount);
+  while (hospitalCoords.length < hospitalCount) hospitalCoords.push(null);
+  hospitalCoords = hospitalCoords.slice(0, hospitalCount);
+  bundleResult = null;
   document.getElementById('countDisplay').textContent = hospitalCount;
   buildUrgentToggles();
   refreshFeePreview();
@@ -1168,6 +1278,7 @@ function toggleUrgent(i) {
   const turningOn = !urgentFlags[i];
   if (turningOn && urgentFlags.filter(f=>f).length >= URGENT_MAX) return;
   urgentFlags[i] = turningOn;
+  bundleResult = null; // 특급 변경 시 재판정 필요
   buildUrgentToggles();
   refreshFeePreview();
 }
@@ -1176,9 +1287,18 @@ function calcFee() {
   const base    = 25000;
   const addHosp = (hospitalCount - 1) * 20000;
   const urgCnt  = urgentFlags.filter(f=>f).length;
-  const addUrg  = urgCnt * 20000;
+  let addUrg;
+  let isBundled = false;
+  if (urgCnt >= 2 && bundleResult && bundleResult.isBundled) {
+    // 묶음특급: 몇 개든 1건으로 취급 = +2만
+    addUrg = 20000;
+    isBundled = true;
+  } else {
+    // 개별특급: 각각 +2만
+    addUrg = urgCnt * 20000;
+  }
   const addPost = deliveryMethod === 'post' ? 20000 : 0;
-  return { base, addHosp, addUrg, urgCnt, addPost, total: base + addHosp + addUrg + addPost };
+  return { base, addHosp, addUrg, urgCnt, addPost, isBundled, total: base + addHosp + addUrg + addPost };
 }
 
 function refreshFeePreview() {
@@ -1186,7 +1306,11 @@ function refreshFeePreview() {
   const rows = document.getElementById('feeRows');
   let html = `<div class="fp-row"><span class="fp-key">기본 대행 (1개 병원)</span><span class="fp-val">25,000원</span></div>`;
   if (f.addHosp) html += `<div class="fp-row"><span class="fp-key">추가 병원 ${hospitalCount-1}개</span><span class="fp-val">+${f.addHosp.toLocaleString()}원</span></div>`;
-  if (f.addUrg)  html += `<div class="fp-row"><span class="fp-key">당일 특급 ${f.urgCnt}개 병원</span><span class="fp-val" style="color:#C8B478;">+${f.addUrg.toLocaleString()}원</span></div>`;
+  if (f.urgCnt && f.isBundled) {
+    html += `<div class="fp-row"><span class="fp-key">🚗 묶음 특급 (${f.urgCnt}개 병원)</span><span class="fp-val" style="color:#3D7A52;">+20,000원</span></div>`;
+  } else if (f.addUrg) {
+    html += `<div class="fp-row"><span class="fp-key">당일 특급 ${f.urgCnt}개 병원</span><span class="fp-val" style="color:#C8B478;">+${f.addUrg.toLocaleString()}원</span></div>`;
+  }
   if (f.addPost) html += `<div class="fp-row"><span class="fp-key">당일 빠른 등기 발송</span><span class="fp-val">+20,000원</span></div>`;
   rows.innerHTML = html;
   document.getElementById('feeTotal').textContent = f.total.toLocaleString() + '원';
@@ -1220,10 +1344,16 @@ function toggleConsent() {
 function buildHospitalBlocks() {
   const wrap = document.getElementById('hospitalBlocks');
   wrap.innerHTML = '';
+  // 병원 수 변경 시 좌표 배열 동기화
+  while (hospitalCoords.length < hospitalCount) hospitalCoords.push(null);
+  hospitalCoords = hospitalCoords.slice(0, hospitalCount);
+  bundleResult = null; // 병원 변경 시 판정 초기화
+
   const DOCS = ['진단서', '진료비내역서', '진료비영수증', '영상CD', '기타'];
   for (let i = 1; i <= hospitalCount; i++) {
     const label = hospitalCount === 1 ? '병원 정보' : `${i}번째 병원`;
     const urgOn = urgentFlags[i-1];
+    const saved = hospitalCoords[i-1];
     const block = document.createElement('div');
     block.innerHTML = `
       <div class="scard" id="hblock${i}">
@@ -1235,7 +1365,14 @@ function buildHospitalBlocks() {
         <div class="scard-body">
           <div class="field">
             <label class="field-label">의료기관 이름 <span class="req">*</span></label>
-            <input type="text" id="hospital_${i}" placeholder="예: 서울대학교병원">
+            <div class="hosp-search-wrap" id="hospWrap_${i}">
+              <input type="text" id="hospital_${i}" placeholder="예: 서울대학교병원" autocomplete="off"
+                     oninput="onHospInput(${i})" onfocus="onHospFocus(${i})">
+              <div class="hosp-dropdown" id="hospDrop_${i}"></div>
+            </div>
+            <div id="hospBadge_${i}" class="hosp-selected-badge" style="${saved ? '' : 'display:none;'}">
+              📍 ${saved ? saved.address : ''}
+            </div>
           </div>
           <div class="two-col">
             <div class="field">
@@ -1266,6 +1403,144 @@ function buildHospitalBlocks() {
         </div>
       </div>`;
     wrap.appendChild(block);
+  }
+  // 드롭다운 외부 클릭 시 닫기
+  document.addEventListener('click', closeAllDropdowns);
+}
+
+/* ================================================
+   병원 검색 — 카카오 로컬 SDK
+   ================================================ */
+function onHospInput(idx) {
+  const q = v('hospital_' + idx).trim();
+  // 직접 입력 시 좌표 초기화
+  hospitalCoords[idx - 1] = null;
+  bundleResult = null;
+  var badge = document.getElementById('hospBadge_' + idx);
+  if (badge) { badge.style.display = 'none'; badge.textContent = ''; }
+
+  if (!kakaoReady || q.length < 2) {
+    closeDropdown(idx);
+    return;
+  }
+  clearTimeout(searchTimers[idx]);
+  searchTimers[idx] = setTimeout(function() { searchHospital(q, idx); }, 300);
+}
+
+function onHospFocus(idx) {
+  var q = v('hospital_' + idx).trim();
+  if (kakaoReady && q.length >= 2) searchHospital(q, idx);
+}
+
+function searchHospital(query, idx) {
+  if (!kakaoReady) return;
+  var ps = new kakao.maps.services.Places();
+  var drop = document.getElementById('hospDrop_' + idx);
+  drop.innerHTML = '<div class="hosp-searching">검색 중...</div>';
+  drop.classList.add('show');
+
+  ps.keywordSearch(query, function(data, status) {
+    drop.innerHTML = '';
+    if (status !== kakao.maps.services.Status.OK || !data.length) {
+      drop.innerHTML = '<div class="hosp-searching">검색 결과 없음</div>';
+      setTimeout(function() { drop.classList.remove('show'); }, 1500);
+      return;
+    }
+    // 병원/의원 우선 + 최대 6개
+    var items = data.filter(function(d) {
+      return d.category_group_code === 'HP8' || d.category_name.indexOf('병원') >= 0 || d.category_name.indexOf('의원') >= 0;
+    });
+    if (items.length === 0) items = data; // 병원 필터 결과 없으면 전체
+    items = items.slice(0, 6);
+
+    items.forEach(function(place) {
+      var div = document.createElement('div');
+      div.className = 'hosp-item';
+      div.innerHTML = '<div class="hosp-item-name">' + place.place_name + '</div>'
+        + '<div class="hosp-item-addr">' + (place.road_address_name || place.address_name) + '</div>';
+      div.onclick = function(e) {
+        e.stopPropagation();
+        selectHospital(idx, place);
+      };
+      drop.appendChild(div);
+    });
+  }, { size: 10 });
+}
+
+function selectHospital(idx, place) {
+  document.getElementById('hospital_' + idx).value = place.place_name;
+  hospitalCoords[idx - 1] = {
+    lat: parseFloat(place.y),
+    lng: parseFloat(place.x),
+    name: place.place_name,
+    address: place.road_address_name || place.address_name
+  };
+  bundleResult = null; // 변경 시 재판정 필요
+  var badge = document.getElementById('hospBadge_' + idx);
+  badge.textContent = '📍 ' + (place.road_address_name || place.address_name);
+  badge.style.display = 'inline-flex';
+  closeDropdown(idx);
+}
+
+function closeDropdown(idx) {
+  var d = document.getElementById('hospDrop_' + idx);
+  if (d) d.classList.remove('show');
+}
+function closeAllDropdowns(e) {
+  for (var i = 1; i <= hospitalCount; i++) {
+    var wrap = document.getElementById('hospWrap_' + i);
+    if (wrap && !wrap.contains(e.target)) closeDropdown(i);
+  }
+}
+
+/* ================================================
+   묶음 판정 — GAS proxy → 카카오 모빌리티
+   ================================================ */
+function checkBundleRoute(urgentHospitals, callback) {
+  // urgentHospitals = [{lat, lng, name}, ...] 좌표가 있는 특급 병원만
+  if (urgentHospitals.length < 2) { bundleResult = null; callback(); return; }
+
+  // 판정 로딩 표시
+  showRouteLoading(true);
+
+  var coords = urgentHospitals.map(function(h) { return h.lat + ',' + h.lng; }).join(';');
+  var url = GAS_URL + '?action=getRouteTime&coords=' + encodeURIComponent(coords);
+
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      showRouteLoading(false);
+      if (res.ok) {
+        var isBundled = res.maxMinutes <= 30;
+        bundleResult = { isBundled: isBundled, routeMinutes: res.maxMinutes, failed: false };
+      } else {
+        // API 실패 → 개별 특급 (비싸게) + fallback
+        bundleResult = { isBundled: false, routeMinutes: -1, failed: true };
+      }
+      refreshFeePreview();
+      callback();
+    })
+    .catch(function() {
+      showRouteLoading(false);
+      bundleResult = { isBundled: false, routeMinutes: -1, failed: true };
+      refreshFeePreview();
+      callback();
+    });
+}
+
+function showRouteLoading(show) {
+  var el = document.getElementById('routeLoadingOverlay');
+  if (show) {
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'routeLoadingOverlay';
+      el.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(28,20,9,.4);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;';
+      el.innerHTML = '<div style="background:var(--base);border-radius:var(--r);padding:28px 36px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.2);"><div style="font-size:28px;margin-bottom:12px;">🚗</div><div style="font-size:14px;font-weight:600;color:var(--t1);margin-bottom:6px;">병원 간 이동시간 확인 중...</div><div style="font-size:12px;color:var(--t3);">묶음 특급 가능 여부를 판정하고 있어</div></div>';
+      document.body.appendChild(el);
+    }
+    el.style.display = 'flex';
+  } else {
+    if (el) el.style.display = 'none';
   }
 }
 
@@ -1383,7 +1658,7 @@ function openMaskModal() {
         '<button onclick="clearMask()" style="flex:1;padding:11px;background:var(--raised);border:.5px solid var(--br);border-radius:var(--r-sm);font-family:inherit;font-size:13px;font-weight:600;color:var(--t2);cursor:pointer;">🗑 전체 삭제</button>',
         '<button onclick="document.getElementById(\'idCardFile\').click()" style="flex:1;padding:11px;background:var(--raised);border:.5px solid var(--br);border-radius:var(--r-sm);font-family:inherit;font-size:13px;font-weight:600;color:var(--t2);cursor:pointer;">📷 재선택</button>',
       '</div>',
-      '<button onclick="closeMaskModal(true)" style="width:100%;padding:16px;background:var(--btn);border:none;border-radius:var(--r);font-family:inherit;font-size:15px;font-weight:700;letter-spacing:-.01em;color:var(--btn-txt);cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 1px 3px rgba(0,0,0,.18);">가리기 완료, 다음으로 →</button>',
+      '<button onclick="closeMaskModal(true)" style="width:100%;padding:16px;background:var(--btn);border:none;border-radius:var(--r);font-family:inherit;font-size:15px;font-weight:700;letter-spacing:-.01em;color:var(--btn-txt);cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 1px 3px rgba(0,0,0,.18);">가리기 완료 ✓</button>',
     '</div>'
   ].join('');
 
@@ -1400,9 +1675,7 @@ function closeMaskModal(confirmed) {
   if (confirmed) {
     exportMasked();
     const sub = document.getElementById('uploadSub');
-    if (sub) { sub.className='upload-ok'; sub.textContent='✅ 마스킹 완료'; }
-    // 마스킹 완료 → 바로 서명 스텝으로 이동
-    setTimeout(() => goToStep(6), 200);
+    if (sub) { sub.className='upload-ok'; sub.textContent='✅ 마스킹 완료 — 확인 후 다음을 눌러줘'; }
   }
 }
 
@@ -1542,9 +1815,14 @@ function clearSig() { if (signaturePad) signaturePad.clear(); }
 function fillConfirm() {
   document.getElementById('cf-name').textContent  = v('patientName') || '-';
   document.getElementById('cf-phone').textContent = v('patientPhone') || '-';
+  const fee = calcFee();
   const urgCnt = urgentFlags.filter(f=>f).length;
   let typeStr = hospitalCount + '개 병원';
-  if (urgCnt) typeStr += ' + 당일 특급 ' + urgCnt + '개 병원';
+  if (urgCnt && fee.isBundled) {
+    typeStr += ' + 🚗 묶음 특급 (' + urgCnt + '개 병원)';
+  } else if (urgCnt) {
+    typeStr += ' + 당일 특급 ' + urgCnt + '개 병원';
+  }
   document.getElementById('cf-type').textContent = typeStr;
   const deliveryLabel = deliveryMethod === 'digital' ? '📱 카카오톡 파일 전송 (무료)' : '📮 당일 빠른 등기 (+20,000원)';
   document.getElementById('cf-delivery').textContent = deliveryLabel;
@@ -1552,13 +1830,14 @@ function fillConfirm() {
   hosp.innerHTML = '';
   for (let i = 1; i <= hospitalCount; i++) {
     const name = v('hospital_' + i) || '-';
+    const addr = hospitalCoords[i-1] ? ' — ' + hospitalCoords[i-1].address : '';
     const urg  = urgentFlags[i-1] ? ' ⚡' : '';
     const row  = document.createElement('div');
     row.className = 'cs-row';
-    row.innerHTML = `<span class="cs-key">${i}번</span><span class="cs-val">${name}${urg}</span>`;
+    row.innerHTML = `<span class="cs-key">${i}번</span><span class="cs-val">${name}${urg}<br><small style="color:var(--t3);font-weight:400;">${addr}</small></span>`;
     hosp.appendChild(row);
   }
-  document.getElementById('cf-total').textContent = calcFee().total.toLocaleString() + '원';
+  document.getElementById('cf-total').textContent = fee.total.toLocaleString() + '원';
 }
 
 /* ================================================
@@ -1576,9 +1855,11 @@ function collectDocs(idx) {
 }
 
 function submitForm() {
-  const fee     = calcFee();
-  const orderId = 'SRY' + Date.now();
-  const fd = {
+  var fee     = calcFee();
+  var orderId = 'SRY' + Date.now();
+  var depositorInput = document.getElementById('depositorName').value.trim();
+  var depositorName = depositorInput || v('patientName');
+  var fd = {
     patientName:    v('patientName'),
     patientBirth:   v('patientBirth'),
     patientPhone:   v('patientPhone'),
@@ -1589,82 +1870,68 @@ function submitForm() {
     treatmentEnd:   v('treatEnd_1'),
     reason:         v('reason_1'),
     documents:      collectDocs(1),
-    hospitalCount,
+    hospitalCount:  hospitalCount,
     urgentFlags:    urgentFlags.slice(),
     deliveryMethod: deliveryMethod,
     signature:      (signaturePad && !signaturePad.isEmpty()) ? signaturePad.toDataURL().split(',')[1] : ''
   };
 
-  if (typeof IMP === 'undefined') {
-    alert('결제 모듈이 아직 로드되지 않았어. 잠깐 후 다시 눌러줘.');
-    return;
+  document.getElementById('finalButtons').style.display = 'none';
+  document.getElementById('screen7').style.display = 'none';
+  document.getElementById('loading').classList.add('show');
+
+  var buildExtra = function() {
+    if (hospitalCount <= 1) return '';
+    var lines = ['[추가 병원 정보]'];
+    for (var i = 2; i <= hospitalCount; i++) {
+      lines.push(i + '번째: ' + v('hospital_'+i) + ' / ' + v('treatStart_'+i) + '~' + v('treatEnd_'+i) + ' / ' + collectDocs(i).join(','));
+    }
+    return lines.join('\n');
+  };
+
+  var sendData = function(idB64, idMime, idName) {
+    var payload = {
+      action: 'sendMail',
+      patientName: fd.patientName, patientBirth: fd.patientBirth,
+      patientPhone: fd.patientPhone, patientAddress: fd.patientAddress,
+      agentName: fd.agentName, hospitalName: fd.hospitalName,
+      treatmentStart: fd.treatmentStart, treatmentEnd: fd.treatmentEnd,
+      reason: fd.reason, documents: fd.documents,
+      signature: fd.signature, idCardBase64: idB64,
+      idCardMime: idMime, idCardName: idName,
+      urgentFlags: fd.urgentFlags, orderId: orderId,
+      depositorName: depositorName,
+      hospitalCoords: hospitalCoords.map(function(c){ return c ? {lat:c.lat,lng:c.lng,name:c.name,address:c.address} : null; }),
+      bundleResult: bundleResult,
+      extraNote: buildExtra()
+    };
+    fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(payload) })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        document.getElementById('loading').classList.remove('show');
+        document.getElementById('success').classList.add('show');
+        if (res && res.receiptNo) document.getElementById('receiptNum').textContent = res.receiptNo;
+        document.getElementById('successFee').textContent = fee.total.toLocaleString() + '원';
+        document.getElementById('successDepositor').textContent = depositorName;
+      })
+      .catch(function(err) {
+        document.getElementById('loading').classList.remove('show');
+        document.getElementById('success').classList.add('show');
+        document.getElementById('successFee').textContent = fee.total.toLocaleString() + '원';
+        document.getElementById('successDepositor').textContent = depositorName;
+      });
+  };
+
+  if (idCardFileObj) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var b64 = e.target.result.split(',')[1];
+      sendData(b64, idCardFileObj.type, idCardFileObj.name);
+    };
+    reader.readAsDataURL(idCardFileObj);
+  } else {
+    sendData('', '', '');
   }
-  IMP.init('imp36663501');
-  IMP.request_pay({
-    pg:           'html5_inicis.INIpayTest',
-    pay_method:   'card',
-    merchant_uid: orderId,
-    name:         '서류대리님 - 진료기록 발급 대행 (' + hospitalCount + '개 병원)',
-    amount:       fee.total,
-    buyer_name:   fd.patientName,
-    buyer_tel:    fd.patientPhone,
-    buyer_addr:   fd.patientAddress,
-    m_redirect_url: location.href
-  }, function(rsp) {
-    if (!rsp.success) {
-      alert('결제가 완료되지 않았어.\n(' + (rsp.error_msg || '취소됨') + ')\n\n다시 시도해줘.');
-      return;
-    }
-    document.getElementById('finalButtons').style.display = 'none';
-    document.getElementById('screen7').style.display = 'none';
-    document.getElementById('loading').classList.add('show');
-
-    const buildExtra = () => {
-      if (hospitalCount <= 1) return '';
-      const lines = ['[추가 병원 정보]'];
-      for (let i = 2; i <= hospitalCount; i++) {
-        lines.push(i + '번째: ' + v('hospital_'+i) + ' / ' + v('treatStart_'+i) + '~' + v('treatEnd_'+i) + ' / ' + collectDocs(i).join(','));
-      }
-      return lines.join('\n');
-    };
-
-    const sendData = (idB64, idMime, idName) => {
-      const payload = {
-        action: 'sendMail',
-        patientName: fd.patientName, patientBirth: fd.patientBirth,
-        patientPhone: fd.patientPhone, patientAddress: fd.patientAddress,
-        agentName: fd.agentName, hospitalName: fd.hospitalName,
-        treatmentStart: fd.treatmentStart, treatmentEnd: fd.treatmentEnd,
-        reason: fd.reason, documents: fd.documents,
-        signature: fd.signature, idCardBase64: idB64,
-        idCardMime: idMime, idCardName: idName,
-        urgentFlags: fd.urgentFlags, orderId, impUid: rsp.imp_uid,
-        extraNote: buildExtra()
-      };
-      fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(payload) })
-        .then(r => r.json())
-        .then(res => {
-          document.getElementById('loading').classList.remove('show');
-          document.getElementById('success').classList.add('show');
-          if (res && res.receiptNo) document.getElementById('receiptNum').textContent = res.receiptNo;
-        })
-        .catch(err => {
-          document.getElementById('loading').classList.remove('show');
-          alert('오류가 발생했어.\n' + err.message);
-        });
-    };
-
-    if (idCardFileObj) {
-      const reader = new FileReader();
-      reader.onload = e => {
-        const b64 = e.target.result.split(',')[1];
-        sendData(b64, idCardFileObj.type, idCardFileObj.name);
-      };
-      reader.readAsDataURL(idCardFileObj);
-    } else {
-      sendData('', '', '');
-    }
-  });
 }
 
 
