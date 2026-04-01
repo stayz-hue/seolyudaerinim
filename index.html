@@ -1081,6 +1081,7 @@ let kakaoReady     = true;  // GAS proxy 방식 — 항상 준비됨
 let searchTimers   = {};   // debounce용
 
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwcOjgmyqA4D7PP1AzYp05sNLsBWcdqbnqcKh9acXwJNeqzaS6e3Il08DzTPxz41R77/exec';
+const PROXY_URL = '/.netlify/functions'; // Netlify Functions proxy
 
 // ── 카카오 로컬 검색: GAS proxy (SDK 불필요) ──
 
@@ -1441,7 +1442,7 @@ function searchHospital(query, idx) {
   drop.innerHTML = '<div class="hosp-searching">검색 중...</div>';
   drop.classList.add('show');
 
-  var url = GAS_URL + '?action=searchHospital&q=' + encodeURIComponent(query);
+  var url = PROXY_URL + '/search?q=' + encodeURIComponent(query);
   fetch(url)
     .then(function(r) { return r.json(); })
     .then(function(res) {
@@ -1512,7 +1513,7 @@ function checkBundleRoute(urgentHospitals, callback) {
   showRouteLoading(true);
 
   var coords = urgentHospitals.map(function(h) { return h.lat + ',' + h.lng; }).join(';');
-  var url = GAS_URL + '?action=getRouteTime&coords=' + encodeURIComponent(coords);
+  var url = PROXY_URL + '/route?coords=' + encodeURIComponent(coords);
 
   fetch(url)
     .then(function(r) { return r.json(); })
