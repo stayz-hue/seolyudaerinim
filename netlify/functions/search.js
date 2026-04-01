@@ -4,8 +4,9 @@ exports.handler = async (event) => {
   const q = (event.queryStringParameters || {}).q || '';
   if (q.length < 1) return { statusCode: 200, headers: h, body: JSON.stringify({ ok: false, error: '검색어 필요' }) };
 
-  // 짧은 검색어(1~2자)일 때만 '병원' 추가, 3자 이상은 그대로 검색
-  const sq = (q.length <= 2 && q.indexOf('병원') < 0 && q.indexOf('의원') < 0) ? q + ' 병원' : q;
+  // 항상 '병원' 추가 — 네이버 검색은 완성 키워드 기반이라 부분입력 보완
+  const hasHospKw = ['병원','의원','의료','클리닉','치과','한의원'].some(k => q.indexOf(k) >= 0);
+  const sq = hasHospKw ? q : q + ' 병원';
 
   try {
     const resp = await fetch('https://openapi.naver.com/v1/search/local.json?query=' + encodeURIComponent(sq) + '&display=15', {
