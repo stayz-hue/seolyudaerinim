@@ -128,14 +128,11 @@ async function searchNaver(query) {
   const csc = process.env.NAVER_CLIENT_SECRET;
   if (!cid || !csc) return { ok: false, error: 'NAVER키 없음' };
 
-  let q = query;
-  if (!/병원|의원|의료|클리닉|치과|한의원|센터/.test(query)) {
-    q = query + ' 병원';
-  }
+  const q = query;
 
   const res = await fetch(
     'https://openapi.naver.com/v1/search/local.json?query='
-    + encodeURIComponent(q) + '&display=10',
+    + encodeURIComponent(q) + '&display=5',
     { headers: { 'X-Naver-Client-Id': cid, 'X-Naver-Client-Secret': csc } }
   );
   if (!res.ok) return { ok: false, error: 'NAVER_' + res.status };
