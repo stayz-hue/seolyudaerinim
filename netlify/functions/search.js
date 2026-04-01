@@ -4,10 +4,11 @@ exports.handler = async (event) => {
   const q = (event.queryStringParameters || {}).q || '';
   if (q.length < 1) return { statusCode: 200, headers: h, body: JSON.stringify({ ok: false, error: '검색어 필요' }) };
 
-  const sq = (q.indexOf('병원') < 0 && q.indexOf('의원') < 0 && q.indexOf('의료') < 0) ? q + ' 병원' : q;
+  // 짧은 검색어(1~2자)일 때만 '병원' 추가, 3자 이상은 그대로 검색
+  const sq = (q.length <= 2 && q.indexOf('병원') < 0 && q.indexOf('의원') < 0) ? q + ' 병원' : q;
 
   try {
-    const resp = await fetch('https://openapi.naver.com/v1/search/local.json?query=' + encodeURIComponent(sq) + '&display=10', {
+    const resp = await fetch('https://openapi.naver.com/v1/search/local.json?query=' + encodeURIComponent(sq) + '&display=15', {
       headers: { 'X-Naver-Client-Id': process.env.NAVER_CLIENT_ID, 'X-Naver-Client-Secret': process.env.NAVER_CLIENT_SECRET }
     });
     if (!resp.ok) return { statusCode: 200, headers: h, body: JSON.stringify({ ok: false, error: 'API_' + resp.status }) };
