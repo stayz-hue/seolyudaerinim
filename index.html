@@ -430,6 +430,9 @@ textarea{resize:none;min-height:76px;}
 .hosp-item-addr{font-size:11.5px;color:var(--t3);}
 .hosp-cat-badge{display:inline-block;font-size:10px;font-weight:600;color:var(--amber);background:var(--amber-pale);padding:1px 6px;border-radius:8px;margin-left:6px;vertical-align:middle;}
 .hosp-item-tel{margin-left:8px;color:var(--t3);font-size:10.5px;}
+.hosp-manual-addr{margin-top:6px;}
+.hosp-manual-addr input{font-size:12.5px;padding:10px 12px;border:1.5px dashed var(--amber);border-radius:var(--r);background:var(--amber-pale);}
+.hosp-addr-status{font-size:11px;color:var(--t3);margin-top:4px;min-height:16px;}
 .hosp-selected-badge{
   display:inline-flex;align-items:center;gap:4px;
   font-size:10.5px;font-weight:600;color:var(--ok);background:var(--ok-pale);
@@ -1133,7 +1136,7 @@ function nextStep(from) {
     if (urgCnt >= 2) {
       var urgentHospitals = [];
       for (var i = 0; i < hospitalCount; i++) {
-        if (urgentFlags[i] && hospitalCoords[i]) {
+        if (urgentFlags[i] && hospitalCoords[i] && hospitalCoords[i].lat) {
           urgentHospitals.push(hospitalCoords[i]);
         }
       }
@@ -1191,7 +1194,7 @@ function validate(step) {
   if (step === 4) {
     for (let i = 1; i <= hospitalCount; i++) {
       if (!v('hospital_' + i)) { alert(i + '번째 병원 이름을 입력해줘.'); return false; }
-      if (!hospitalCoords[i-1]) { alert(i + '번째 병원을 검색 결과에서 선택해줘.\n동명 병원 구분을 위해 주소를 확인하고 선택해야 해.'); return false; }
+      if (!hospitalCoords[i-1]) { alert(i + '번째 병원을 검색 결과에서 선택하거나,\n검색에 안 뜨면 "직접 입력"를 눌러줘.'); return false; }
       const ts = v('treatStart_' + i), te = v('treatEnd_' + i);
       if (!isValidDate(ts)) { alert(i + '번째 병원 진료 시작일을 올바르게 입력해줘. (예: 2022-01-15)'); return false; }
       if (!isValidDate(te)) { alert(i + '번째 병원 진료 종료일을 올바르게 입력해줘.'); return false; }
@@ -1378,6 +1381,11 @@ function buildHospitalBlocks() {
             <div id="hospBadge_${i}" class="hosp-selected-badge" style="${saved ? '' : 'display:none;'}">
               📍 ${saved ? saved.address : ''}
             </div>
+            <div id="hospManualAddr_${i}" class="hosp-manual-addr" style="display:none;">
+              <input type="text" id="hospAddr_${i}" placeholder="주소 입력 (예: 서울시 노원구 상계동 1234)" autocomplete="off"
+                     onblur="geocodeAddress(${i})">
+              <div id="hospAddrStatus_${i}" class="hosp-addr-status"></div>
+            </div>
           </div>
           <div class="two-col">
             <div class="field">
@@ -1449,8 +1457,10 @@ function searchHospital(query, idx) {
     .then(function(res) {
       drop.innerHTML = '';
       if (!res.ok || !res.places || res.places.length === 0) {
-        drop.innerHTML = '<div class="hosp-searching">검색 결과 없음</div>';
-        setTimeout(function() { drop.classList.remove('show'); }, 1500);
+        drop.innerHTML = '<div class="hosp-searching">검색 결과 없음</div>'
+          + '<div class="hosp-item hosp-manual" onclick="manualInput(' + idx + ')">'
+          + '<div class="hosp-item-name">✏️ 직접 입력</div>'
+          + '<div class="hosp-item-addr">검색에 안 뜨는 병원이면 여기를 눌러줘</div></div>';
         return;
       }
       res.places.forEach(function(place) {
@@ -1485,8 +1495,10 @@ function searchHospital(query, idx) {
       });
     })
     .catch(function() {
-      drop.innerHTML = '<div class="hosp-searching">검색 실패</div>';
-      setTimeout(function() { drop.classList.remove('show'); }, 1500);
+      drop.innerHTML = '<div class="hosp-searching">검색 실패</div>'
+        + '<div class="hosp-item hosp-manual" onclick="manualInput(' + idx + ')">'
+        + '<div class="hosp-item-name">✏️ 직접 입력</div>'
+        + '<div class="hosp-item-addr">검색에 안 뜨는 병원이면 여기를 눌러줘</div></div>';
     });
 }
 
@@ -1502,7 +1514,67 @@ function selectHospital(idx, place) {
   var badge = document.getElementById('hospBadge_' + idx);
   badge.textContent = '📍 ' + (place.road_address_name || place.address_name);
   badge.style.display = 'inline-flex';
+  // 직접입력 주소 필드 숨기기
+  var addrWrap = document.getElementById('hospManualAddr_' + idx);
+  if (addrWrap) addrWrap.style.display = 'none';
+  badge.style.display = 'inline-flex';
   closeDropdown(idx);
+}
+
+// 직접 입력 — 검색에 안 뜨는 병원용
+function manualInput(idx) {
+  var name = v('hospital_' + idx).trim();
+  if (!name) { alert('병원 이름을 먼저 입력해줘.'); return; }
+  hospitalCoords[idx - 1] = {
+    lat: null, lng: null,
+    name: name, address: '(직접 입력)',
+    manual: true
+  };
+  bundleResult = null;
+  var badge = document.getElementById('hospBadge_' + idx);
+  badge.textContent = '✏️ 직접 입력됨 — 아래에 주소를 입력하면 특급 묶음판정 가능';
+  badge.style.display = 'inline-flex';
+  // 주소 입력 필드 표시
+  var addrWrap = document.getElementById('hospManualAddr_' + idx);
+  if (addrWrap) {
+    addrWrap.style.display = 'block';
+    document.getElementById('hospAddr_' + idx).focus();
+  }
+  closeDropdown(idx);
+}
+
+// 주소 → 좌표 변환 (카카오 로컬 API via Netlify Function)
+function geocodeAddress(idx) {
+  var addr = (document.getElementById('hospAddr_' + idx) || {}).value || '';
+  addr = addr.trim();
+  if (!addr) return;
+  var status = document.getElementById('hospAddrStatus_' + idx);
+  status.textContent = '📍 좌표 확인 중...';
+
+  fetch('/.netlify/functions/geocode?address=' + encodeURIComponent(addr))
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res.ok && res.lat && res.lng) {
+        // 좌표 업데이트
+        var coords = hospitalCoords[idx - 1];
+        if (coords) {
+          coords.lat = parseFloat(res.lat);
+          coords.lng = parseFloat(res.lng);
+          coords.address = res.address || addr;
+        }
+        var badge = document.getElementById('hospBadge_' + idx);
+        badge.textContent = '📍 ' + (res.address || addr);
+        status.textContent = '✅ 좌표 확인 완료 — 묶음판정 가능';
+        status.style.color = '#3D7A52';
+      } else {
+        status.textContent = '⚠️ 좌표 변환 실패 — 주소를 더 정확하게 입력해줘';
+        status.style.color = '#c44';
+      }
+    })
+    .catch(function() {
+      status.textContent = '⚠️ 좌표 확인 실패';
+      status.style.color = '#c44';
+    });
 }
 
 function closeDropdown(idx) {
@@ -1532,16 +1604,20 @@ function checkBundleRoute(urgentHospitals, callback) {
   fetch(url)
     .then(function(r) { return r.json(); })
     .then(function(res) {
-      showRouteLoading(false);
       if (res.ok) {
         var isBundled = res.maxMinutes <= 30;
         bundleResult = { isBundled: isBundled, routeMinutes: res.maxMinutes, failed: false };
+        // 판정 결과 표시 (1.5초 후 다음 step)
+        showRouteResult(isBundled, res.maxMinutes, function() {
+          refreshFeePreview();
+          callback();
+        });
       } else {
-        // API 실패 → 개별 특급 (비싸게) + fallback
         bundleResult = { isBundled: false, routeMinutes: -1, failed: true };
+        showRouteLoading(false);
+        refreshFeePreview();
+        callback();
       }
-      refreshFeePreview();
-      callback();
     })
     .catch(function() {
       showRouteLoading(false);
@@ -1565,6 +1641,28 @@ function showRouteLoading(show) {
   } else {
     if (el) el.style.display = 'none';
   }
+}
+
+function showRouteResult(isBundled, minutes, callback) {
+  var el = document.getElementById('routeLoadingOverlay');
+  if (!el) { callback(); return; }
+  if (isBundled) {
+    el.querySelector('div > div').innerHTML =
+      '<div style="font-size:32px;margin-bottom:12px;">🎉</div>'
+      + '<div style="font-size:15px;font-weight:700;color:#3D7A52;margin-bottom:6px;">묶음 특급 가능!</div>'
+      + '<div style="font-size:13px;color:var(--t2);">병원 간 이동시간 <b>' + minutes + '분</b> (30분 이내)</div>'
+      + '<div style="font-size:12px;color:var(--t3);margin-top:8px;">특급 요금이 묶음 할인 적용돼</div>';
+  } else {
+    el.querySelector('div > div').innerHTML =
+      '<div style="font-size:32px;margin-bottom:12px;">📍</div>'
+      + '<div style="font-size:15px;font-weight:700;color:var(--t1);margin-bottom:6px;">개별 특급 적용</div>'
+      + '<div style="font-size:13px;color:var(--t2);">병원 간 이동시간 <b>' + minutes + '분</b> (30분 초과)</div>'
+      + '<div style="font-size:12px;color:var(--t3);margin-top:8px;">병원별 각각 특급 요금이 적용돼</div>';
+  }
+  setTimeout(function() {
+    el.style.display = 'none';
+    callback();
+  }, 1800);
 }
 
 function toggleDoc(el, event) {
