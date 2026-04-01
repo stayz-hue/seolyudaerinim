@@ -68,12 +68,21 @@ body{
   max-width:390px;
   margin:0 auto;
   min-height:100dvh;
+  max-height:100dvh;
   background:var(--base);
   display:flex;
   flex-direction:column;
   position:relative;
   overflow:hidden;
   box-shadow:0 0 0 .5px rgba(120,90,60,.08),0 20px 60px rgba(30,20,9,.12);
+}
+@media (min-width:768px) {
+  .shell{
+    max-height:844px;
+    min-height:auto;
+    margin:24px auto;
+    border-radius:20px;
+  }
 }
 
 /* ── WELCOME SCREEN ── */
@@ -682,7 +691,6 @@ canvas#signaturePad1{
           <div class="w-frow"><span class="w-flabel">기본 대행 — 1개 병원</span><span class="w-fval lead">25,000원</span></div>
           <div class="w-frow"><span class="w-flabel">병원 추가할 때마다</span><span class="w-fval">+ 20,000원</span></div>
           <div class="w-frow"><span class="w-flabel">당일 특급 처리</span><span class="w-fval">+ 20,000원</span></div>
-          <div class="w-frow" style="font-size:11px;color:var(--t3);padding-top:2px;"><span class="w-flabel">└ 가까운 병원끼리는 묶음 할인</span><span class="w-fval" style="font-size:11px;">2곳 = +20,000원</span></div>
         </div>
       </div>
       <div class="w-cta">
@@ -1183,6 +1191,7 @@ function validate(step) {
   if (step === 4) {
     for (let i = 1; i <= hospitalCount; i++) {
       if (!v('hospital_' + i)) { alert(i + '번째 병원 이름을 입력해줘.'); return false; }
+      if (!hospitalCoords[i-1]) { alert(i + '번째 병원을 검색 결과에서 선택해줘.\n동명 병원 구분을 위해 주소를 확인하고 선택해야 해.'); return false; }
       const ts = v('treatStart_' + i), te = v('treatEnd_' + i);
       if (!isValidDate(ts)) { alert(i + '번째 병원 진료 시작일을 올바르게 입력해줘. (예: 2022-01-15)'); return false; }
       if (!isValidDate(te)) { alert(i + '번째 병원 진료 종료일을 올바르게 입력해줘.'); return false; }
@@ -1420,7 +1429,7 @@ function onHospInput(idx) {
     return;
   }
   clearTimeout(searchTimers[idx]);
-  searchTimers[idx] = setTimeout(function() { searchHospital(q, idx); }, 300);
+  searchTimers[idx] = setTimeout(function() { searchHospital(q, idx); }, 500);
 }
 
 function onHospFocus(idx) {
