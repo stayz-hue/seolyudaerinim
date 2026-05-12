@@ -120,7 +120,7 @@ body{
 .w-brand{display:flex;align-items:center;gap:10px;margin-bottom:14px;opacity:0;animation:fadeUp .4s cubic-bezier(.22,1,.36,1) .28s both;}
 .w-bname{font-size:14.85px;font-weight:700;letter-spacing:.16em;color:var(--amber);text-transform:uppercase;white-space:nowrap;}
 .w-brule{flex:1;height:.5px;background:linear-gradient(90deg,var(--amber-muted) 0%,transparent 80%);}
-.w-h1{font-size:40.5px;font-weight:800;line-height:1.32;letter-spacing:-.03em;color:var(--t1);margin-bottom:12px;opacity:0;animation:fadeUp .45s cubic-bezier(.22,1,.36,1) .40s both;}
+.w-h1{font-size:40.5px;font-weight:800;line-height:1.22;letter-spacing:-.035em;color:var(--t1);margin-bottom:24px;opacity:0;animation:fadeUp .45s cubic-bezier(.22,1,.36,1) .40s both;}
 .w-h1 .em{color:var(--btn);display:inline;}
 .w-copy{font-size:14.5px;font-weight:400;line-height:1.76;color:var(--t2);margin-bottom:24px;letter-spacing:-.01em;opacity:0;animation:fadeUp .4s cubic-bezier(.22,1,.36,1) .52s both;}
 .w-stats{display:grid;grid-template-columns:1fr .5px 1fr .5px 1fr;align-items:center;background:var(--raised);border:.5px solid var(--br);border-radius:var(--r);padding:16px 0;margin-bottom:20px;opacity:0;animation:fadeUp .4s cubic-bezier(.22,1,.36,1) .63s both;}
@@ -129,7 +129,8 @@ body{
 .w-sval{font-size:20.25px;font-weight:700;letter-spacing:-.025em;color:var(--t1);line-height:1;}
 .w-skey{font-size:14.18px;font-weight:500;color:var(--t3);letter-spacing:.02em;}
 .w-fee{background:var(--raised);border:.5px solid var(--br);border-radius:var(--r);overflow:hidden;margin-bottom:20px;opacity:0;animation:fadeUp .4s cubic-bezier(.22,1,.36,1) .72s both;}
-.w-fcap{padding:14px 18px 0;font-size:13.5px;font-weight:700;letter-spacing:.12em;color:var(--t3);text-transform:uppercase;}
+.w-fcap{padding:16px 18px 4px;font-size:12.5px;font-weight:700;letter-spacing:.14em;color:var(--amber);text-transform:uppercase;display:flex;align-items:center;gap:8px;}
+.w-fcap::before{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--amber-mid);}
 .w-frows{padding:8px 0 4px;}
 .w-frow{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;}
 .w-frow+.w-frow{border-top:.5px solid var(--br-l);}
@@ -592,7 +593,7 @@ canvas#signaturePad1{
   color:var(--btn-txt);
   cursor:pointer;
   display:flex;align-items:center;justify-content:center;gap:8px;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 1px 3px rgba(0,0,0,.18);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 4px 14px rgba(122,85,48,.28),0 1px 3px rgba(0,0,0,.18);
   transition:background .15s,transform .1s;
 }
 .btn-next:active{background:var(--btn-hi);transform:scale(.983);}
@@ -678,7 +679,7 @@ canvas#signaturePad1{
         <span class="w-bname">서류대리님</span>
         <div class="w-brule"></div>
       </div>
-      <h1 class="w-h1">바쁜 거 알아.<br><span class="em">내가 받아올게.</span></h1>
+      <h1 class="w-h1">의무기록<br><span class="em">발급 대행</span></h1>
       <div class="w-stats">
         <div class="w-stat"><span class="w-sval">3~5일</span><span class="w-skey">처리 기간</span></div>
         <div class="w-srule"></div>
