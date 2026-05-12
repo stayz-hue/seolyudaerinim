@@ -118,25 +118,24 @@ body{
 .w-bdot{width:6px;height:6px;border-radius:50%;background:var(--amber-mid);}
 .w-body{flex:1;padding:20px 22px 0;padding-bottom:max(40px,calc(40px + env(safe-area-inset-bottom)));display:flex;flex-direction:column;}
 .w-brand{display:flex;align-items:center;gap:10px;margin-bottom:14px;opacity:0;animation:fadeUp .4s cubic-bezier(.22,1,.36,1) .28s both;}
-.w-bname{font-size:11px;font-weight:700;letter-spacing:.16em;color:var(--amber);text-transform:uppercase;white-space:nowrap;}
+.w-bname{font-size:14.85px;font-weight:700;letter-spacing:.16em;color:var(--amber);text-transform:uppercase;white-space:nowrap;}
 .w-brule{flex:1;height:.5px;background:linear-gradient(90deg,var(--amber-muted) 0%,transparent 80%);}
-.w-h1{font-size:30px;font-weight:800;line-height:1.32;letter-spacing:-.03em;color:var(--t1);margin-bottom:12px;opacity:0;animation:fadeUp .45s cubic-bezier(.22,1,.36,1) .40s both;}
-.w-h1 .em{color:var(--btn);position:relative;display:inline;}
-.w-h1 .em::after{content:'';position:absolute;left:0;right:2px;bottom:0px;height:2.5px;border-radius:2px;background:linear-gradient(90deg,var(--amber-mid) 0%,rgba(182,141,97,.3) 70%,transparent 100%);}
+.w-h1{font-size:40.5px;font-weight:800;line-height:1.32;letter-spacing:-.03em;color:var(--t1);margin-bottom:12px;opacity:0;animation:fadeUp .45s cubic-bezier(.22,1,.36,1) .40s both;}
+.w-h1 .em{color:var(--btn);display:inline;}
 .w-copy{font-size:14.5px;font-weight:400;line-height:1.76;color:var(--t2);margin-bottom:24px;letter-spacing:-.01em;opacity:0;animation:fadeUp .4s cubic-bezier(.22,1,.36,1) .52s both;}
 .w-stats{display:grid;grid-template-columns:1fr .5px 1fr .5px 1fr;align-items:center;background:var(--raised);border:.5px solid var(--br);border-radius:var(--r);padding:16px 0;margin-bottom:20px;opacity:0;animation:fadeUp .4s cubic-bezier(.22,1,.36,1) .63s both;}
 .w-stat{display:flex;flex-direction:column;align-items:center;gap:4px;padding:0 12px;}
 .w-srule{width:.5px;height:28px;background:var(--br);}
-.w-sval{font-size:15px;font-weight:700;letter-spacing:-.025em;color:var(--t1);line-height:1;}
-.w-skey{font-size:10.5px;font-weight:500;color:var(--t3);letter-spacing:.02em;}
+.w-sval{font-size:20.25px;font-weight:700;letter-spacing:-.025em;color:var(--t1);line-height:1;}
+.w-skey{font-size:14.18px;font-weight:500;color:var(--t3);letter-spacing:.02em;}
 .w-fee{background:var(--raised);border:.5px solid var(--br);border-radius:var(--r);overflow:hidden;margin-bottom:20px;opacity:0;animation:fadeUp .4s cubic-bezier(.22,1,.36,1) .72s both;}
-.w-fcap{padding:14px 18px 0;font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--t3);text-transform:uppercase;}
+.w-fcap{padding:14px 18px 0;font-size:13.5px;font-weight:700;letter-spacing:.12em;color:var(--t3);text-transform:uppercase;}
 .w-frows{padding:8px 0 4px;}
 .w-frow{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;}
 .w-frow+.w-frow{border-top:.5px solid var(--br-l);}
-.w-flabel{font-size:13.5px;font-weight:400;color:var(--t2);letter-spacing:-.01em;}
-.w-fval{font-size:14px;font-weight:700;color:var(--t1);letter-spacing:-.02em;}
-.w-fval.lead{font-size:15.5px;color:var(--amber);}
+.w-flabel{font-size:18.23px;font-weight:400;color:var(--t2);letter-spacing:-.01em;}
+.w-fval{font-size:18.9px;font-weight:700;color:var(--t1);letter-spacing:-.02em;}
+.w-fval.lead{font-size:20.93px;color:var(--amber);}
 .w-cta{display:flex;flex-direction:column;gap:12px;opacity:0;animation:fadeUp .4s cubic-bezier(.22,1,.36,1) .80s both;}
 .w-fine{text-align:center;font-size:11.5px;font-weight:400;color:var(--t4);line-height:1.7;letter-spacing:-.005em;}
 
@@ -589,7 +588,7 @@ canvas#signaturePad1{
   background:var(--btn);
   border:none;border-radius:var(--r);
   font-family:inherit;
-  font-size:15.5px;font-weight:700;letter-spacing:-.01em;
+  font-size:20.93px;font-weight:700;letter-spacing:-.01em;
   color:var(--btn-txt);
   cursor:pointer;
   display:flex;align-items:center;justify-content:center;gap:8px;
@@ -641,9 +640,9 @@ canvas#signaturePad1{
 
 /* ── RESPONSIVE ── */
 @media (max-width:375px){
-  .w-h1{font-size:26px;}
+  .w-h1{font-size:35.1px;}
   .headline{font-size:26px;}
-  .w-sval{font-size:13.5px;}
+  .w-sval{font-size:18.23px;}
   .step-title{font-size:16px;}
   .w-body{padding:16px 18px 0;}
   .fscroll{padding:16px 18px;}
@@ -652,10 +651,10 @@ canvas#signaturePad1{
   .two-col{grid-template-columns:1fr;}
 }
 @media (max-width:320px){
-  .w-h1{font-size:23px;}
+  .w-h1{font-size:31.05px;}
   .w-copy{font-size:13.5px;}
   .w-frow{flex-direction:column;align-items:flex-start;gap:2px;}
-  .w-fval{font-size:13px;}
+  .w-fval{font-size:17.55px;}
   .fp-total-val{font-size:19px;}
 }
 </style>
@@ -680,7 +679,6 @@ canvas#signaturePad1{
         <div class="w-brule"></div>
       </div>
       <h1 class="w-h1">바쁜 거 알아.<br><span class="em">내가 받아올게.</span></h1>
-      <p class="w-copy">신청만 해두면 내가 병원에 직접 가서 서류 받아다 줄게.</p>
       <div class="w-stats">
         <div class="w-stat"><span class="w-sval">3~5일</span><span class="w-skey">처리 기간</span></div>
         <div class="w-srule"></div>
@@ -700,7 +698,6 @@ canvas#signaturePad1{
         <button class="btn-next" style="border-radius:var(--r);padding:17px;" onclick="openCheckModal()">
           신청하기 <span style="font-size:17px;">→</span>
         </button>
-        <p class="w-fine">계좌이체 · 병원 서류 발급 비용은 실비로 별도 청구돼</p>
       </div>
     </div>
   </div>
