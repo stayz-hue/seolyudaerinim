@@ -193,7 +193,7 @@ body{
 /* ── FORM ELEMENTS ── */
 .field{margin-bottom:18px;}
 .field-label{
-  display:block;font-size:12px;font-weight:700;
+  display:block;font-size:16.2px;font-weight:700;
   color:var(--t2);letter-spacing:-.005em;
   margin-bottom:7px;
 }
@@ -206,7 +206,7 @@ input[type=text],input[type=tel],input[type=email],textarea,select{
   border:.5px solid var(--br);
   border-radius:var(--r-sm);
   font-family:inherit;
-  font-size:16px;
+  font-size:21.6px;
   color:var(--t1);
   transition:border-color .18s,box-shadow .18s,background .18s;
   -webkit-appearance:none;appearance:none;
@@ -231,18 +231,18 @@ textarea{resize:none;min-height:76px;}
   margin-bottom:18px;
 }
 .scard-head{
-  padding:12px 16px;
+  padding:14px 18px;
   background:var(--sunken);
   border-bottom:.5px solid var(--br);
-  display:flex;align-items:center;gap:8px;
-  font-size:13px;font-weight:700;color:var(--t1);
+  display:flex;align-items:center;gap:10px;
+  font-size:17.55px;font-weight:700;color:var(--t1);
   letter-spacing:-.01em;
 }
 .scard-num{
-  width:22px;height:22px;border-radius:50%;
+  width:30px;height:30px;border-radius:50%;
   background:var(--btn);color:#fff;
   display:flex;align-items:center;justify-content:center;
-  font-size:11px;font-weight:700;flex-shrink:0;
+  font-size:14.85px;font-weight:700;flex-shrink:0;
 }
 .scard-body{padding:16px;}
 
@@ -387,8 +387,8 @@ textarea{resize:none;min-height:76px;}
 .ac-val{font-size:13px;font-weight:600;color:var(--t1);line-height:1.5;}
 
 .consent-row{
-  display:flex;align-items:flex-start;gap:12px;
-  padding:14px 16px;
+  display:flex;align-items:flex-start;gap:14px;
+  padding:18px 20px;
   background:var(--raised);
   border:.5px solid var(--br);
   border-radius:var(--r);
@@ -396,7 +396,7 @@ textarea{resize:none;min-height:76px;}
 }
 .consent-row.checked{border-color:rgba(182,141,97,.4);background:var(--amber-pale);}
 .consent-box{
-  width:22px;height:22px;border-radius:6px;
+  width:30px;height:30px;border-radius:7px;
   border:.5px solid var(--br);
   background:var(--base);
   display:flex;align-items:center;justify-content:center;
@@ -404,9 +404,9 @@ textarea{resize:none;min-height:76px;}
   transition:all .18s;
 }
 .consent-row.checked .consent-box{background:var(--amber-mid);border-color:var(--amber-mid);}
-.consent-check{font-size:12px;color:#fff;opacity:0;transition:opacity .18s;}
+.consent-check{font-size:16.2px;color:#fff;opacity:0;transition:opacity .18s;}
 .consent-row.checked .consent-check{opacity:1;}
-.consent-text{font-size:13.5px;color:var(--t2);line-height:1.6;}
+.consent-text{font-size:18.23px;color:var(--t2);line-height:1.5;letter-spacing:-.01em;}
 
 /* ── STEP 4 — 병원 정보 ── */
 /* 병원 검색 자동완성 */
@@ -414,7 +414,7 @@ textarea{resize:none;min-height:76px;}
 .hosp-dropdown{
   position:absolute;top:100%;left:0;right:0;z-index:100;
   background:var(--base);border:.5px solid var(--br);border-radius:0 0 var(--r-sm) var(--r-sm);
-  max-height:220px;overflow-y:auto;
+  max-height:300px;overflow-y:auto;
   box-shadow:0 8px 24px rgba(28,20,9,.12);
   display:none;
 }
@@ -426,19 +426,19 @@ textarea{resize:none;min-height:76px;}
 }
 .hosp-item:last-child{border-bottom:none;}
 .hosp-item:active,.hosp-item:hover{background:var(--amber-pale);}
-.hosp-item-name{font-size:13.5px;font-weight:600;color:var(--t1);margin-bottom:2px;}
-.hosp-item-addr{font-size:11.5px;color:var(--t3);}
-.hosp-cat-badge{display:inline-block;font-size:10px;font-weight:600;color:var(--amber);background:var(--amber-pale);padding:1px 6px;border-radius:8px;margin-left:6px;vertical-align:middle;}
-.hosp-item-tel{margin-left:8px;color:var(--t3);font-size:10.5px;}
+.hosp-item-name{font-size:18.23px;font-weight:600;color:var(--t1);margin-bottom:2px;}
+.hosp-item-addr{font-size:15.53px;color:var(--t3);}
+.hosp-cat-badge{display:inline-block;font-size:13.5px;font-weight:600;color:var(--amber);background:var(--amber-pale);padding:2px 8px;border-radius:10px;margin-left:6px;vertical-align:middle;}
+.hosp-item-tel{margin-left:8px;color:var(--t3);font-size:14.18px;}
 .hosp-manual-addr{margin-top:6px;}
-.hosp-manual-addr input{font-size:12.5px;padding:10px 12px;border:1.5px dashed var(--amber);border-radius:var(--r);background:var(--amber-pale);}
-.hosp-addr-status{font-size:11px;color:var(--t3);margin-top:4px;min-height:16px;}
+.hosp-manual-addr input{padding:13px 14px;border:1.5px dashed var(--amber);border-radius:var(--r);background:var(--amber-pale);}
+.hosp-addr-status{font-size:14.85px;color:var(--t3);margin-top:4px;min-height:20px;}
 .hosp-selected-badge{
   display:inline-flex;align-items:center;gap:4px;
-  font-size:10.5px;font-weight:600;color:var(--ok);background:var(--ok-pale);
-  padding:3px 8px;border-radius:20px;margin-top:6px;
+  font-size:14.18px;font-weight:600;color:var(--ok);background:var(--ok-pale);
+  padding:5px 10px;border-radius:20px;margin-top:6px;
 }
-.hosp-searching{padding:14px;text-align:center;font-size:12px;color:var(--t3);}
+.hosp-searching{padding:14px;text-align:center;font-size:16.2px;color:var(--t3);}
 /* 묶음 판정 배너 */
 .bundle-banner{
   background:var(--amber-pale);border:.5px solid rgba(182,141,97,.3);
@@ -825,10 +825,6 @@ canvas#signaturePad1{
         <p class="step-sub">서류 발급받을 환자분 정보를 입력해줘.</p>
       </div>
       <div class="fscroll">
-        <div class="info-notice">
-          <strong>정확하게 입력해줘.</strong><br>
-          잘못 입력하면 병원에서 발급이 거절될 수 있어.
-        </div>
         <div class="field">
           <label class="field-label">성명 <span class="req">*</span></label>
           <input type="text" id="patientName" placeholder="예: 김철수">
@@ -881,7 +877,7 @@ canvas#signaturePad1{
           <div class="consent-box" id="consentBox">
             <span class="consent-check" id="consentCheck">✓</span>
           </div>
-          <span class="consent-text">위 대리인 정보로 진행하는 것에 동의해.</span>
+          <span class="consent-text">위 대리인 정보로 진행 동의</span>
         </div>
         <input type="hidden" id="agentName" value="배승휴">
         <input type="hidden" id="agentBirth" value="1990-09-23">
@@ -1113,32 +1109,43 @@ function goToStep(n) {
 }
 
 function nextStep(from) {
-  if (!validate(from)) return;
+  try {
+    if (!validate(from)) return;
 
-  // Step 4→5: 특급 병원 2곳+ → 묶음 판정 실행
-  if (from === 4) {
-    var urgCnt = urgentFlags.filter(function(f){return f;}).length;
-    if (urgCnt >= 2) {
-      var urgentHospitals = [];
-      for (var i = 0; i < hospitalCount; i++) {
-        if (urgentFlags[i] && hospitalCoords[i] && hospitalCoords[i].lat) {
-          urgentHospitals.push(hospitalCoords[i]);
+    var proceedNext = function() {
+      if (from === 4) {
+        openWarningModal(function() { goToStep(from + 1); });
+      } else {
+        goToStep(from + 1);
+      }
+    };
+
+    // Step 4→5: 특급 병원 2곳+ → 묶음 판정 실행
+    if (from === 4) {
+      var urgCnt = urgentFlags.filter(function(f){return f;}).length;
+      if (urgCnt >= 2) {
+        var urgentHospitals = [];
+        for (var i = 0; i < hospitalCount; i++) {
+          if (urgentFlags[i] && hospitalCoords[i] && hospitalCoords[i].lat) {
+            urgentHospitals.push(hospitalCoords[i]);
+          }
         }
+        if (urgentHospitals.length >= 2) {
+          // 좌표 있는 특급 병원 2곳+ → API 호출
+          checkBundleRoute(urgentHospitals, proceedNext);
+          return;
+        }
+        // 좌표 없는 특급 병원 → fallback (개별 특급)
+        bundleResult = { isBundled: false, routeMinutes: -1, failed: true };
+        refreshFeePreview();
       }
-      if (urgentHospitals.length >= 2) {
-        // 좌표 있는 특급 병원 2곳+ → API 호출
-        checkBundleRoute(urgentHospitals, function() {
-          goToStep(from + 1);
-        });
-        return;
-      }
-      // 좌표 없는 특급 병원 → fallback (개별 특급)
-      bundleResult = { isBundled: false, routeMinutes: -1, failed: true };
-      refreshFeePreview();
     }
-  }
 
-  goToStep(from + 1);
+    proceedNext();
+  } catch (e) {
+    alert('진행 중 오류가 났어. 입력값을 확인하거나 새로고침해줘.\n오류: ' + (e && e.message ? e.message : e));
+    console.error('[nextStep error]', e);
+  }
 }
 
 function updateProgress(current) {
@@ -1178,14 +1185,31 @@ function validate(step) {
   }
   if (step === 4) {
     for (let i = 1; i <= hospitalCount; i++) {
-      if (!v('hospital_' + i)) { alert(i + '번째 병원 이름을 입력해줘.'); return false; }
-      if (!hospitalCoords[i-1]) { alert(i + '번째 병원을 검색 결과에서 선택하거나,\n검색에 안 뜨면 "직접 입력"를 눌러줘.'); return false; }
-      const ts = v('treatStart_' + i), te = v('treatEnd_' + i);
-      if (!isValidDate(ts)) { alert(i + '번째 병원 진료 시작일을 올바르게 입력해줘. (예: 2022-01-15)'); return false; }
-      if (!isValidDate(te)) { alert(i + '번째 병원 진료 종료일을 올바르게 입력해줘.'); return false; }
-      if (!v('reason_' + i)) { alert(i + '번째 병원 발급 사유를 입력해줘.'); return false; }
-      const checked = document.querySelectorAll('#docGrid_' + i + ' .doc-chip.selected');
-      if (checked.length === 0) { alert(i + '번째 병원 발급 서류를 하나 이상 선택해줘.'); return false; }
+      if (!v('hospital_' + i)) {
+        alert(i + '번째 병원 이름을 입력해줘.');
+        var el1 = document.getElementById('hospital_' + i); if (el1) el1.focus();
+        return false;
+      }
+      if (!hospitalCoords[i-1]) {
+        alert(i + '번째 병원 주소가 확인 안 됐어.\n\n의료기관 이름을 다시 입력하면 검색 결과가 떠.\n결과 중에서 선택하거나,\n검색에 안 뜨면 "✏️ 직접 입력"을 눌러줘.');
+        var el2 = document.getElementById('hospital_' + i); if (el2) el2.focus();
+        return false;
+      }
+      if (!v('treatPeriod_' + i).trim()) {
+        alert(i + '번째 병원 진료 기간을 입력해줘.');
+        var el3 = document.getElementById('treatPeriod_' + i); if (el3) el3.focus();
+        return false;
+      }
+      if (!v('reason_' + i)) {
+        alert(i + '번째 병원 발급 사유를 입력해줘.');
+        var el4 = document.getElementById('reason_' + i); if (el4) el4.focus();
+        return false;
+      }
+      if (!v('docEtc_' + i).trim()) {
+        alert(i + '번째 병원 발급 서류를 입력해줘.');
+        var el5 = document.getElementById('docEtc_' + i); if (el5) el5.focus();
+        return false;
+      }
     }
     return true;
   }
@@ -1359,7 +1383,7 @@ function buildHospitalBlocks() {
         </div>
         <div class="scard-body">
           <div class="field">
-            <label class="field-label">의료기관 이름 <span class="req">*</span></label>
+            <label class="field-label">의료기관 이름(주소까지!!!) <span class="req">*</span></label>
             <div class="hosp-search-wrap" id="hospWrap_${i}">
               <input type="text" id="hospital_${i}" placeholder="예: 서울대학교병원" autocomplete="off"
                      oninput="onHospInput(${i})" onfocus="onHospFocus(${i})">
@@ -1374,31 +1398,17 @@ function buildHospitalBlocks() {
               <div id="hospAddrStatus_${i}" class="hosp-addr-status"></div>
             </div>
           </div>
-          <div class="two-col">
-            <div class="field">
-              <label class="field-label">진료 시작일 <span class="req">*</span></label>
-              <input type="text" id="treatStart_${i}" placeholder="2022-01-15" maxlength="10" inputmode="numeric" oninput="autoDate(this)">
-            </div>
-            <div class="field">
-              <label class="field-label">진료 종료일 <span class="req">*</span></label>
-              <input type="text" id="treatEnd_${i}" placeholder="2023-02-12" maxlength="10" inputmode="numeric" oninput="autoDate(this)">
-            </div>
+          <div class="field">
+            <label class="field-label">진료 기간 <span class="req">*</span></label>
+            <input type="text" id="treatPeriod_${i}" placeholder="예: 2024. ~">
           </div>
           <div class="field">
             <label class="field-label">발급 사유 <span class="req">*</span></label>
-            <input type="text" id="reason_${i}" placeholder="예: 보험금 청구, 산재 처리">
+            <input type="text" id="reason_${i}" placeholder="예: 보험사 제출용">
           </div>
           <div class="field">
             <label class="field-label">발급 서류 <span class="req">*</span></label>
-            <div class="doc-grid" id="docGrid_${i}">
-              ${DOCS.map((d,j) => `
-                <label class="doc-chip${j===4?' doc-wide':''}" onclick="toggleDoc(this,event)">
-                  <input type="checkbox" value="${d}" style="display:none;">
-                  <span class="dc-check">✓</span>${d}
-                </label>
-              `).join('')}
-            </div>
-            <input type="text" id="docEtc_${i}" placeholder="기타 서류 직접 입력" style="margin-top:8px;font-size:13px;">
+            <input type="text" id="docEtc_${i}" placeholder="예: 진단서, 진료비내역서, 영상CD">
           </div>
         </div>
       </div>`;
@@ -1446,8 +1456,7 @@ function searchHospital(query, idx) {
       if (!res.ok || !res.places || res.places.length === 0) {
         drop.innerHTML = '<div class="hosp-searching">검색 결과 없음</div>'
           + '<div class="hosp-item hosp-manual" onclick="manualInput(' + idx + ')">'
-          + '<div class="hosp-item-name">✏️ 직접 입력</div>'
-          + '<div class="hosp-item-addr">검색에 안 뜨는 병원이면 여기를 눌러줘</div></div>';
+          + '<div class="hosp-item-name">✏️ 직접 입력</div></div>';
         return;
       }
       res.places.forEach(function(place) {
@@ -1484,8 +1493,7 @@ function searchHospital(query, idx) {
     .catch(function() {
       drop.innerHTML = '<div class="hosp-searching">검색 실패</div>'
         + '<div class="hosp-item hosp-manual" onclick="manualInput(' + idx + ')">'
-        + '<div class="hosp-item-name">✏️ 직접 입력</div>'
-        + '<div class="hosp-item-addr">검색에 안 뜨는 병원이면 여기를 눌러줘</div></div>';
+        + '<div class="hosp-item-name">✏️ 직접 입력</div></div>';
     });
 }
 
@@ -1519,7 +1527,7 @@ function manualInput(idx) {
   };
   bundleResult = null;
   var badge = document.getElementById('hospBadge_' + idx);
-  badge.textContent = '✏️ 직접 입력됨 — 아래에 주소를 입력하면 특급 묶음판정 가능';
+  badge.textContent = '✏️ 직접 입력';
   badge.style.display = 'inline-flex';
   // 주소 입력 필드 표시
   var addrWrap = document.getElementById('hospManualAddr_' + idx);
@@ -1952,14 +1960,8 @@ function fillConfirm() {
    SUBMIT
    ================================================ */
 function collectDocs(idx) {
-  const sel = document.querySelectorAll('#docGrid_' + idx + ' .doc-chip.selected input');
-  let docs = Array.from(sel).map(i => i.value);
   const etc = v('docEtc_' + idx).trim();
-  if (etc) {
-    docs = docs.filter(d => d !== '기타');
-    docs.push('기타(' + etc + ')');
-  }
-  return docs;
+  return etc ? [etc] : [];
 }
 
 function submitForm() {
@@ -1974,8 +1976,9 @@ function submitForm() {
     patientAddress: v('patientAddress'),
     agentName:      v('agentName'),
     hospitalName:   Array.from({length:hospitalCount},(_,i)=>v('hospital_'+(i+1))).join(' / '),
-    treatmentStart: v('treatStart_1'),
-    treatmentEnd:   v('treatEnd_1'),
+    treatmentPeriod: v('treatPeriod_1'),
+    treatmentStart: v('treatPeriod_1'),
+    treatmentEnd:   '',
     reason:         v('reason_1'),
     documents:      collectDocs(1),
     hospitalCount:  hospitalCount,
@@ -1992,7 +1995,7 @@ function submitForm() {
     if (hospitalCount <= 1) return '';
     var lines = ['[추가 병원 정보]'];
     for (var i = 2; i <= hospitalCount; i++) {
-      lines.push(i + '번째: ' + v('hospital_'+i) + ' / ' + v('treatStart_'+i) + '~' + v('treatEnd_'+i) + ' / ' + collectDocs(i).join(','));
+      lines.push(i + '번째: ' + v('hospital_'+i) + ' / ' + v('treatPeriod_'+i) + ' / ' + collectDocs(i).join(','));
     }
     return lines.join('\n');
   };
@@ -2204,6 +2207,66 @@ function closeCheckModal() {
 function confirmAndApply() {
   closeCheckModal();
   setTimeout(() => goToStep(1), 100);
+}
+
+/* ========================
+   진단서 최초발급 경고 모달
+   ======================== */
+let _warningOnConfirm = null;
+function openWarningModal(onConfirm) {
+  _warningOnConfirm = onConfirm || null;
+  let modal = document.getElementById('warningModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'warningModal';
+    modal.style.cssText = 'display:none;position:fixed;inset:0;z-index:200;background:rgba(28,20,9,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);align-items:flex-end;justify-content:center;';
+    modal.innerHTML = `
+      <div id="warningModalSheet" style="background:var(--base);width:100%;max-width:390px;border-radius:20px 20px 0 0;padding:0 22px max(28px,calc(20px + env(safe-area-inset-bottom)));transform:translateY(100%);transition:transform .38s cubic-bezier(.22,1,.36,1);">
+        <div style="display:flex;justify-content:center;padding:14px 0 22px;">
+          <div style="width:44px;height:5px;border-radius:4px;background:var(--amber-muted);"></div>
+        </div>
+        <div style="display:flex;justify-content:center;margin-bottom:18px;">
+          <div style="width:64px;height:64px;border-radius:50%;background:var(--danger-pale);display:flex;align-items:center;justify-content:center;font-size:34px;line-height:1;"><span style="display:block;transform:translateY(-3px);">⚠️</span></div>
+        </div>
+        <div style="font-size:19px;font-weight:800;letter-spacing:-.035em;color:var(--danger);text-align:center;margin-bottom:26px;line-height:1.3;white-space:nowrap;">
+          진단서 최초발급이면 대행 불가!
+        </div>
+        <button onclick="confirmWarning()" style="width:100%;padding:20px;background:var(--btn);border:none;border-radius:var(--r);font-family:inherit;font-size:20.25px;font-weight:700;letter-spacing:-.01em;color:var(--btn-txt);cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 4px 14px rgba(122,85,48,.28),0 1px 3px rgba(0,0,0,.18);margin-bottom:10px;">
+          확인했어, 계속 진행할게 →
+        </button>
+        <button onclick="closeWarningModal()" style="width:100%;padding:16px;background:none;border:none;font-family:inherit;font-size:18.9px;font-weight:600;color:var(--t3);cursor:pointer;">
+          닫기
+        </button>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+  const sheet = document.getElementById('warningModalSheet');
+  modal.style.display = 'flex';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      sheet.style.transform = 'translateY(0)';
+    });
+  });
+  const onBg = function(e) {
+    if (e.target === modal) {
+      closeWarningModal();
+      modal.removeEventListener('click', onBg);
+    }
+  };
+  modal.addEventListener('click', onBg);
+}
+function closeWarningModal() {
+  const sheet = document.getElementById('warningModalSheet');
+  const modal = document.getElementById('warningModal');
+  if (!sheet || !modal) return;
+  sheet.style.transform = 'translateY(100%)';
+  setTimeout(() => { modal.style.display = 'none'; }, 380);
+}
+function confirmWarning() {
+  const cb = _warningOnConfirm;
+  _warningOnConfirm = null;
+  closeWarningModal();
+  setTimeout(() => { if (cb) cb(); }, 100);
 }
 </script>
 <div id="legalSection" style="display:none;background:var(--raised);border-top:.5px solid var(--br);padding:28px 22px 40px;font-size:12px;color:var(--t3);line-height:1.85;">
