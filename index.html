@@ -2300,9 +2300,73 @@ function confirmWarning() {
   setTimeout(() => { if (cb) cb(); }, 100);
 }
 </script>
-<div id="legalSection" style="display:none;background:var(--raised);border-top:.5px solid var(--br);padding:28px 22px 40px;font-size:12px;color:var(--t3);line-height:1.85;">
-  <div style="margin-bottom:16px;">
-    <div style="font-weight:700;color:var(--t2);font-size:12px;margin-bottom:6px;">사업자 정보</div>
-    상호명 : 서류대리님 · 대표자 : 배승휴 · 사업자등록번호 : 826-21-02496<br>
+
+<!-- 푸터 토글 버튼 -->
+<div style="text-align:center;padding:20px 22px 28px;background:var(--page);">
+  <button onclick="document.getElementById('legalSection').style.display = document.getElementById('legalSection').style.display === 'none' ? 'block' : 'none';" style="background:none;border:none;font-family:inherit;font-size:13px;color:var(--t3);cursor:pointer;letter-spacing:-.01em;padding:6px 10px;">
+    사업자 정보 · 개인정보처리방침 ▾
+  </button>
+</div>
+
+<div id="legalSection" style="display:none;background:var(--raised);border-top:.5px solid var(--br);padding:28px 22px 40px;font-size:12px;color:var(--t3);line-height:1.85;letter-spacing:-.005em;">
+
+  <!-- 사업자 정보 -->
+  <div style="margin-bottom:24px;">
+    <div style="font-weight:700;color:var(--t2);font-size:12.5px;margin-bottom:8px;letter-spacing:.04em;">사업자 정보</div>
+    상호명 : 서류대리님<br>
+    대표자 : 배승휴<br>
+    사업자등록번호 : 826-21-02496<br>
     주소 : 경기도 남양주시 진접읍 부평로48번길 140, 109동 2501호<br>
-    대표 전화 : 010-9536-2940 · <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="73171216011a00161c33141e121a1f5d101c
+    대표 전화 : 010-9536-2940<br>
+    이메일 : daeriseo@gmail.com
+  </div>
+
+  <!-- 개인정보처리방침 -->
+  <div>
+    <div style="font-weight:700;color:var(--t2);font-size:12.5px;margin-bottom:8px;letter-spacing:.04em;">개인정보처리방침</div>
+
+    <div style="margin-bottom:14px;">
+      <strong style="color:var(--t2);">1. 수집 항목</strong><br>
+      성명, 생년월일, 연락처, 주소, 신분증 사본, 서명, 발급 요청 의료기관 및 진료 정보
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <strong style="color:var(--t2);">2. 수집 목적</strong><br>
+      의무기록 발급 대행 업무 수행 (대리 발급 신청 시 의료기관 제출용)
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <strong style="color:var(--t2);">3. 보유 및 이용 기간</strong><br>
+      서류 전달 완료 후 즉시 파기. 신분증 사본은 발급 완료 직후 영구 삭제하며, 신청 내역은 부가세 신고·환불 분쟁 대응을 위해 최대 5년간 보관 후 파기.
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <strong style="color:var(--t2);">4. 제3자 제공</strong><br>
+      신청인 동의에 따라 위임장·동의서를 발급 대상 의료기관에 제출하는 것 외에는 제3자에게 제공하지 않음.
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <strong style="color:var(--t2);">5. 처리 위탁</strong><br>
+      Google Workspace (메일·시트 저장), Netlify (웹사이트 호스팅). 위 사업자는 개인정보보호법에 따른 처리방침을 자체적으로 운영.
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <strong style="color:var(--t2);">6. 정보 주체의 권리</strong><br>
+      신청인은 언제든지 본인의 개인정보 열람·정정·삭제·처리정지를 요청할 수 있음. daeriseo@gmail.com 으로 요청 시 지체 없이 처리.
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <strong style="color:var(--t2);">7. 안전성 확보 조치</strong><br>
+      신분증 사본은 신청 시 주민번호 뒷자리를 마스킹 처리하며, 발급 완료 후 즉시 삭제. 저장된 개인정보는 Google 계정 2단계 인증으로 접근 제한.
+    </div>
+
+    <div>
+      <strong style="color:var(--t2);">8. 개인정보 보호책임자</strong><br>
+      성명 : 배승휴 · 연락처 : 010-9536-2940 · 이메일 : daeriseo@gmail.com
+    </div>
+
+    <div style="margin-top:18px;padding-top:14px;border-top:.5px solid var(--br-l);font-size:11px;color:var(--t4);">
+      본 방침은 2026년 5월 1일부터 시행됩니다.
+    </div>
+  </div>
+</div>
