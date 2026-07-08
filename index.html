@@ -980,6 +980,19 @@ canvas#signaturePad1{
           </div>
           <canvas id="signaturePad1" style="display:block;width:100%;height:200px;background:var(--base);cursor:crosshair;touch-action:none;"></canvas>
         </div>
+
+        <label for="sameDepositor" style="display:flex;align-items:center;gap:12px;margin-top:16px;margin-bottom:10px;padding:18px 20px;background:#FFF7ED;border:1.5px solid #FDBA74;border-radius:var(--r-sm);cursor:pointer;font-size:18.9px;color:#9A3412;font-weight:700;letter-spacing:-.01em;">
+          <input type="radio" name="depositorMatch" id="sameDepositor" value="same" onchange="toggleDepositorInput()" style="width:24px;height:24px;accent-color:#EA580C;flex-shrink:0;">
+          신청인과 입금자가 같습니다
+        </label>
+        <label for="diffDepositor" style="display:flex;align-items:center;gap:12px;margin-bottom:10px;padding:18px 20px;background:#FFF7ED;border:1.5px solid #FDBA74;border-radius:var(--r-sm);cursor:pointer;font-size:18.9px;color:#9A3412;font-weight:700;letter-spacing:-.01em;">
+          <input type="radio" name="depositorMatch" id="diffDepositor" value="diff" onchange="toggleDepositorInput()" style="width:24px;height:24px;accent-color:#EA580C;flex-shrink:0;">
+          신청인과 입금자가 다릅니다
+        </label>
+        <div id="depositorBox" style="display:none;margin-bottom:16px;padding:18px 20px;background:#FFF7ED;border:1.5px solid #FDBA74;border-radius:var(--r-sm);">
+          <input type="text" id="depositorName" placeholder="실제 입금하시는 분 이름" style="width:100%;padding:14px 16px;border:1px solid rgba(182,141,97,.3);border-radius:var(--r-sm);font-family:inherit;background:#fff;">
+          <p style="font-size:15.53px;color:var(--t3);margin-top:8px;line-height:1.6;letter-spacing:-.01em;">현금영수증 필요시 번호도 함께 입력해줘<br>예) 홍길동 010-1234-5678</p>
+        </div>
       </div>
       <div class="bottom">
         <button class="btn-back" onclick="goToStep(5)">←</button>
@@ -1032,18 +1045,7 @@ canvas#signaturePad1{
           입금 확인 후 서비스가 시작돼.<br>
           <strong>단순 변심은 환불이 안돼.</strong>
         </div>
-        <label for="sameDepositor" style="display:flex;align-items:center;gap:12px;margin-top:16px;margin-bottom:10px;padding:18px 20px;background:#FFF7ED;border:1.5px solid #FDBA74;border-radius:var(--r-sm);cursor:pointer;font-size:18.9px;color:#9A3412;font-weight:700;letter-spacing:-.01em;">
-          <input type="radio" name="depositorMatch" id="sameDepositor" value="same" onchange="toggleDepositorInput()" style="width:24px;height:24px;accent-color:#EA580C;flex-shrink:0;">
-          신청인과 입금자가 같습니다
-        </label>
-        <label for="diffDepositor" style="display:flex;align-items:center;gap:12px;margin-bottom:10px;padding:18px 20px;background:#FFF7ED;border:1.5px solid #FDBA74;border-radius:var(--r-sm);cursor:pointer;font-size:18.9px;color:#9A3412;font-weight:700;letter-spacing:-.01em;">
-          <input type="radio" name="depositorMatch" id="diffDepositor" value="diff" onchange="toggleDepositorInput()" style="width:24px;height:24px;accent-color:#EA580C;flex-shrink:0;">
-          신청인과 입금자가 다릅니다
-        </label>
-        <div id="depositorBox" style="display:none;margin-bottom:16px;padding:18px 20px;background:#FFF7ED;border:1.5px solid #FDBA74;border-radius:var(--r-sm);">
-          <input type="text" id="depositorName" placeholder="실제 입금하시는 분 이름" style="width:100%;padding:14px 16px;border:1px solid rgba(182,141,97,.3);border-radius:var(--r-sm);font-family:inherit;background:#fff;">
-          <p style="font-size:15.53px;color:var(--t3);margin-top:8px;line-height:1.6;letter-spacing:-.01em;">현금영수증 필요시 번호도 함께 입력해줘<br>예) 홍길동 010-1234-5678</p>
-        </div>
+
       </div>
       <div class="bottom" id="finalButtons">
         <button class="btn-back" onclick="goToStep(6)">←</button>
@@ -2040,6 +2042,16 @@ function collectDocs(idx) {
 }
 
 function submitForm() {
+  var sameR = document.getElementById('sameDepositor');
+  var diffR = document.getElementById('diffDepositor');
+  if (!(sameR && sameR.checked) && !(diffR && diffR.checked)) {
+    alert('입금자가 신청인과 같은지/다른지 선택해줘.');
+    return;
+  }
+  if (diffR && diffR.checked && !document.getElementById('depositorName').value.trim()) {
+    alert('실제 입금하시는 분 이름을 입력해줘.');
+    return;
+  }
   var fee     = calcFee();
   var orderId = 'SRY' + Date.now();
   var depositorInput = document.getElementById('depositorName').value.trim();
