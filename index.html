@@ -792,7 +792,6 @@ canvas#signaturePad1{
           <div class="step-num">2</div>
           <div class="step-title">신청인 정보</div>
         </div>
-        <p class="step-sub">서류 발급받을 신청인 정보를 입력해줘.</p>
       </div>
       <div class="fscroll">
         <div class="field">
@@ -815,7 +814,7 @@ canvas#signaturePad1{
         </div>
       </div>
       <div class="bottom">
-        <button class="btn-back" onclick="goToStep(1)">←</button>
+        <button class="btn-back" onclick="goToStep(4)">←</button>
         <button class="btn-next" onclick="nextStep(2)">다음 →</button>
       </div>
     </div>
@@ -868,7 +867,7 @@ canvas#signaturePad1{
       <div class="fhdr">
         <div class="progress" id="progressBar4"></div>
         <div class="step-meta">
-          <div class="step-num">4</div>
+          <div class="step-num">1</div>
           <div class="step-title">병원 정보</div>
         </div>
       </div>
@@ -934,7 +933,7 @@ canvas#signaturePad1{
       <div class="fhdr">
         <div class="progress" id="progressBar5"></div>
         <div class="step-meta">
-          <div class="step-num">5</div>
+          <div class="step-num">3</div>
           <div class="step-title">신분증 첨부</div>
         </div>
       </div>
@@ -943,10 +942,6 @@ canvas#signaturePad1{
           <strong>발급 목적으로만 쓰인 후 즉시 파기</strong>
         </div>
 
-        <div class="field">
-          <label class="field-label">신청인 연락처 <span class="req">*</span></label>
-          <input type="tel" id="patientPhone5" placeholder="010-0000-0000">
-        </div>
 
         <!-- 업로드 전 -->
         <div class="upload-area" id="uploadArea" onclick="document.getElementById('idCardFile').click()">
@@ -958,7 +953,7 @@ canvas#signaturePad1{
 
       </div>
       <div class="bottom">
-        <button class="btn-back" onclick="goToStep(4)">←</button>
+        <button class="btn-back" onclick="goToStep(2)">←</button>
         <button class="btn-next" onclick="nextStep(5)">다음 →</button>
       </div>
     </div>
@@ -970,7 +965,7 @@ canvas#signaturePad1{
       <div class="fhdr">
         <div class="progress" id="progressBar6"></div>
         <div class="step-meta">
-          <div class="step-num">6</div>
+          <div class="step-num">4</div>
           <div class="step-title">신청인 서명</div>
         </div>
       </div>
@@ -1131,9 +1126,9 @@ function nextStep(from) {
 
     var proceedNext = function() {
       if (from === 4) {
-        openWarningModal(function() { goToStep(5); });
-      } else if (from === 5) {
-        extractIdInfo(function() { goToStep(6); });
+        openWarningModal(function() { goToStep(2); });
+      } else if (from === 2) {
+        goToStep(5);
       } else if (from === 6) {
         submitForm();
       } else {
@@ -1170,7 +1165,7 @@ function nextStep(from) {
 }
 
 function updateProgress(current) {
-  const ORDER = [4, 5, 6];
+  const ORDER = [4, 2, 5, 6];
   const pos = ORDER.indexOf(current) + 1;
   const total = ORDER.length;
   const allBars = document.querySelectorAll('.progress');
@@ -1234,9 +1229,6 @@ function validate(step) {
     return true;
   }
   if (step === 5) {
-    var ph5 = v('patientPhone5').trim();
-    if (!ph5) { alert('연락처를 입력해줘.'); return false; }
-    document.getElementById('patientPhone').value = ph5;
     if (!idCardFileObj) { alert('신분증 사진을 올려줘.'); return false; }
     return true;
   }
