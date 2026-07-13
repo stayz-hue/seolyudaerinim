@@ -2080,6 +2080,12 @@ function submitForm() {
     treatmentEnd:   '',
     reason:         v('reason_1'),
     documents:      collectDocs(1),
+    hospitals:      Array.from({length:hospitalCount},(_,i)=>({
+                      name:    v('hospital_'+(i+1)),
+                      period:  v('treatPeriod_'+(i+1)),
+                      reason:  v('reason_'+(i+1)),
+                      documents: collectDocs(i+1)
+                    })),
     hospitalCount:  hospitalCount,
     urgentFlags:    urgentFlags.slice(),
     deliveryMethod: deliveryMethod,
@@ -2112,6 +2118,7 @@ function submitForm() {
       hospitalCount: fd.hospitalCount,
       deliveryMethod: fd.deliveryMethod,
       treatmentPeriod: fd.treatmentPeriod,
+      hospitals: fd.hospitals,
       depositorName: depositorName,
       hospitalCoords: hospitalCoords.map(function(c){ return c ? {lat:c.lat,lng:c.lng,name:c.name,address:c.address} : null; }),
       bundleResult: bundleResult,
