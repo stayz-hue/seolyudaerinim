@@ -2052,6 +2052,12 @@ function submitForm() {
     alert('실제 입금하시는 분 이름을 입력해줘.');
     return;
   }
+  // ── 신분증 첨부 최종 검증 (빈 신분증으로 접수되는 것 차단) ──
+  if (!idCardFileObj) {
+    alert('신분증이 첨부되지 않았어.\n신분증 첨부 단계로 돌아가서 다시 올려줘.');
+    goToStep(5);
+    return;
+  }
   var fee     = calcFee();
   var orderId = 'SRY' + Date.now();
   var depositorInput = document.getElementById('depositorName').value.trim();
@@ -2402,7 +2408,7 @@ function confirmWarning() {
 
     <div style="margin-bottom:14px;">
       <strong style="color:var(--t2);">5. 처리 위탁</strong><br>
-      Google Workspace (메일·시트 저장), Netlify (웹사이트 호스팅), Telegram (업무 처리용 내부 알림·서류 전달). 위 사업자는 개인정보보호법에 따른 처리방침을 자체적으로 운영.
+      Google Workspace (메일·시트 저장), Netlify (웹사이트 호스팅). 위 사업자는 개인정보보호법에 따른 처리방침을 자체적으로 운영.
     </div>
 
     <div style="margin-bottom:14px;">
