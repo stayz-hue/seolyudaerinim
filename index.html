@@ -914,6 +914,11 @@ canvas#signaturePad1{
             <div style="font-size:16.2px;color:var(--t3);line-height:1.7;padding-left:34px;word-break:keep-all;">
               서류 원본, 영상CD는 하드케이스에 안전하게 포장 후 보내줄게. 원본이 반드시 필요한 경우에 추천해.
             </div>
+            <div id="postAddrBox" onclick="event.stopPropagation()" style="display:none;width:100%;">
+              <label class="field-label" style="margin-top:2px;">등기 받을 주소 <span class="req">*</span></label>
+              <input type="text" id="postAddress" placeholder="예: 경기도 남양주시 다산순환로 20, 101동 202호">
+              <div style="font-size:14px;color:var(--t3);margin-top:6px;line-height:1.6;">받는 분이 신청인과 다르면 주소 뒤에 이름도 같이 적어줘</div>
+            </div>
           </div>
         </div>
         <div class="fee-preview">
@@ -1234,6 +1239,11 @@ function validate(step) {
         return false;
       }
     }
+    if (deliveryMethod === 'post' && !v('postAddress').trim()) {
+      alert('등기 받을 주소를 입력해줘.');
+      var elp = document.getElementById('postAddress'); if (elp) elp.focus();
+      return false;
+    }
     return true;
   }
   if (step === 5) {
@@ -1272,6 +1282,8 @@ function setDelivery(method) {
     pTog.style.background = 'var(--amber-mid)'; pTog.innerHTML = '<div style="content:\'\';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.18);transform:translateX(18px);"></div>';
     dTog.style.background = ''; dTog.innerHTML = '';
   }
+  var pab = document.getElementById('postAddrBox');
+  if (pab) pab.style.display = (method === 'post') ? 'block' : 'none';
   refreshFeePreview();
 }
 function adjustCount(d) {
@@ -1758,6 +1770,19 @@ function handleUpload(input) {
     const src = e.target.result;
     maskImg = new Image();
     maskImg.onload = function() {
+      // 대용량 사진 자동 축소 (긴 변 1600px 초과 시) — 전송·PDF 경량화
+      try {
+        var mw = maskImg.naturalWidth, mh = maskImg.naturalHeight;
+        if (Math.max(mw, mh) > 1600) {
+          var sc = 1600 / Math.max(mw, mh);
+          var rc = document.createElement('canvas');
+          rc.width = Math.round(mw * sc); rc.height = Math.round(mh * sc);
+          rc.getContext('2d').drawImage(maskImg, 0, 0, rc.width, rc.height);
+          rc.toBlob(function(rb) {
+            if (rb) idCardFileObj = new File([rb], 'id_resized.jpg', {type:'image/jpeg'});
+          }, 'image/jpeg', 0.85);
+        }
+      } catch (rerr) { /* 축소 실패 시 원본 유지 */ }
       // 업로드 영역 완료 표시
       const area = document.getElementById('uploadArea');
       if (area) area.classList.add('has-file');
@@ -2006,7 +2031,8 @@ function fillConfirm() {
   document.getElementById('cf-phone').textContent   = v('patientPhone') || '-';
   document.getElementById('cf-address').textContent = v('patientAddress') || '-';
   const fee = calcFee();
-  const deliveryLabel = deliveryMethod === 'digital' ? '📱 카카오톡 파일 전송 (무료)' : '📮 당일 빠른 등기 (+20,000원)';
+  var deliveryLabel = deliveryMethod === 'digital' ? '📱 카카오톡 파일 전송 (무료)' : '📮 당일 빠른 등기 (+20,000원)';
+  if (deliveryMethod === 'post' && v('postAddress').trim()) deliveryLabel += ' — ' + v('postAddress').trim();
   document.getElementById('cf-delivery').textContent = deliveryLabel;
   const hosp = document.getElementById('cf-hospitals');
   hosp.innerHTML = '';
@@ -2089,6 +2115,7 @@ function submitForm() {
     hospitalCount:  hospitalCount,
     urgentFlags:    urgentFlags.slice(),
     deliveryMethod: deliveryMethod,
+    postAddress:    (deliveryMethod === 'post') ? v('postAddress').trim() : '',
     signature:      (signaturePad && !signaturePad.isEmpty()) ? signaturePad.toDataURL().split(',')[1] : ''
   };
 
@@ -2117,6 +2144,7 @@ function submitForm() {
       urgentFlags: fd.urgentFlags, orderId: orderId,
       hospitalCount: fd.hospitalCount,
       deliveryMethod: fd.deliveryMethod,
+      postAddress: fd.postAddress,
       treatmentPeriod: fd.treatmentPeriod,
       hospitals: fd.hospitals,
       depositorName: depositorName,
