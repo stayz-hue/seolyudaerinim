@@ -742,7 +742,7 @@ canvas#signaturePad1{
         <div style="font-size:12px;color:var(--t3);margin-bottom:14px;">예금주: 배승휴(서류대리님)</div>
         <div style="font-size:14px;font-weight:700;color:var(--t1);margin-bottom:6px;">입금 금액: <span id="successFee">-</span></div>
         <div style="font-size:13px;color:var(--amber);font-weight:600;margin-bottom:12px;">입금자명: <strong id="successDepositor">-</strong></div>
-        <button onclick="navigator.clipboard.writeText(document.getElementById('successAccount').textContent.replace(/[^0-9]/g,''))" style="margin-top:4px;padding:10px 20px;background:var(--btn);color:var(--btn-txt);border:none;border-radius:var(--r-sm);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">계좌번호 복사</button>
+        <button onclick="copyIntakeAccount(this)" style="margin-top:4px;padding:10px 20px;background:var(--btn);color:var(--btn-txt);border:none;border-radius:var(--r-sm);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">계좌번호 복사</button>
       </div>
       <div style="background:#FFF7ED;border:1.5px solid #FDBA74;border-radius:var(--r);padding:20px 18px;margin-bottom:12px;text-align:center;">
         <div style="font-size:26px;margin-bottom:8px;">💬</div>
@@ -1078,6 +1078,12 @@ let urgentFlags   = [false];
 let urgentSoldOut = false;
 let signaturePad  = null;
 let idCardFileObj = null;
+let idCardSelection = 0;
+let idCardLoading = false;
+let submissionBusy = false;
+let submissionComplete = false;
+let submissionOrderId = '';
+let submissionUncertain = false;
 let deliveryMethod = 'digital'; // digital | post
 const URGENT_MAX  = 3;
 
@@ -1247,6 +1253,7 @@ function validate(step) {
     return true;
   }
   if (step === 5) {
+    if (idCardLoading) { alert('신분증 사진을 확인하고 있어. 잠깐만 기다려줘.'); return false; }
     if (!idCardFileObj) { alert('신분증 사진을 올려줘.'); return false; }
     return true;
   }
@@ -1400,7 +1407,7 @@ function hospitalBlockHTML(i) {
         <div class="scard-head">
           <div class="scard-num">${i}</div>
           ${i}번째 병원
-          ${i > 1 ? '<button onclick="removeLastHospital()" style="margin-left:auto;background:none;border:none;font-family:inherit;font-size:13px;font-weight:600;color:var(--danger);cursor:pointer;">삭제</button>' : ''}
+          ${i > 1 ? '<button onclick="removeHospital(' + i + ')" style="margin-left:auto;background:none;border:none;font-family:inherit;font-size:13px;font-weight:600;color:var(--danger);cursor:pointer;">삭제</button>' : ''}
         </div>
         <div class="scard-body">
           <div class="field">
@@ -1460,16 +1467,46 @@ function addHospital() {
   refreshFeePreview();
 }
 
-function removeLastHospital() {
-  if (hospitalCount <= 1) return;
-  const el = document.getElementById('hwrap' + hospitalCount);
-  if (el) el.remove();
-  hospitalCount--;
-  hospitalCoords.pop();
-  urgentFlags.pop();
-  bundleResult = null;
+function removeHospital(index) {
+  if (hospitalCount <= 1 || !Number.isInteger(index) || index < 1 || index > hospitalCount) return;
+  // Rebuild only the hospital blocks, restoring the values for every retained hospital.
+  const kept = [];
+  for (let i = 1; i <= hospitalCount; i++) {
+    clearTimeout(searchTimers[i]);
+    if (i === index) continue;
+    kept.push({
+      values: ['hospital_', 'treatPeriod_', 'reason_', 'docEtc_', 'hospAddr_'].map(prefix => v(prefix + i)),
+      coords: hospitalCoords[i - 1], urgent: urgentFlags[i - 1],
+      badge: document.getElementById('hospBadge_' + i).textContent,
+      badgeDisplay: document.getElementById('hospBadge_' + i).style.display,
+      manualDisplay: document.getElementById('hospManualAddr_' + i).style.display,
+      status: document.getElementById('hospAddrStatus_' + i).textContent,
+      statusColor: document.getElementById('hospAddrStatus_' + i).style.color
+    });
+  }
+  searchTimers = {};
+  hospitalCount = kept.length;
+  hospitalCoords = kept.map(item => item.coords);
+  urgentFlags = kept.map(item => item.urgent);
+  buildHospitalBlocks();
+  kept.forEach(function(item, offset) {
+    const i = offset + 1;
+    ['hospital_', 'treatPeriod_', 'reason_', 'docEtc_', 'hospAddr_'].forEach(function(prefix, j) {
+      document.getElementById(prefix + i).value = item.values[j];
+    });
+    const badge = document.getElementById('hospBadge_' + i);
+    badge.textContent = item.badge;
+    badge.style.display = item.badgeDisplay;
+    document.getElementById('hospManualAddr_' + i).style.display = item.manualDisplay;
+    const status = document.getElementById('hospAddrStatus_' + i);
+    status.textContent = item.status;
+    status.style.color = item.statusColor;
+  });
+  document.getElementById('countDisplay').textContent = hospitalCount;
   refreshFeePreview();
 }
+
+function removeLastHospital() { removeHospital(hospitalCount); }
 
 /* ================================================
    병원 검색 — 카카오 로컬 SDK
@@ -1505,6 +1542,7 @@ function searchHospital(query, idx) {
   fetch(url)
     .then(function(r) { return r.json(); })
     .then(function(res) {
+      if (document.getElementById('hospDrop_' + idx) !== drop || v('hospital_' + idx).trim() !== query) return;
       drop.innerHTML = '';
       if (!res.ok || !res.places || res.places.length === 0) {
         drop.innerHTML = '<div class="hosp-searching">검색 결과 없음</div>'
@@ -1544,6 +1582,7 @@ function searchHospital(query, idx) {
       });
     })
     .catch(function() {
+      if (document.getElementById('hospDrop_' + idx) !== drop || v('hospital_' + idx).trim() !== query) return;
       drop.innerHTML = '<div class="hosp-searching">검색 실패</div>'
         + '<div class="hosp-item hosp-manual" onclick="manualInput(' + idx + ')">'
         + '<div class="hosp-item-name">✏️ 직접 입력</div></div>';
@@ -1597,11 +1636,13 @@ function geocodeAddress(idx) {
   addr = addr.trim();
   if (!addr) return;
   var status = document.getElementById('hospAddrStatus_' + idx);
+  var addressInput = document.getElementById('hospAddr_' + idx);
   status.textContent = '📍 좌표 확인 중...';
 
   fetch('/.netlify/functions/geocode?address=' + encodeURIComponent(addr))
     .then(function(r) { return r.json(); })
     .then(function(res) {
+      if (document.getElementById('hospAddr_' + idx) !== addressInput || addressInput.value.trim() !== addr) return;
       if (res.ok && res.lat && res.lng) {
         // 좌표 업데이트
         var coords = hospitalCoords[idx - 1];
@@ -1620,6 +1661,7 @@ function geocodeAddress(idx) {
       }
     })
     .catch(function() {
+      if (document.getElementById('hospAddr_' + idx) !== addressInput || addressInput.value.trim() !== addr) return;
       status.textContent = '⚠️ 좌표 확인 실패';
       status.style.color = '#c44';
     });
@@ -1760,45 +1802,68 @@ let currentRect = null;
 
 function handleUpload(input) {
   if (!input.files || !input.files[0]) return;
-  idCardFileObj = input.files[0];
-
+  const selection = ++idCardSelection;
+  const file = input.files[0];
+  idCardFileObj = null;
+  idCardLoading = true;
+  const area = document.getElementById('uploadArea');
+  if (area) area.classList.remove('has-file');
   document.getElementById('uploadIcon').textContent = '⏳';
   document.getElementById('uploadTitle').textContent = '불러오는 중...';
+  const sub = document.getElementById('uploadSub');
+  if (sub) { sub.className = 'upload-sub'; sub.textContent = '사진을 확인하고 있어. 잠깐만 기다려줘.'; }
 
+  function fail() {
+    if (selection !== idCardSelection) return;
+    idCardFileObj = null;
+    idCardLoading = false;
+    maskImg = null;
+    input.value = '';
+    document.getElementById('uploadIcon').textContent = '📷';
+    document.getElementById('uploadTitle').textContent = '신분증 사진 다시 올리기';
+    if (sub) { sub.className = 'upload-sub'; sub.textContent = '사진을 읽지 못했어. 다른 사진을 선택해줘.'; }
+    alert('신분증 사진을 읽지 못했어. 다른 사진을 선택해줘.');
+  }
+  function accept(accepted, img) {
+    if (selection !== idCardSelection) return;
+    idCardFileObj = accepted;
+    idCardLoading = false;
+    maskImg = img;
+    if (area) area.classList.add('has-file');
+    document.getElementById('uploadIcon').textContent = '✅';
+    document.getElementById('uploadTitle').textContent = file.name;
+    if (sub) { sub.className = 'upload-ok'; sub.textContent = '✅ 업로드 완료 — 다른 사진은 다시 탭'; }
+  }
+  if (!file.type.startsWith('image/') || !file.size) { fail(); return; }
   const reader = new FileReader();
+  reader.onerror = fail;
+  reader.onabort = fail;
   reader.onload = function(e) {
-    const src = e.target.result;
-    maskImg = new Image();
-    maskImg.onload = function() {
-      // 대용량 사진 자동 축소 (긴 변 1600px 초과 시) — 전송·PDF 경량화
+    if (selection !== idCardSelection) return;
+    const img = new Image();
+    img.onerror = fail;
+    img.onload = function() {
+      if (selection !== idCardSelection) return;
+      const width = img.naturalWidth, height = img.naturalHeight;
+      if (!width || !height) { fail(); return; }
+      if (Math.max(width, height) <= 1600) { accept(file, img); return; }
       try {
-        var mw = maskImg.naturalWidth, mh = maskImg.naturalHeight;
-        if (Math.max(mw, mh) > 1600) {
-          var sc = 1600 / Math.max(mw, mh);
-          var rc = document.createElement('canvas');
-          rc.width = Math.round(mw * sc); rc.height = Math.round(mh * sc);
-          rc.getContext('2d').drawImage(maskImg, 0, 0, rc.width, rc.height);
-          rc.toBlob(function(rb) {
-            if (rb) idCardFileObj = new File([rb], 'id_resized.jpg', {type:'image/jpeg'});
-          }, 'image/jpeg', 0.85);
-        }
-      } catch (rerr) { /* 축소 실패 시 원본 유지 */ }
-      // 업로드 영역 완료 표시
-      const area = document.getElementById('uploadArea');
-      if (area) area.classList.add('has-file');
-      document.getElementById('uploadIcon').textContent = '✅';
-      document.getElementById('uploadTitle').textContent = idCardFileObj.name;
-      const sub = document.getElementById('uploadSub');
-      if (sub) { sub.className = 'upload-ok'; sub.textContent = '✅ 업로드 완료 — 다른 사진은 다시 탭'; }
+        const scale = 1600 / Math.max(width, height);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(width * scale));
+        canvas.height = Math.max(1, Math.round(height * scale));
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(function(blob) {
+          if (selection !== idCardSelection) return;
+          if (!blob) { fail(); return; }
+          accept(new File([blob], 'id_resized.jpg', {type:'image/jpeg'}), img);
+        }, 'image/jpeg', 0.85);
+      } catch (err) { fail(); }
     };
-    maskImg.onerror = function() {
-      alert('이미지를 불러오지 못했어. 다시 선택해줘.');
-    };
-    maskImg.src = src;
+    img.src = e.target.result;
   };
-  reader.readAsDataURL(idCardFileObj);
+  try { reader.readAsDataURL(file); } catch (err) { fail(); }
 }
-
 
 function openMaskModal() {
   // 기존 모달 제거
@@ -1948,9 +2013,10 @@ function drawMask() {
 }
 
 function exportMasked() {
-  // 마스킹된 이미지를 idCardFileObj 대신 사용
+  // A callback from an older image must not overwrite a newer selection.
+  const selection = idCardSelection;
   maskCanvas.toBlob(function(blob) {
-    if (!blob) return;
+    if (!blob || selection !== idCardSelection || idCardLoading) return;
     const file = new File([blob], 'id_masked.jpg', {type:'image/jpeg'});
     idCardFileObj = file;
   }, 'image/jpeg', 0.92);
@@ -2006,7 +2072,7 @@ function extractIdInfo(done) {
    ================================================ */
 function initSig() {
   const canvas = document.getElementById('signaturePad1');
-  if (!canvas) return;
+  if (!canvas || signaturePad) return;
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
   canvas.width  = rect.width * dpr;
@@ -2046,7 +2112,15 @@ function fillConfirm() {
     const headerRow = document.createElement('div');
     headerRow.className = 'cs-row';
     if (i > 1) headerRow.style.borderTop = '1.5px solid var(--br)';
-    headerRow.innerHTML = `<span class="cs-key" style="color:var(--amber);font-weight:700;">${i}번 병원</span><span class="cs-val">${name}</span>`;
+    const hospitalLabel = document.createElement('span');
+    hospitalLabel.className = 'cs-key';
+    hospitalLabel.style.cssText = 'color:var(--amber);font-weight:700;';
+    hospitalLabel.textContent = i + '번 병원';
+    const hospitalValue = document.createElement('span');
+    hospitalValue.className = 'cs-val';
+    hospitalValue.textContent = name;
+    headerRow.appendChild(hospitalLabel);
+    headerRow.appendChild(hospitalValue);
     hosp.appendChild(headerRow);
 
     const rows = [
@@ -2058,7 +2132,14 @@ function fillConfirm() {
     rows.forEach(function(r) {
       const row = document.createElement('div');
       row.className = 'cs-row';
-      row.innerHTML = `<span class="cs-key">${r[0]}</span><span class="cs-val">${r[1]}</span>`;
+      const key = document.createElement('span');
+      key.className = 'cs-key';
+      key.textContent = r[0];
+      const value = document.createElement('span');
+      value.className = 'cs-val';
+      value.textContent = r[1];
+      row.appendChild(key);
+      row.appendChild(value);
       hosp.appendChild(row);
     });
   }
@@ -2073,7 +2154,23 @@ function collectDocs(idx) {
   return etc ? [etc] : [];
 }
 
+function copyIntakeAccount(button) {
+  const account = document.getElementById('successAccount').textContent.replace(/[^0-9]/g, '');
+  function fallback() { prompt('계좌번호를 복사해줘:', account); }
+  if (!navigator.clipboard || !navigator.clipboard.writeText) { fallback(); return; }
+  try {
+    navigator.clipboard.writeText(account).then(function() {
+      if (!button) return;
+      const label = button.textContent;
+      button.textContent = '복사 완료 ✓';
+      setTimeout(function() { button.textContent = label; }, 2000);
+    }).catch(fallback);
+  } catch (err) { fallback(); }
+}
+
 function submitForm() {
+  if (submissionBusy || submissionComplete) return;
+  if (submissionUncertain && !confirm('이전 신청이 접수됐을 수 있어. 먼저 접수 상태를 확인해줘.\n접수번호: ' + submissionOrderId + '\n\n확인 후에도 다시 전송할까? 중복 접수될 수 있어.')) return;
   var sameR = document.getElementById('sameDepositor');
   var diffR = document.getElementById('diffDepositor');
   if (!(sameR && sameR.checked) && !(diffR && diffR.checked)) {
@@ -2085,13 +2182,22 @@ function submitForm() {
     return;
   }
   // ── 신분증 첨부 최종 검증 (빈 신분증으로 접수되는 것 차단) ──
+  if (idCardLoading) {
+    alert('신분증 사진을 확인하고 있어. 잠깐만 기다려줘.');
+    return;
+  }
   if (!idCardFileObj) {
     alert('신분증이 첨부되지 않았어.\n신분증 첨부 단계로 돌아가서 다시 올려줘.');
     goToStep(5);
     return;
   }
+  if (!signaturePad || signaturePad.isEmpty()) {
+    alert('서명을 해줘.');
+    return;
+  }
   var fee     = calcFee();
-  var orderId = 'SRY' + Date.now();
+  var orderId = submissionOrderId || ('SRY' + Date.now());
+  submissionOrderId = orderId;
   var depositorInput = document.getElementById('depositorName').value.trim();
   var depositorName = depositorInput || v('patientName');
   var fd = {
@@ -2119,8 +2225,28 @@ function submitForm() {
     signature:      (signaturePad && !signaturePad.isEmpty()) ? signaturePad.toDataURL().split(',')[1] : ''
   };
 
+  submissionBusy = true;
+  document.querySelectorAll('.btn-next.submit').forEach(function(button) { button.disabled = true; });
   document.getElementById('screen6').classList.remove('active');
+  document.getElementById('screen7').classList.remove('active');
   document.getElementById('loading').classList.add('show');
+  const submittedFile = idCardFileObj;
+  const previouslyUncertain = submissionUncertain;
+  function restoreForm(uncertain) {
+    submissionBusy = false;
+    submissionUncertain = uncertain || previouslyUncertain;
+    document.querySelectorAll('.btn-next.submit').forEach(function(button) { button.disabled = false; });
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('success').classList.remove('show');
+    // Do not navigate through initSig(): the customer's existing signature stays intact.
+    document.getElementById('screen6').classList.add('active');
+    currentStep = 6;
+    if (uncertain) {
+      alert('접수 결과를 확인하지 못했어. 이미 접수됐을 수 있으니 다시 신청하기 전에 문의해줘.\n접수번호: ' + orderId);
+    } else {
+      alert('신분증 사진을 읽지 못해 전송하지 않았어. 사진을 다시 선택해줘.');
+    }
+  }
 
   var buildExtra = function() {
     if (hospitalCount <= 1) return '';
@@ -2152,33 +2278,45 @@ function submitForm() {
       bundleResult: bundleResult,
       extraNote: buildExtra()
     };
-    fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(payload) })
-      .then(function(r) { return r.json(); })
-      .then(function(res) {
-        document.getElementById('loading').classList.remove('show');
-        document.getElementById('success').classList.add('show');
-        if (res && res.receiptNo) document.getElementById('receiptNum').textContent = res.receiptNo;
-        document.getElementById('successFee').textContent = fee.total.toLocaleString() + '원';
-        document.getElementById('successDepositor').textContent = depositorName;
-      })
-      .catch(function(err) {
-        document.getElementById('loading').classList.remove('show');
-        document.getElementById('success').classList.add('show');
-        document.getElementById('successFee').textContent = fee.total.toLocaleString() + '원';
-        document.getElementById('successDepositor').textContent = depositorName;
-      });
+    const controller = new AbortController();
+    const timeout = setTimeout(function() { controller.abort(); }, 45000);
+    let request;
+    try {
+      request = fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(payload), signal:controller.signal });
+    } catch (err) {
+      clearTimeout(timeout);
+      restoreForm(true);
+      return;
+    }
+    request.then(function(response) {
+      if (!response || response.ok !== true) throw new Error('Unconfirmed response');
+      return response.json();
+    }).then(function(res) {
+      if (!res || res.ok !== true) throw new Error('Unconfirmed receipt');
+      submissionComplete = true;
+      submissionBusy = false;
+      submissionUncertain = false;
+      document.getElementById('loading').classList.remove('show');
+      document.getElementById('success').classList.add('show');
+      document.getElementById('receiptNum').textContent = res.receiptNo || orderId;
+      document.getElementById('successFee').textContent = fee.total.toLocaleString() + '원';
+      document.getElementById('successDepositor').textContent = depositorName;
+    }).catch(function() {
+      restoreForm(true);
+    }).finally(function() { clearTimeout(timeout); });
   };
 
-  if (idCardFileObj) {
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      var b64 = e.target.result.split(',')[1];
-      sendData(b64, idCardFileObj.type, idCardFileObj.name);
-    };
-    reader.readAsDataURL(idCardFileObj);
-  } else {
-    sendData('', '', '');
-  }
+  const reader = new FileReader();
+  reader.onerror = function() { restoreForm(false); };
+  reader.onabort = function() { restoreForm(false); };
+  reader.onload = function(e) {
+    const result = e.target.result;
+    const b64 = typeof result === 'string' && result.split(',')[1];
+    if (!b64) { restoreForm(false); return; }
+    sendData(b64, submittedFile.type, submittedFile.name);
+  };
+  try { reader.readAsDataURL(submittedFile); } catch (err) { restoreForm(false); }
+
 }
 
 
