@@ -732,10 +732,10 @@ canvas#signaturePad1{
 
     <!-- 완료 -->
     <div class="success" id="success">
-      <div class="success-icon">✅</div>
-      <h2 class="success-h">접수 완료!</h2>
-      <p class="success-p">아래 계좌로 대행료를 입금해줘.<br>입금 확인되면 바로 시작할게.</p>
-      <div style="background:var(--amber-pale);border:.5px solid rgba(182,141,97,.3);border-radius:var(--r);padding:20px;margin-bottom:12px;text-align:center;">
+      <div class="success-icon" id="successIcon">✅</div>
+      <h2 class="success-h" id="successHeading">접수 완료!</h2>
+      <p class="success-p" id="successIntro">아래 계좌로 대행료를 입금해줘.<br>입금 확인되면 바로 시작할게.</p>
+      <div id="successBank" style="background:var(--amber-pale);border:.5px solid rgba(182,141,97,.3);border-radius:var(--r);padding:20px;margin-bottom:12px;text-align:center;">
         <div style="font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--amber);margin-bottom:12px;">입금 계좌</div>
         <div style="font-size:14px;font-weight:600;color:var(--t1);margin-bottom:4px;">IBK기업은행</div>
         <div id="successAccount" style="font-size:22px;font-weight:800;color:var(--t1);letter-spacing:.02em;margin-bottom:4px;">523-082856-04-011</div>
@@ -744,17 +744,16 @@ canvas#signaturePad1{
         <div style="font-size:13px;color:var(--amber);font-weight:600;margin-bottom:12px;">입금자명: <strong id="successDepositor">-</strong></div>
         <button onclick="copyIntakeAccount(this)" style="margin-top:4px;padding:10px 20px;background:var(--btn);color:var(--btn-txt);border:none;border-radius:var(--r-sm);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">계좌번호 복사</button>
       </div>
-      <div style="background:#FFF7ED;border:1.5px solid #FDBA74;border-radius:var(--r);padding:20px 18px;margin-bottom:12px;text-align:center;">
-        <div style="font-size:26px;margin-bottom:8px;">💬</div>
-        <div style="font-size:15px;font-weight:800;color:#9A3412;letter-spacing:-.02em;margin-bottom:8px;">카카오톡 채널을 꼭 추가하고<br>대화방을 열어둬 주세요!</div>
-        <div style="font-size:13px;color:#7C2D12;line-height:1.7;margin-bottom:16px;word-break:keep-all;">발급받은 서류는 <strong>카카오톡 파일로 전송</strong>됩니다.<br>채널 대화방을 추가해두지 않으면<br><strong>파일을 보내드릴 수 없어요.</strong></div>
-        <a href="http://pf.kakao.com/_XxjhEX" target="_blank" style="display:inline-block;width:100%;padding:16px;background:#FEE500;color:#3C1E1E;border-radius:var(--r-sm);font-size:16px;font-weight:700;text-decoration:none;box-sizing:border-box;">카카오톡 채널 추가하기 →</a>
+      <div class="info-notice" id="successNext" style="margin-bottom:12px;text-align:center;overflow-wrap:anywhere;">
+        병원 발급 비용은 문자로 안내할게.<br>
+        <span id="successDelivery">완료된 서류는 신청한 이메일로 보내줄게.</span>
       </div>
       <div class="receipt-box">
-        <div class="receipt-label">접수 번호</div>
+        <div class="receipt-label">주문번호</div>
         <div class="receipt-num" id="receiptNum">-</div>
+        <div id="receiptMeta" style="font-size:12px;color:var(--t3);margin-top:6px;"></div>
       </div>
-      <div class="contact-txt">문의: 카카오 <a href="http://pf.kakao.com/_XxjhEX" style="color:var(--amber);text-decoration:underline;">[서류대리님]</a></div>
+      <div class="contact-txt">문의·긴급 연락: <a href="http://pf.kakao.com/_XxjhEX" style="color:var(--amber);text-decoration:underline;">카카오톡 서류대리님</a></div>
     </div>
 
     <!-- ────────────────────────
@@ -810,13 +809,29 @@ canvas#signaturePad1{
             <input type="text" id="patientBirth" placeholder="19900101" maxlength="8" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
           </div>
           <div class="field">
-            <label class="field-label">연락처 <span class="req">*</span></label>
+            <label class="field-label" for="patientPhone">환자 연락처 <span class="req">*</span></label>
             <input type="tel" id="patientPhone" placeholder="010-0000-0000">
           </div>
         </div>
         <div class="field">
           <label class="field-label">주소 <span class="req">*</span></label>
           <input type="text" id="patientAddress" placeholder="예: 서울시 강남구 테헤란로 123">
+        </div>
+        <div class="field">
+          <div class="field-label">연락받을 휴대폰 <span class="req">*</span></div>
+          <label for="sameContact" style="display:flex;align-items:center;gap:8px;font-size:15px;cursor:pointer;">
+            <input type="checkbox" id="sameContact" checked onchange="toggleContactInput()" style="width:18px;height:18px;accent-color:var(--amber);">
+            환자 연락처와 같아
+          </label>
+          <div id="contactPhoneBox" style="display:none;margin-top:10px;">
+            <input type="tel" id="contactPhone" aria-label="연락받을 휴대폰" autocomplete="tel" placeholder="010-0000-0000">
+          </div>
+          <div style="font-size:13px;color:var(--t3);margin-top:7px;line-height:1.6;">진행 연락과 병원 발급 비용을 문자로 안내할 번호야.</div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="email">서류 받을 이메일 <span class="req" id="emailRequired">*</span></label>
+          <input type="email" id="email" autocomplete="email" autocapitalize="none" spellcheck="false" maxlength="254" required placeholder="name@example.com">
+          <div id="emailHint" style="font-size:13px;color:var(--t3);margin-top:7px;line-height:1.6;">완료된 서류를 보내줄 주소야. 오타가 없는지 확인해줘.</div>
         </div>
       </div>
       <div class="bottom">
@@ -883,17 +898,17 @@ canvas#signaturePad1{
         <div style="margin-bottom:16px;">
           <div style="font-size:15.53px;font-weight:700;color:var(--t3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:10px;">📦 서류 수령 방법</div>
 
-          <!-- 옵션 1: 디지털 파일 전송 (추천) -->
-          <div id="delivery_digital" class="urgent-row on" style="flex-direction:column;align-items:flex-start;gap:10px;cursor:pointer;" onclick="setDelivery('digital')">
+          <!-- 옵션 1: 이메일 수령 (기본) -->
+          <div id="delivery_email" class="urgent-row on" style="flex-direction:column;align-items:flex-start;gap:10px;cursor:pointer;" onclick="setDelivery('email')">
             <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
               <div style="display:flex;align-items:center;gap:10px;">
-                <div class="ur-idx" style="font-size:17.55px;">💬</div>
+                <div class="ur-idx" style="font-size:17.55px;">📧</div>
                 <div>
-                  <div class="ur-title">카카오톡 파일 전송 <span style="display:inline-block;font-size:13.5px;font-weight:700;color:#fff;background:var(--amber);padding:3px 9px;border-radius:20px;margin-left:2px;transform:translateY(-3px);">추천</span></div>
-                  <div class="ur-sub" style="font-size:13.5px;letter-spacing:-.03em;white-space:nowrap;">무료 · 보안PDF · 영상CD 파일화 전송</div>
+                  <div class="ur-title">이메일로 받기</div>
+                  <div class="ur-sub" style="font-size:13.5px;letter-spacing:-.03em;">무료 · 완료된 서류 파일 전송</div>
                 </div>
               </div>
-              <div id="delivery_digital_toggle" class="toggle" style="background:var(--amber-mid);flex-shrink:0;">
+              <div id="delivery_email_toggle" class="toggle" style="background:var(--amber-mid);flex-shrink:0;">
                 <div style="content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.18);transform:translateX(18px);"></div>
               </div>
             </div>
@@ -928,7 +943,7 @@ canvas#signaturePad1{
             <span class="fp-total-label">합계</span>
             <span class="fp-total-val" id="feeTotal">25,000원</span>
           </div>
-          <div class="fp-note">병원 서류 발급 수수료는 별도 실비 정산</div>
+          <div class="fp-note">병원 서류 발급 비용은 별도로 문자 안내</div>
         </div>
       </div>
       <div class="bottom">
@@ -984,6 +999,11 @@ canvas#signaturePad1{
         <div class="info-notice" style="margin-bottom:14px;">
           이 서명은 <strong>위임장 및 동의서</strong>에 일회성 사용
         </div>
+        <div class="info-notice" style="margin-bottom:14px;overflow-wrap:anywhere;">
+          문자 안내: <span id="signatureContact">-</span><br>
+          서류 수령: <span id="signatureDelivery">-</span><br>
+          <button type="button" onclick="goToStep(2)" style="border:0;background:none;padding:4px 0;font:inherit;color:var(--amber);text-decoration:underline;cursor:pointer;">연락처·이메일 수정</button>
+        </div>
         <div class="sig-wrap">
           <div class="sig-bar">
             <span class="sig-hint">또렷하게 서명해줘</span>
@@ -1030,7 +1050,7 @@ canvas#signaturePad1{
           <div class="cs-rows">
             <div class="cs-row"><span class="cs-key">이름</span><span class="cs-val" id="cf-name">-</span></div>
             <div class="cs-row"><span class="cs-key">생년월일</span><span class="cs-val" id="cf-birth">-</span></div>
-            <div class="cs-row"><span class="cs-key">연락처</span><span class="cs-val" id="cf-phone">-</span></div>
+            <div class="cs-row"><span class="cs-key">환자 연락처</span><span class="cs-val" id="cf-phone">-</span></div>
             <div class="cs-row"><span class="cs-key">주소</span><span class="cs-val" id="cf-address">-</span></div>
           </div>
         </div>
@@ -1042,6 +1062,8 @@ canvas#signaturePad1{
           <div class="cs-cap">수령 방법</div>
           <div class="cs-rows">
             <div class="cs-row"><span class="cs-key">방법</span><span class="cs-val" id="cf-delivery">-</span></div>
+            <div class="cs-row"><span class="cs-key">문자 받을 번호</span><span class="cs-val" id="cf-contact">-</span></div>
+            <div class="cs-row"><span class="cs-key">이메일</span><span class="cs-val" id="cf-email" style="overflow-wrap:anywhere;min-width:0;">-</span></div>
           </div>
         </div>
         <div class="total-box">
@@ -1084,7 +1106,7 @@ let submissionBusy = false;
 let submissionComplete = false;
 let submissionOrderId = '';
 let submissionUncertain = false;
-let deliveryMethod = 'digital'; // digital | post
+let deliveryMethod = 'email'; // email | post
 const URGENT_MAX  = 3;
 
 // ── 병원 좌표 + 묶음 판정 ──
@@ -1133,7 +1155,11 @@ function goToStep(n) {
     if (!document.getElementById('hospitalBlocks').children.length) buildHospitalBlocks();
     refreshFeePreview();
   }
-  if (n === 6) setTimeout(initSig, 200);
+  if (n === 6) {
+    document.getElementById('signatureContact').textContent = getContactPhone() || '-';
+    document.getElementById('signatureDelivery').textContent = deliveryMethod === 'email' ? v('email').trim() : '등기 — ' + v('postAddress').trim();
+    setTimeout(initSig, 200);
+  }
   if (n === 7) fillConfirm();
 
   window.scrollTo(0, 0);
@@ -1207,9 +1233,9 @@ function validate(step) {
     if (!v('patientName'))    { alert('성명을 입력해줘.'); return false; }
     const b = v('patientBirth');
     if (!b || b.length !== 8) { alert('생년월일을 8자리로 입력해줘.'); return false; }
-    if (!v('patientPhone'))   { alert('연락처를 입력해줘.'); return false; }
+    if (!v('patientPhone'))   { alert('환자 연락처를 입력해줘.'); return false; }
     if (!v('patientAddress')) { alert('주소를 입력해줘.'); return false; }
-    return true;
+    return validateContactFields();
   }
   if (step === 3) {
     if (!document.getElementById('consentRow').classList.contains('checked')) {
@@ -1266,19 +1292,44 @@ function validate(step) {
 function v(id) { return (document.getElementById(id)||{}).value || ''; }
 function isValidDate(s) { return /^\d{4}-\d{2}-\d{2}$/.test(s); }
 
+function getContactPhone() {
+  const same = document.getElementById('sameContact');
+  return v(same && same.checked ? 'patientPhone' : 'contactPhone').trim();
+}
+function toggleContactInput() {
+  document.getElementById('contactPhoneBox').style.display = document.getElementById('sameContact').checked ? 'none' : 'block';
+}
+function validateContactFields() {
+  const phone = getContactPhone();
+  if (!/^[0-9\s-]+$/.test(phone) || !/^01(?:0\d{8}|[16789]\d{7,8})$/.test(phone.replace(/[\s-]/g, ''))) {
+    alert('문자 안내를 받을 휴대폰 번호를 확인해줘.');
+    const phoneField = document.getElementById(document.getElementById('sameContact').checked ? 'patientPhone' : 'contactPhone');
+    if (phoneField) phoneField.focus();
+    return false;
+  }
+  const email = v('email').trim();
+  if ((deliveryMethod === 'email' && !email) || (email && (email.length > 254 || !/^[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~]+(?:\.[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~]+)*@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+$/.test(email)))) {
+    alert('서류 받을 이메일 주소를 확인해줘.');
+    document.getElementById('email').focus();
+    return false;
+  }
+  return true;
+}
+
 /* ================================================
    STEP 1 — 병원 수 / 특급
    ================================================ */
 
 function setDelivery(method) {
+  if (method !== 'email' && method !== 'post') return;
   deliveryMethod = method;
-  const dEl = document.getElementById('delivery_digital');
+  const dEl = document.getElementById('delivery_email');
   const pEl = document.getElementById('delivery_post');
-  const dTog = document.getElementById('delivery_digital_toggle');
+  const dTog = document.getElementById('delivery_email_toggle');
   const pTog = document.getElementById('delivery_post_toggle');
   if (!dEl || !pEl) return;
 
-  if (method === 'digital') {
+  if (method === 'email') {
     dEl.classList.add('on'); dEl.style.borderColor = 'rgba(182,141,97,.5)'; dEl.style.background = 'var(--amber-pale)';
     pEl.classList.remove('on'); pEl.style.borderColor = ''; pEl.style.background = '';
     dTog.style.background = 'var(--amber-mid)'; dTog.innerHTML = '<div style="content:\'\';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.18);transform:translateX(18px);"></div>';
@@ -1291,6 +1342,9 @@ function setDelivery(method) {
   }
   var pab = document.getElementById('postAddrBox');
   if (pab) pab.style.display = (method === 'post') ? 'block' : 'none';
+  document.getElementById('email').required = method === 'email';
+  document.getElementById('emailRequired').style.display = method === 'email' ? '' : 'none';
+  document.getElementById('emailHint').textContent = method === 'email' ? '완료된 서류를 보내줄 주소야. 오타가 없는지 확인해줘.' : '등기로 받으면 이메일은 생략해도 돼.';
   refreshFeePreview();
 }
 function adjustCount(d) {
@@ -2096,8 +2150,10 @@ function fillConfirm() {
   document.getElementById('cf-birth').textContent   = v('patientBirth') || '-';
   document.getElementById('cf-phone').textContent   = v('patientPhone') || '-';
   document.getElementById('cf-address').textContent = v('patientAddress') || '-';
+  document.getElementById('cf-contact').textContent = getContactPhone() || '-';
+  document.getElementById('cf-email').textContent = v('email').trim() || '입력 안 함';
   const fee = calcFee();
-  var deliveryLabel = deliveryMethod === 'digital' ? '📱 카카오톡 파일 전송 (무료)' : '📮 당일 빠른 등기 (+20,000원)';
+  var deliveryLabel = deliveryMethod === 'email' ? '📧 이메일 수령 (무료)' : '📮 당일 빠른 등기 (+20,000원)';
   if (deliveryMethod === 'post' && v('postAddress').trim()) deliveryLabel += ' — ' + v('postAddress').trim();
   document.getElementById('cf-delivery').textContent = deliveryLabel;
   const hosp = document.getElementById('cf-hospitals');
@@ -2170,6 +2226,8 @@ function copyIntakeAccount(button) {
 
 function submitForm() {
   if (submissionBusy || submissionComplete) return;
+  if (!validateContactFields()) { goToStep(2); return; }
+  if (deliveryMethod === 'post' && !v('postAddress').trim()) { alert('등기 받을 주소를 입력해줘.'); goToStep(4); return; }
   if (submissionUncertain && !confirm('이전 신청이 접수됐을 수 있어. 먼저 접수 상태를 확인해줘.\n접수번호: ' + submissionOrderId + '\n\n확인 후에도 다시 전송할까? 중복 접수될 수 있어.')) return;
   var sameR = document.getElementById('sameDepositor');
   var diffR = document.getElementById('diffDepositor');
@@ -2195,16 +2253,17 @@ function submitForm() {
     alert('서명을 해줘.');
     return;
   }
-  var fee     = calcFee();
   var orderId = submissionOrderId || ('SRY' + Date.now());
   submissionOrderId = orderId;
   var depositorInput = document.getElementById('depositorName').value.trim();
-  var depositorName = depositorInput || v('patientName');
+  var depositorName = diffR && diffR.checked ? depositorInput : v('patientName');
   var fd = {
     patientName:    v('patientName'),
     patientBirth:   v('patientBirth'),
     patientPhone:   v('patientPhone'),
     patientAddress: v('patientAddress'),
+    contactPhone:   getContactPhone().replace(/[\s-]/g, ''),
+    email:          v('email').trim(),
     agentName:      v('agentName'),
     hospitalName:   Array.from({length:hospitalCount},(_,i)=>v('hospital_'+(i+1))).join(' / '),
     treatmentPeriod: v('treatPeriod_1'),
@@ -2232,7 +2291,7 @@ function submitForm() {
   document.getElementById('loading').classList.add('show');
   const submittedFile = idCardFileObj;
   const previouslyUncertain = submissionUncertain;
-  function restoreForm(uncertain) {
+  function restoreForm(uncertain, errorMessage) {
     submissionBusy = false;
     submissionUncertain = uncertain || previouslyUncertain;
     document.querySelectorAll('.btn-next.submit').forEach(function(button) { button.disabled = false; });
@@ -2241,11 +2300,9 @@ function submitForm() {
     // Do not navigate through initSig(): the customer's existing signature stays intact.
     document.getElementById('screen6').classList.add('active');
     currentStep = 6;
-    if (uncertain) {
-      alert('접수 결과를 확인하지 못했어. 이미 접수됐을 수 있으니 다시 신청하기 전에 문의해줘.\n접수번호: ' + orderId);
-    } else {
-      alert('신분증 사진을 읽지 못해 전송하지 않았어. 사진을 다시 선택해줘.');
-    }
+    var message = errorMessage || (uncertain ? '접수 결과를 확인하지 못했어.' : '신분증 사진을 읽지 못해 전송하지 않았어. 사진을 다시 선택해줘.');
+    if (submissionUncertain) message += '\n\n이전 신청은 이미 접수됐을 수 있으니 다시 신청하기 전에 문의해줘.\n접수번호: ' + orderId;
+    alert(message);
   }
 
   var buildExtra = function() {
@@ -2260,8 +2317,10 @@ function submitForm() {
   var sendData = function(idB64, idMime, idName) {
     var payload = {
       action: 'sendMail',
+      schemaVersion: 2,
       patientName: fd.patientName, patientBirth: fd.patientBirth,
       patientPhone: fd.patientPhone, patientAddress: fd.patientAddress,
+      contactPhone: fd.contactPhone, email: fd.email,
       agentName: fd.agentName, hospitalName: fd.hospitalName,
       treatmentStart: fd.treatmentStart, treatmentEnd: fd.treatmentEnd,
       reason: fd.reason, documents: fd.documents,
@@ -2292,15 +2351,33 @@ function submitForm() {
       if (!response || response.ok !== true) throw new Error('Unconfirmed response');
       return response.json();
     }).then(function(res) {
-      if (!res || res.ok !== true) throw new Error('Unconfirmed receipt');
+      if (res && res.ok === false && res.code === 'validation' && typeof res.error === 'string' && res.error.trim() && res.error.length <= 500) {
+        restoreForm(false, res.error.trim());
+        return;
+      }
+      if (!res || res.ok !== true || res.orderId !== orderId || typeof res.receiptNo !== 'string' || !res.receiptNo.trim() || !Number.isSafeInteger(res.baseAmount) || res.baseAmount <= 0 || !['waiting_payment', 'paid', 'delivered', 'cancelled'].includes(res.state)) throw new Error('Unconfirmed receipt');
       submissionComplete = true;
       submissionBusy = false;
       submissionUncertain = false;
       document.getElementById('loading').classList.remove('show');
       document.getElementById('success').classList.add('show');
-      document.getElementById('receiptNum').textContent = res.receiptNo || orderId;
-      document.getElementById('successFee').textContent = fee.total.toLocaleString() + '원';
+      document.getElementById('receiptNum').textContent = res.orderId;
+      document.getElementById('receiptMeta').textContent = res.receiptNo !== res.orderId ? '접수번호: ' + res.receiptNo : '';
+      document.getElementById('successFee').textContent = res.baseAmount.toLocaleString() + '원';
       document.getElementById('successDepositor').textContent = depositorName;
+      document.getElementById('successDelivery').textContent = fd.deliveryMethod === 'email' ? '완료된 서류는 ' + fd.email + '로 보내줄게.' : '서류 원본·영상CD는 신청한 등기 주소로 보내줄게.';
+      const waiting = res.state === 'waiting_payment';
+      document.getElementById('successBank').style.display = waiting ? '' : 'none';
+      document.getElementById('successNext').style.display = waiting || res.state === 'paid' ? '' : 'none';
+      const statusCopy = {
+        waiting_payment: ['접수 완료!', '아래 계좌로 대행료를 입금해줘. 입금 확인되면 시작할게.'],
+        paid: ['입금 확인됐어!', '대행료 입금이 확인된 접수야. 진행 중 필요한 내용은 문자로 안내할게.'],
+        delivered: ['전달 완료된 접수야.', '서류 확인이나 다시 받기가 필요하면 아래로 문의해줘.'],
+        cancelled: ['취소된 접수야.', '대행료를 입금하지 말고, 다시 진행하려면 아래로 문의해줘.']
+      }[res.state];
+      document.getElementById('successHeading').textContent = statusCopy[0];
+      document.getElementById('successIntro').textContent = statusCopy[1];
+      document.getElementById('successIcon').textContent = res.state === 'cancelled' ? 'ℹ️' : '✅';
     }).catch(function() {
       restoreForm(true);
     }).finally(function() { clearTimeout(timeout); });
@@ -2570,12 +2647,12 @@ function confirmWarning() {
 
     <div style="margin-bottom:14px;">
       <strong style="color:var(--t2);">1. 수집 항목</strong><br>
-      성명, 생년월일, 연락처, 주소, 신분증 사본, 서명, 발급 요청 의료기관 및 진료 정보
+      성명, 생년월일, 환자 연락처, 연락받을 휴대폰, 이메일, 주소, 신분증 사본, 서명, 발급 요청 의료기관 및 진료 정보
     </div>
 
     <div style="margin-bottom:14px;">
       <strong style="color:var(--t2);">2. 수집 목적</strong><br>
-      의무기록 발급 대행 업무 수행 (대리 발급 신청 시 의료기관 제출용)
+      의무기록 발급 대행 업무 수행 (대리 발급 신청 시 의료기관 제출용), 진행·비용 안내 및 서류 전달
     </div>
 
     <div style="margin-bottom:14px;">

@@ -1,0 +1,30 @@
+{
+  "embedded_images_unchanged": true,
+  "embedded_image_count": 2,
+  "calcFee_unchanged": true,
+  "initSig_unchanged": true,
+  "patientName_input_unchanged": true,
+  "patientBirth_input_unchanged": true,
+  "patientPhone_input_unchanged": true,
+  "patientAddress_input_unchanged": true,
+  "agentName_input_unchanged": true,
+  "agentBirth_input_unchanged": true,
+  "agentPhone_input_unchanged": true,
+  "agentAddress_input_unchanged": true,
+  "agentRelation_input_unchanged": true,
+  "gas_url_unchanged": true,
+  "account_unchanged": true,
+  "tests": {
+    "passed": 47,
+    "failed": 0,
+    "skipped": 0,
+    "command": "node --test tests/*.test.cjs",
+    "kind": "offline VM/DOM contract tests"
+  },
+  "sha256": {
+    "index.html": "080b37212e240fe13010d5dfaf0ccc2ea8b81e65b887e8225166cb9aeb2b0445",
+    "payment.html": "0fd8d25337aeef8d43b26cffcef123d617cbb410390d11bd677ec79d56c8554a",
+    "tests/intake.test.cjs": "64a09f27d06da165460ceb246413cf56c9073a1c506c8d00feb6bd0eeb595389",
+    "tests/payment.test.cjs": "b9400054ae505f1f489a2c17fed20f7aa8c2aa81bac5b532b1e655e45e7e806a"
+  }
+}
