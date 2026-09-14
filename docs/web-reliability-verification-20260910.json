@@ -1,0 +1,25 @@
+{
+  "baseline_commit": "562c681c9484fe38502ef6101b889a822f263005",
+  "node": "v24.19.0",
+  "offline_tests": {
+    "total": 30,
+    "passed": 30,
+    "failed": 0,
+    "skipped": 0
+  },
+  "original_embedded_images_unchanged": true,
+  "gas_endpoint_and_bank_accounts_unchanged": true,
+  "one_submitForm_declaration": true,
+  "sha256": {
+    "index.html": "3aa9626306b198498f34d378d620edfc91f70f2b2c90b74fde6065608a7c6bb6",
+    "payment.html": "f12e19ee275f5851f95d35dae3b667c9f47ee4883fbdf874d173abed21145ed3",
+    "tests/intake.test.cjs": "c4775b18b26b2177d6f71e6e412166d0fcc6556bb3456d1434e6a80001a8459c",
+    "tests/payment.test.cjs": "b9400054ae505f1f489a2c17fed20f7aa8c2aa81bac5b532b1e655e45e7e806a"
+  },
+  "not_verified": [
+    "live GAS response contract and idempotency",
+    "browser visual rendering",
+    "SMS and final email integration"
+  ],
+  "deployment": "draft only; not merged into main"
+}
