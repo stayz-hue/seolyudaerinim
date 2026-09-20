@@ -2192,7 +2192,7 @@ function copyIntakeAccount(button) {
   } catch (err) { fallback(); }
 }
 
-function submitForm() {
+function submitForm(depositConfirmed) {
   if (submissionBusy || submissionComplete) return;
   if (!validate(2)) { goToStep(2); return; }
   if (!validateContactFields()) { goToStep(2); return; }
@@ -2213,10 +2213,16 @@ function submitForm() {
     alert('서명을 해줘.');
     return;
   }
+  if (depositConfirmed !== true) {
+    openWarningModal(function() { submitForm(true); }, {
+      title: '입금자명은 신청인 이름으로 해 주세요',
+      detail: v('patientName').trim()
+    });
+    return;
+  }
   var orderId = submissionOrderId || ('SRY' + Date.now());
   submissionOrderId = orderId;
   var depositorName = v('patientName').trim();
-  alert('입금자명은 신청인 이름 ‘' + depositorName + '’으로 해 주세요.');
   var fd = {
     patientName:    v('patientName'),
     patientBirth:   v('patientBirth'),
@@ -2524,7 +2530,7 @@ function confirmAndApply() {
    진단서 최초발급 경고 모달
    ======================== */
 let _warningOnConfirm = null;
-function openWarningModal(onConfirm) {
+function openWarningModal(onConfirm, copy) {
   _warningOnConfirm = onConfirm || null;
   let modal = document.getElementById('warningModal');
   if (!modal) {
@@ -2539,9 +2545,10 @@ function openWarningModal(onConfirm) {
         <div style="display:flex;justify-content:center;margin-bottom:18px;">
           <div style="width:64px;height:64px;border-radius:50%;background:var(--danger-pale);display:flex;align-items:center;justify-content:center;font-size:34px;line-height:1;"><span style="display:block;transform:translateY(-3px);">⚠️</span></div>
         </div>
-        <div style="font-size:19px;font-weight:800;letter-spacing:-.035em;color:var(--danger);text-align:center;margin-bottom:26px;line-height:1.3;white-space:nowrap;">
+        <div id="warningModalTitle" style="font-size:19px;font-weight:800;letter-spacing:-.035em;color:var(--danger);text-align:center;margin-bottom:26px;line-height:1.5;word-break:keep-all;">
           진단서 최초발급이면 대행 불가!
         </div>
+        <div id="warningModalDetail" style="display:none;text-align:center;font-size:22px;font-weight:800;color:var(--t1);margin:-12px 0 24px;overflow-wrap:anywhere;"></div>
         <button onclick="confirmWarning()" style="width:100%;padding:20px;background:var(--btn);border:none;border-radius:var(--r);font-family:inherit;font-size:20.25px;font-weight:700;letter-spacing:-.01em;color:var(--btn-txt);cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 4px 14px rgba(122,85,48,.28),0 1px 3px rgba(0,0,0,.18);margin-bottom:10px;">
           확인했어, 계속 진행할게 →
         </button>
@@ -2552,6 +2559,10 @@ function openWarningModal(onConfirm) {
     document.body.appendChild(modal);
   }
   const sheet = document.getElementById('warningModalSheet');
+  document.getElementById('warningModalTitle').textContent = copy ? copy.title : '진단서 최초발급이면 대행 불가!';
+  const detail = document.getElementById('warningModalDetail');
+  detail.textContent = copy && copy.detail || '';
+  detail.style.display = detail.textContent ? 'block' : 'none';
   modal.style.display = 'flex';
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
@@ -2567,6 +2578,7 @@ function openWarningModal(onConfirm) {
   modal.addEventListener('click', onBg);
 }
 function closeWarningModal() {
+  _warningOnConfirm = null;
   const sheet = document.getElementById('warningModalSheet');
   const modal = document.getElementById('warningModal');
   if (!sheet || !modal) return;
