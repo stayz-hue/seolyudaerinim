@@ -104,10 +104,9 @@ function fixture(options = {}) {
     set('patientPhone', '010-0000-0000'); set('patientAddress', '테스트 주소');
     set('email', 'test@example.com');
     set('hospital_1', '테스트 병원'); set('treatPeriod_1', '2025'); set('reason_1', '보험사 제출'); set('docEtc_1', '진료기록');
-    set('depositorName', '');
-    elements.get('sameDepositor').checked = true;
-    elements.get('screen6').classList.add('active');
-    run("idCardFileObj = {name:'test.jpg',type:'image/jpeg',size:100}; signaturePad={isEmpty:()=>false,toDataURL:()=> 'data:image/png;base64,c2ln'}; currentStep=6; hospitalCoords=[{name:'테스트 병원',address:'병원 주소',lat:1,lng:2}]");
+    elements.get('identityReviewed').checked = true;
+    elements.get('screen2').classList.add('active');
+    run("idCardFileObj = {name:'test.jpg',type:'image/jpeg',size:100}; signaturePad={isEmpty:()=>false,toDataURL:()=> 'data:image/png;base64,c2ln'}; currentStep=2; hospitalCoords=[{name:'테스트 병원',address:'병원 주소',lat:1,lng:2}]");
   }
   return {context, run, set, elements, htmlWrites, alerts, confirms, requests, readers, images, blobs, timers, buttons, prompts,
     seedForm, setReadMode(value) { readMode = value; },
@@ -120,7 +119,7 @@ function fixture(options = {}) {
 function assertRecovered(f) {
   assert.equal(f.elements.get('loading').classList.contains('show'), false);
   assert.equal(f.elements.get('success').classList.contains('show'), false);
-  assert.equal(f.elements.get('screen6').classList.contains('active'), true);
+  assert.equal(f.elements.get('screen2').classList.contains('active'), true);
   assert.equal(f.elements.get('patientName').value, '테스트 신청인');
   assert.equal(f.elements.get('email').value, 'test@example.com');
   assert.equal(f.run('signaturePad.toDataURL()'), 'data:image/png;base64,c2ln');
@@ -148,7 +147,7 @@ for (const [label, fetch] of [
   test(label + ' preserves input and signature, shows uncertainty and does not automatically retry', async () => {
     const f=fixture({fetch}); f.seedForm(); f.run('submitForm()'); await tick(); assertRecovered(f);
     assert.equal(f.requests.length,1); assert.equal(f.run('submissionUncertain'),true);
-    assert.ok(f.alerts[0].includes(f.requests[0].payload.orderId));
+    assert.ok(f.alerts.at(-1).includes(f.requests[0].payload.orderId));
     assert.ok(!f.alerts.join('').includes('private') && !f.alerts.join('').includes('secret'));
     assert.equal(f.timers.size,0);
   });
@@ -186,7 +185,7 @@ for(const readMode of ['error','abort','throw']) {
   test('file read '+readMode+' restores the form without sending',()=>{
     const f=fixture({readMode});f.seedForm();f.run('submitForm()');assertRecovered(f);
     assert.equal(f.requests.length,0);assert.equal(f.run('submissionUncertain'),false);
-    assert.ok(f.alerts[0].includes('전송하지 않았어'));
+    assert.ok(f.alerts.at(-1).includes('전송하지 않았어'));
   });
 }
 
@@ -263,7 +262,7 @@ test('account copy offers a manual fallback when clipboard is unavailable',()=>{
 test('email delivery is the default; contact phone reuses current patient phone without replacing patient data',async()=>{
   const f=fixture();f.seedForm();
   assert.equal(f.run('deliveryMethod'),'email');
-  assert.equal(f.elements.get('sameContact').checked,true);
+  assert.equal(f.elements.has('sameContact'),false);
   f.set('patientPhone','010-1234-5678');f.set('email','  reply@example.com  ');
   f.run('submitForm()');await tick();
   const payload=f.requests[0].payload;
@@ -273,17 +272,12 @@ test('email delivery is the default; contact phone reuses current patient phone 
   assert.ok(f.elements.get('successDelivery').textContent.includes('reply@example.com'));
 });
 
-test('a separate contact receives SMS while patient telephone stays unchanged; toggling back uses patient phone',async()=>{
-  const f=fixture();f.seedForm();f.elements.get('sameContact').checked=false;
-  f.set('contactPhone','010 2222 3333');f.run('toggleContactInput()');
-  assert.equal(f.elements.get('contactPhoneBox').style.display,'block');
-  f.run('submitForm()');await tick();
-  assert.equal(f.requests[0].payload.patientPhone,'010-0000-0000');
-  assert.equal(f.requests[0].payload.contactPhone,'01022223333');
-  f.elements.get('sameContact').checked=true;f.run('toggleContactInput()');
-  assert.equal(f.run('getContactPhone()'),'010-0000-0000');
-  assert.equal(f.elements.get('contactPhoneBox').style.display,'none');
-  assert.equal(f.elements.get('contactPhone').value,'010 2222 3333');
+test('one telephone field populates both legacy backend fields',async()=>{
+ const f=fixture();f.seedForm();f.set('patientPhone','010 2222 3333');
+ f.run('submitForm()');await tick();
+ assert.equal(f.requests[0].payload.patientPhone.replace(/\D/g,''),'01022223333');
+ assert.equal(f.requests[0].payload.contactPhone,'01022223333');
+ assert.equal(f.elements.has('contactPhone'),false);
 });
 
 test('invalid or absent email blocks both step validation and direct submission without losing entered data',()=>{
@@ -297,9 +291,9 @@ test('invalid or absent email blocks both step validation and direct submission 
 
 test('SMS contact validation rejects empty, landline, short and letter-containing numbers',()=>{
   for(const phone of ['', '02-123-4567','010-1234','abc01012345678']) {
-    const f=fixture();f.seedForm();f.elements.get('sameContact').checked=false;f.set('contactPhone',phone);
+    const f=fixture();f.seedForm();f.set('patientPhone',phone);
     assert.equal(f.run('validate(2)'),false,phone);f.run('submitForm()');assert.equal(f.requests.length,0,phone);
-    assert.equal(f.elements.get('contactPhone').value,phone);
+    assert.equal(f.elements.get('patientPhone').value,phone);
   }
 });
 
@@ -339,9 +333,9 @@ test('switching back from post to email restores required email and does not dis
 
 test('signature step and confirmation show email and contact as plain text without adding a new step',()=>{
   const f=fixture();f.seedForm();const attack='<img src=x onerror="alert(1)">';
-  f.elements.get('sameContact').checked=false;f.set('contactPhone',attack);f.set('email',attack);
+  f.set('patientPhone',attack);f.set('email',attack);
   f.run('goToStep(6);fillConfirm()');
-  for(const id of ['signatureContact','signatureDelivery','cf-contact','cf-email'])assert.equal(f.elements.get(id).textContent,attack);
+  for(const id of ['cf-contact','cf-email'])assert.equal(f.elements.get(id).textContent,attack);
   assert.ok(!f.htmlWrites.some(value=>value.includes(attack)));
 });
 
@@ -365,20 +359,22 @@ test('mismatched receipt, invalid fee and unsupported state retain the form with
   }
 });
 
-test('changing depositor back to same ignores the earlier different name',async()=>{
-  const f=fixture();f.seedForm();f.set('depositorName','이전에 적은 다른 입금자');
-  f.elements.get('sameDepositor').checked=true;f.elements.get('diffDepositor').checked=false;
+test('depositor is always applicant and a reminder precedes submission',async()=>{
+  const f=fixture();f.seedForm();
+  assert.equal(f.elements.has('depositorName'),false);
+  assert.equal(f.elements.has('diffDepositor'),false);
   f.run('submitForm()');await tick();
   assert.equal(f.requests[0].payload.depositorName,'테스트 신청인');
+  assert.ok(f.alerts.some(msg=>msg.includes('입금자명은 신청인 이름')));
   assert.equal(f.elements.get('successDepositor').textContent,'테스트 신청인');
 });
 
-test('network failure retains separate contact, email, physical-delivery address and signature',async()=>{
+test('network failure retains single contact, email, physical-delivery address and signature',async()=>{
   const f=fixture({fetch:()=>Promise.reject(new Error('offline'))});f.seedForm();
-  f.elements.get('sameContact').checked=false;f.set('contactPhone','010-2222-3333');
+  f.set('patientPhone','010-2222-3333');
   f.set('postAddress','보존할 등기 주소');f.run("setDelivery('post');submitForm()");await tick();
-  assertRecovered(f);assert.equal(f.elements.get('contactPhone').value,'010-2222-3333');
-  assert.equal(f.elements.get('sameContact').checked,false);assert.equal(f.elements.get('postAddress').value,'보존할 등기 주소');
+  assertRecovered(f);assert.equal(f.elements.get('patientPhone').value,'010-2222-3333');
+  assert.equal(f.elements.has('sameContact'),false);assert.equal(f.elements.get('postAddress').value,'보존할 등기 주소');
   assert.equal(f.run('deliveryMethod'),'post');
 });
 
@@ -402,4 +398,48 @@ test('validation failure after an uncertain earlier request retains its order an
   assert.equal(f.requests[0].payload.orderId,f.requests[1].payload.orderId);
   assert.ok(f.alerts.at(-1).includes(error));assert.ok(f.alerts.at(-1).includes('문의'));
   assert.ok(f.alerts.at(-1).includes(f.requests[0].payload.orderId));
+});
+
+test('two-step flow fixes insurance purpose even if hidden fields change',async()=>{
+ const f=fixture();f.seedForm();f.set('reason_1','tampered');f.run('submitForm()');await tick();
+ assert.equal(f.requests[0].payload.reason,'보험사 제출용');
+ assert.equal(f.requests[0].payload.hospitals[0].reason,'보험사 제출용');
+ assert.ok(!html.includes('id="screen6"'));
+ assert.ok(!html.includes('병원 서류 발급 비용은 별도로 문자 안내'));
+});
+test('identity review and OCR in progress block submission',()=>{
+ const f=fixture();f.seedForm();f.elements.get('identityReviewed').checked=false;f.run('submitForm()');assert.equal(f.requests.length,0);
+ f.elements.get('identityReviewed').checked=true;f.run('idRecognitionBusy=true;submitForm()');assert.equal(f.requests.length,0);
+});
+test('OCR fills fields but preserves typing during recognition',async()=>{
+ const f=fixture();f.seedForm();let resolve;
+ f.context.window.SeoryuIdOCR={recognize:()=>({promise:new Promise(r=>resolve=r),cancel(){}})};
+ f.set('patientName','');f.set('patientBirth','');f.set('patientAddress','');
+ f.run('extractIdInfo(()=>{})');f.set('patientName','직접수정');
+ resolve({name:'홍길동',birth:'19900101',address:'서울 테스트로 1'});await tick();
+ assert.equal(f.elements.get('patientName').value,'직접수정');
+ assert.equal(f.elements.get('patientBirth').value,'19900101');
+ assert.equal(f.elements.get('patientAddress').value,'서울 테스트로 1');
+ assert.equal(f.elements.get('identityReviewed').checked,false);
+ assert.equal(f.run('idRecognitionBusy'),false);assert.equal(f.requests.length,0);
+});
+test('cancelled recognition cannot overwrite manual input',async()=>{
+ const f=fixture();f.seedForm();let resolve,cancelled=false;
+ f.context.window.SeoryuIdOCR={recognize:()=>({promise:new Promise(r=>resolve=r),cancel(){cancelled=true;}})};
+ f.run('extractIdInfo(()=>{});useManualIdentity()');
+ resolve({name:'오래된값',birth:'20000101',address:'오래된주소'});await tick();
+ assert.equal(cancelled,true);assert.equal(f.elements.get('patientName').value,'테스트 신청인');
+ assert.equal(f.run('idRecognitionBusy'),false);
+});
+test('failed recognition falls back to manual without network submission',async()=>{
+ const f=fixture();f.seedForm();
+ f.context.window.SeoryuIdOCR={recognize:()=>({promise:Promise.reject(new Error('offline')),cancel(){}})};
+ f.run('extractIdInfo(()=>{})');await tick();
+ assert.match(f.elements.get('ocrStatus').textContent,/직접 입력/);assert.equal(f.requests.length,0);assert.equal(f.run('idRecognitionBusy'),false);
+});
+test('new photo clears old identity, review and signature',()=>{
+ const f=fixture();f.seedForm();f.run('signaturePad.clear=()=>{window.cleared=true}');
+ f.run('handleUpload({files:[{name:"new.jpg",type:"image/jpeg",size:100}]})');
+ assert.equal(f.elements.get('patientName').value,'');assert.equal(f.elements.get('patientBirth').value,'');assert.equal(f.elements.get('patientAddress').value,'');
+ assert.equal(f.elements.get('identityReviewed').checked,false);assert.equal(f.context.window.cleared,true);
 });
