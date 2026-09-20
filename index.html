@@ -677,6 +677,27 @@ canvas#signaturePad1{
   .fp-total-val{font-size:19px;}
 }
 </style>
+<script src="id-ocr.js" defer></script>
+<style>
+#screen2 .fscroll,#screen4 .fscroll{padding-top:12px}
+#screen2 .field{margin-bottom:16px}
+#screen2 .upload-area{padding:18px;margin-bottom:8px}
+#screen2 .upload-icon{font-size:26px;margin-bottom:5px}
+#screen2 .upload-title{font-size:17px}
+#screen2 .upload-sub{font-size:13px}
+.identity-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.kakao-contact{display:block;text-align:center;background:#fee500;color:#191919;text-decoration:none;padding:15px;border-radius:12px;font-size:16px;font-weight:700;margin-top:16px}
+.manual-id{background:none;border:0;color:var(--amber);padding:8px 0;margin-bottom:12px;font:inherit;cursor:pointer}
+.identity-grid>.field:last-child{grid-column:1/-1}
+.compact-check{display:flex;align-items:center;gap:9px;font-size:14px;line-height:1.5;margin:8px 0 20px;cursor:pointer}
+.compact-check input{width:19px!important;height:19px;flex-shrink:0;accent-color:var(--amber)}
+.compact-status{font-size:13px;color:var(--t3);line-height:1.5;margin:0 0 16px}
+.compact-heading{font-size:17px;margin:16px 0 10px}
+#screen2 .sig-wrap{margin-bottom:12px}
+#screen2 input:not([type=checkbox]){font-size:16px;min-width:0}
+#screen2 .field-label{font-size:15px}
+#screen4 .ur-title{font-size:17px}
+</style>
 </head>
 <body>
 <div class="shell" id="app">
@@ -733,8 +754,8 @@ canvas#signaturePad1{
     <!-- 완료 -->
     <div class="success" id="success">
       <div class="success-icon" id="successIcon">✅</div>
-      <h2 class="success-h" id="successHeading">접수 완료!</h2>
-      <p class="success-p" id="successIntro">아래 계좌로 대행료를 입금해줘.<br>입금 확인되면 바로 시작할게.</p>
+      <h2 class="success-h" id="successHeading">신청 완료</h2>
+      <p class="success-p" id="successIntro">입금 확인 후 진행합니다.</p>
       <div id="successBank" style="background:var(--amber-pale);border:.5px solid rgba(182,141,97,.3);border-radius:var(--r);padding:20px;margin-bottom:12px;text-align:center;">
         <div style="font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--amber);margin-bottom:12px;">입금 계좌</div>
         <div style="font-size:14px;font-weight:600;color:var(--t1);margin-bottom:4px;">IBK기업은행</div>
@@ -745,15 +766,15 @@ canvas#signaturePad1{
         <button onclick="copyIntakeAccount(this)" style="margin-top:4px;padding:10px 20px;background:var(--btn);color:var(--btn-txt);border:none;border-radius:var(--r-sm);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">계좌번호 복사</button>
       </div>
       <div class="info-notice" id="successNext" style="margin-bottom:12px;text-align:center;overflow-wrap:anywhere;">
-        병원 발급 비용은 문자로 안내할게.<br>
-        <span id="successDelivery">완료된 서류는 신청한 이메일로 보내줄게.</span>
+
+        <span id="successDelivery">서류는 이메일로 보내드립니다.</span>
       </div>
       <div class="receipt-box">
         <div class="receipt-label">주문번호</div>
         <div class="receipt-num" id="receiptNum">-</div>
         <div id="receiptMeta" style="font-size:12px;color:var(--t3);margin-top:6px;"></div>
       </div>
-      <div class="contact-txt">문의·긴급 연락: <a href="http://pf.kakao.com/_XxjhEX" style="color:var(--amber);text-decoration:underline;">카카오톡 서류대리님</a></div>
+      <a class="kakao-contact" href="https://pf.kakao.com/_XxjhEX/chat" target="_blank" rel="noopener noreferrer">문의사항은 카카오톡으로</a>
     </div>
 
     <!-- ────────────────────────
@@ -799,44 +820,57 @@ canvas#signaturePad1{
         </div>
       </div>
       <div class="fscroll">
+        <!-- 업로드 전 -->
+        <div class="upload-area" id="uploadArea" onclick="document.getElementById('idCardFile').click()">
+          <input type="file" id="idCardFile" accept="image/*" onchange="handleUpload(this)">
+          <div class="upload-icon" id="uploadIcon">📷</div>
+          <div class="upload-title" id="uploadTitle">신분증 사진 올리기</div>
+          <div class="upload-sub" id="uploadSub">주민번호 뒷자리는 가려 주세요</div>
+        </div>
+
+        <p id="ocrStatus" role="status" aria-live="polite" class="compact-status">사진을 올리면 성명·생년월일·주소를 입력해요.</p>
+        <button type="button" class="manual-id" onclick="useManualIdentity()">직접 입력</button>
+        <div class="identity-grid">
         <div class="field">
           <label class="field-label">성명 <span class="req">*</span></label>
-          <input type="text" id="patientName" placeholder="예: 김철수">
+          <input type="text" id="patientName" autocomplete="name" placeholder="성명" oninput="resetIdentityReview()">
         </div>
-        <div class="two-col">
+        <div>
           <div class="field">
             <label class="field-label">생년월일 <span class="req">*</span></label>
-            <input type="text" id="patientBirth" placeholder="19900101" maxlength="8" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+            <input type="text" id="patientBirth" placeholder="19900101" maxlength="8" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'');resetIdentityReview()">
           </div>
-          <div class="field">
-            <label class="field-label" for="patientPhone">환자 연락처 <span class="req">*</span></label>
-            <input type="tel" id="patientPhone" placeholder="010-0000-0000">
-          </div>
+
         </div>
         <div class="field">
           <label class="field-label">주소 <span class="req">*</span></label>
-          <input type="text" id="patientAddress" placeholder="예: 서울시 강남구 테헤란로 123">
+          <input type="text" id="patientAddress" autocomplete="street-address" placeholder="주소" oninput="resetIdentityReview()">
         </div>
-        <div class="field">
-          <div class="field-label">연락받을 휴대폰 <span class="req">*</span></div>
-          <label for="sameContact" style="display:flex;align-items:center;gap:8px;font-size:15px;cursor:pointer;">
-            <input type="checkbox" id="sameContact" checked onchange="toggleContactInput()" style="width:18px;height:18px;accent-color:var(--amber);">
-            환자 연락처와 같아
-          </label>
-          <div id="contactPhoneBox" style="display:none;margin-top:10px;">
-            <input type="tel" id="contactPhone" aria-label="연락받을 휴대폰" autocomplete="tel" placeholder="010-0000-0000">
+        </div>
+        <label class="compact-check"><input type="checkbox" id="identityReviewed">성명·생년월일·주소를 확인했습니다</label>
+          <div class="field">
+            <label class="field-label" for="patientPhone">연락받을 휴대폰 번호 <span class="req">*</span></label>
+            <input type="tel" id="patientPhone" placeholder="010-0000-0000">
           </div>
-          <div style="font-size:13px;color:var(--t3);margin-top:7px;line-height:1.6;">진행 연락과 병원 발급 비용을 문자로 안내할 번호야.</div>
-        </div>
         <div class="field">
           <label class="field-label" for="email">서류 받을 이메일 <span class="req" id="emailRequired">*</span></label>
           <input type="email" id="email" autocomplete="email" autocapitalize="none" spellcheck="false" maxlength="254" required placeholder="name@example.com">
-          <div id="emailHint" style="font-size:13px;color:var(--t3);margin-top:7px;line-height:1.6;">완료된 서류를 보내줄 주소야. 오타가 없는지 확인해줘.</div>
+          <div id="emailHint" hidden style="font-size:13px;color:var(--t3);margin-top:7px;line-height:1.6;">완료된 서류를 보내줄 주소야. 오타가 없는지 확인해줘.</div>
         </div>
+        <h3 class="compact-heading">위임장·동의서 서명</h3>
+        <div class="sig-wrap">
+          <div class="sig-bar">
+            <span class="sig-hint">또렷하게 서명해줘</span>
+            <button class="sig-clear" onclick="clearSig()">다시 쓰기</button>
+          </div>
+          <canvas id="signaturePad1" style="display:block;width:100%;height:200px;background:var(--base);cursor:crosshair;touch-action:none;"></canvas>
+        </div>
+
+
       </div>
       <div class="bottom">
         <button class="btn-back" onclick="goToStep(4)">←</button>
-        <button class="btn-next" onclick="nextStep(2)">다음 →</button>
+        <button class="btn-next" onclick="nextStep(2)">신청하기</button>
       </div>
     </div>
 
@@ -927,7 +961,7 @@ canvas#signaturePad1{
               <div id="delivery_post_toggle" class="toggle" style="flex-shrink:0;"></div>
             </div>
             <div style="font-size:16.2px;color:var(--t3);line-height:1.7;padding-left:34px;word-break:keep-all;">
-              서류 원본, 영상CD는 하드케이스에 안전하게 포장 후 보내줄게. 원본이 반드시 필요한 경우에 추천해.
+원본이 반드시 필요한 경우에 추천.
             </div>
             <div id="postAddrBox" onclick="event.stopPropagation()" style="display:none;width:100%;">
               <label class="field-label" style="margin-top:2px;">등기 받을 주소 <span class="req">*</span></label>
@@ -943,7 +977,7 @@ canvas#signaturePad1{
             <span class="fp-total-label">합계</span>
             <span class="fp-total-val" id="feeTotal">25,000원</span>
           </div>
-          <div class="fp-note">병원 서류 발급 비용은 별도로 문자 안내</div>
+
         </div>
       </div>
       <div class="bottom">
@@ -955,82 +989,9 @@ canvas#signaturePad1{
     <!-- ────────────────────────
          STEP 5 — 신분증
          ──────────────────────── -->
-    <div class="form-screen" id="screen5">
-      <div class="fhdr">
-        <div class="progress" id="progressBar5"></div>
-        <div class="step-meta">
-          <div class="step-num">3</div>
-          <div class="step-title">신분증 첨부</div>
-        </div>
-      </div>
-      <div class="fscroll">
-        <div class="info-notice" style="margin-bottom:16px;">
-          <strong>발급 목적으로만 쓰인 후 즉시 파기</strong>
-        </div>
-
-
-        <!-- 업로드 전 -->
-        <div class="upload-area" id="uploadArea" onclick="document.getElementById('idCardFile').click()">
-          <input type="file" id="idCardFile" accept="image/*" onchange="handleUpload(this)">
-          <div class="upload-icon" id="uploadIcon">📷</div>
-          <div class="upload-title" id="uploadTitle">신분증 사진 올리기</div>
-          <div class="upload-sub" id="uploadSub">탭해서 사진 선택하거나 파일 드래그</div>
-        </div>
-
-      </div>
-      <div class="bottom">
-        <button class="btn-back" onclick="goToStep(2)">←</button>
-        <button class="btn-next" onclick="nextStep(5)">다음 →</button>
-      </div>
-    </div>
-
     <!-- ────────────────────────
          STEP 6 — 서명
          ──────────────────────── -->
-    <div class="form-screen" id="screen6">
-      <div class="fhdr">
-        <div class="progress" id="progressBar6"></div>
-        <div class="step-meta">
-          <div class="step-num">4</div>
-          <div class="step-title">신청인 서명</div>
-        </div>
-      </div>
-      <div class="fscroll">
-        <div class="info-notice" style="margin-bottom:14px;">
-          이 서명은 <strong>위임장 및 동의서</strong>에 일회성 사용
-        </div>
-        <div class="info-notice" style="margin-bottom:14px;overflow-wrap:anywhere;">
-          문자 안내: <span id="signatureContact">-</span><br>
-          서류 수령: <span id="signatureDelivery">-</span><br>
-          <button type="button" onclick="goToStep(2)" style="border:0;background:none;padding:4px 0;font:inherit;color:var(--amber);text-decoration:underline;cursor:pointer;">연락처·이메일 수정</button>
-        </div>
-        <div class="sig-wrap">
-          <div class="sig-bar">
-            <span class="sig-hint">또렷하게 서명해줘</span>
-            <button class="sig-clear" onclick="clearSig()">다시 쓰기</button>
-          </div>
-          <canvas id="signaturePad1" style="display:block;width:100%;height:200px;background:var(--base);cursor:crosshair;touch-action:none;"></canvas>
-        </div>
-
-        <label for="sameDepositor" style="display:flex;align-items:center;gap:12px;margin-top:16px;margin-bottom:10px;padding:18px 20px;background:#FFF7ED;border:1.5px solid #FDBA74;border-radius:var(--r-sm);cursor:pointer;font-size:18.9px;color:#9A3412;font-weight:700;letter-spacing:-.01em;">
-          <input type="radio" name="depositorMatch" id="sameDepositor" value="same" onchange="toggleDepositorInput()" style="width:24px;height:24px;accent-color:#EA580C;flex-shrink:0;">
-          신청인과 입금자가 같습니다
-        </label>
-        <label for="diffDepositor" style="display:flex;align-items:center;gap:12px;margin-bottom:10px;padding:18px 20px;background:#FFF7ED;border:1.5px solid #FDBA74;border-radius:var(--r-sm);cursor:pointer;font-size:18.9px;color:#9A3412;font-weight:700;letter-spacing:-.01em;">
-          <input type="radio" name="depositorMatch" id="diffDepositor" value="diff" onchange="toggleDepositorInput()" style="width:24px;height:24px;accent-color:#EA580C;flex-shrink:0;">
-          신청인과 입금자가 다릅니다
-        </label>
-        <div id="depositorBox" style="display:none;margin-bottom:16px;padding:18px 20px;background:#FFF7ED;border:1.5px solid #FDBA74;border-radius:var(--r-sm);">
-          <input type="text" id="depositorName" placeholder="실제 입금하시는 분 이름" style="width:100%;padding:14px 16px;border:1px solid rgba(182,141,97,.3);border-radius:var(--r-sm);font-family:inherit;background:#fff;">
-          <p style="font-size:15.53px;color:var(--t3);margin-top:8px;line-height:1.6;letter-spacing:-.01em;">현금영수증 필요시 번호도 함께 입력해줘<br>예) 홍길동 010-1234-5678</p>
-        </div>
-      </div>
-      <div class="bottom">
-        <button class="btn-back" onclick="goToStep(5)">←</button>
-        <button class="btn-next submit" onclick="nextStep(6)">신청하기 →</button>
-      </div>
-    </div>
-
     <!-- ────────────────────────
          STEP 7 — 최종 확인
          ──────────────────────── -->
@@ -1122,17 +1083,13 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbwcOjgmyqA4D7PP1AzYp05s
 /* ================================================
    입금자명 토글
    ================================================ */
-function toggleDepositorInput() {
-  var diffR = document.getElementById('diffDepositor');
-  var checked = diffR && diffR.checked;
-  document.getElementById('depositorBox').style.display = checked ? 'block' : 'none';
-  if (!checked) document.getElementById('depositorName').value = '';
-}
+
 
 /* ================================================
    NAVIGATION
    ================================================ */
 function goToStep(n) {
+  if (n === 5 || n === 6) n = 2;
   currentStep = n;
   document.getElementById('screen0').style.display   = n === 0 ? 'flex' : 'none';
   document.getElementById('formArea').style.display  = n > 0  ? 'flex' : 'none';
@@ -1155,9 +1112,7 @@ function goToStep(n) {
     if (!document.getElementById('hospitalBlocks').children.length) buildHospitalBlocks();
     refreshFeePreview();
   }
-  if (n === 6) {
-    document.getElementById('signatureContact').textContent = getContactPhone() || '-';
-    document.getElementById('signatureDelivery').textContent = deliveryMethod === 'email' ? v('email').trim() : '등기 — ' + v('postAddress').trim();
+  if (n === 2) {
     setTimeout(initSig, 200);
   }
   if (n === 7) fillConfirm();
@@ -1173,7 +1128,7 @@ function nextStep(from) {
       if (from === 4) {
         openWarningModal(function() { goToStep(2); });
       } else if (from === 2) {
-        goToStep(5);
+        submitForm();
       } else if (from === 6) {
         submitForm();
       } else {
@@ -1210,7 +1165,7 @@ function nextStep(from) {
 }
 
 function updateProgress(current) {
-  const ORDER = [4, 2, 5, 6];
+  const ORDER = [4, 2];
   const pos = ORDER.indexOf(current) + 1;
   const total = ORDER.length;
   const allBars = document.querySelectorAll('.progress');
@@ -1230,11 +1185,14 @@ function updateProgress(current) {
 function validate(step) {
   if (step === 1) return true;
   if (step === 2) {
+    if (idRecognitionBusy) { alert('신분증을 읽고 있어요. 직접 입력하려면 직접 입력을 눌러 주세요.'); return false; }
     if (!v('patientName'))    { alert('성명을 입력해줘.'); return false; }
     const b = v('patientBirth');
     if (!b || b.length !== 8) { alert('생년월일을 8자리로 입력해줘.'); return false; }
-    if (!v('patientPhone'))   { alert('환자 연락처를 입력해줘.'); return false; }
+    if (!v('patientPhone'))   { alert('연락받을 휴대폰 번호를 입력해 주세요.'); return false; }
     if (!v('patientAddress')) { alert('주소를 입력해줘.'); return false; }
+    if (!validate(5) || !validate(6)) return false;
+    if (!document.getElementById("identityReviewed").checked) { alert("신분증 정보를 확인해 주세요."); return false; }
     return validateContactFields();
   }
   if (step === 3) {
@@ -1258,11 +1216,6 @@ function validate(step) {
       if (!v('treatPeriod_' + i).trim()) {
         alert(i + '번째 병원 진료 기간을 입력해줘.');
         var el3 = document.getElementById('treatPeriod_' + i); if (el3) el3.focus();
-        return false;
-      }
-      if (!v('reason_' + i)) {
-        alert(i + '번째 병원 발급 사유를 입력해줘.');
-        var el4 = document.getElementById('reason_' + i); if (el4) el4.focus();
         return false;
       }
       if (!v('docEtc_' + i).trim()) {
@@ -1293,17 +1246,13 @@ function v(id) { return (document.getElementById(id)||{}).value || ''; }
 function isValidDate(s) { return /^\d{4}-\d{2}-\d{2}$/.test(s); }
 
 function getContactPhone() {
-  const same = document.getElementById('sameContact');
-  return v(same && same.checked ? 'patientPhone' : 'contactPhone').trim();
-}
-function toggleContactInput() {
-  document.getElementById('contactPhoneBox').style.display = document.getElementById('sameContact').checked ? 'none' : 'block';
+  return v('patientPhone').trim();
 }
 function validateContactFields() {
   const phone = getContactPhone();
   if (!/^[0-9\s-]+$/.test(phone) || !/^01(?:0\d{8}|[16789]\d{7,8})$/.test(phone.replace(/[\s-]/g, ''))) {
     alert('문자 안내를 받을 휴대폰 번호를 확인해줘.');
-    const phoneField = document.getElementById(document.getElementById('sameContact').checked ? 'patientPhone' : 'contactPhone');
+    const phoneField = document.getElementById('patientPhone');
     if (phoneField) phoneField.focus();
     return false;
   }
@@ -1482,10 +1431,7 @@ function hospitalBlockHTML(i) {
             <label class="field-label">진료 기간 <span class="req">*</span></label>
             <input type="text" id="treatPeriod_${i}" placeholder="예: 2024. ~">
           </div>
-          <div class="field">
-            <label class="field-label">발급 사유 <span class="req">*</span></label>
-            <input type="text" id="reason_${i}" placeholder="예: 보험사 제출용">
-          </div>
+          <input type="hidden" id="reason_${i}" value="보험사 제출용">
           <div class="field">
             <label class="field-label">발급 서류 <span class="req">*</span></label>
             <input type="text" id="docEtc_${i}" placeholder="예: 진단서, 진료비내역서, 영상CD">
@@ -1857,6 +1803,10 @@ let currentRect = null;
 function handleUpload(input) {
   if (!input.files || !input.files[0]) return;
   const selection = ++idCardSelection;
+  cancelIdRecognition();
+  resetIdentityReview();
+  if (signaturePad && typeof signaturePad.clear === 'function') signaturePad.clear();
+  ['patientName', 'patientBirth', 'patientAddress'].forEach(function(id) { document.getElementById(id).value = ''; });
   const file = input.files[0];
   idCardFileObj = null;
   idCardLoading = true;
@@ -1886,7 +1836,8 @@ function handleUpload(input) {
     if (area) area.classList.add('has-file');
     document.getElementById('uploadIcon').textContent = '✅';
     document.getElementById('uploadTitle').textContent = file.name;
-    if (sub) { sub.className = 'upload-ok'; sub.textContent = '✅ 업로드 완료 — 다른 사진은 다시 탭'; }
+    if (sub) { sub.className = 'upload-ok'; sub.textContent = '사진 변경'; }
+    extractIdInfo(function() {});
   }
   if (!file.type.startsWith('image/') || !file.size) { fail(); return; }
   const reader = new FileReader();
@@ -2089,36 +2040,53 @@ function clearMask() {
 }
 
 /* ================================================
-   신분증 자동 추출 — Netlify function
+   신분증 자동 추출 — 기기 내 OCR
    ================================================ */
+let activeIdRecognition = null;
+let idRecognitionBusy = false;
+function resetIdentityReview() {
+  const el = document.getElementById('identityReviewed');
+  if (el) el.checked = false;
+}
+function cancelIdRecognition() {
+  if (activeIdRecognition) activeIdRecognition.cancel();
+  activeIdRecognition = null;
+  idRecognitionBusy = false;
+}
+function useManualIdentity() {
+  cancelIdRecognition();
+  document.getElementById('ocrStatus').textContent = '성명·생년월일·주소를 직접 입력해 주세요.';
+}
 function extractIdInfo(done) {
-  if (!idCardFileObj) { done(); return; }
-  showRouteLoading(true);
-  var el = document.getElementById('routeLoadingOverlay');
-  if (el) el.querySelector('div > div').innerHTML =
-    '<div style="font-size:28px;margin-bottom:12px;">🪪</div>'
-    + '<div style="font-size:14px;font-weight:600;color:var(--t1);">신분증 정보 읽는 중...</div>';
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    var b64 = e.target.result.split(',')[1];
-    fetch('/.netlify/functions/extract', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ image: b64, mime: idCardFileObj.type || 'image/jpeg' })
-    })
-    .then(function(r){ return r.json(); })
-    .then(function(res) {
-      showRouteLoading(false);
-      if (res && res.ok) {
-        if (res.name)    document.getElementById('patientName').value = res.name;
-        if (res.birth)   document.getElementById('patientBirth').value = res.birth;
-        if (res.address) document.getElementById('patientAddress').value = res.address;
-      }
-      done();
-    })
-    .catch(function() { showRouteLoading(false); done(); });
-  };
-  reader.readAsDataURL(idCardFileObj);
+  const status = document.getElementById('ocrStatus');
+  if (!idCardFileObj || !window.SeoryuIdOCR) {
+    if (status) status.textContent = '성명·생년월일·주소를 직접 입력해 주세요.';
+    done(); return;
+  }
+  cancelIdRecognition();
+  const selection = idCardSelection;
+  const fields = ['patientName','patientBirth','patientAddress'];
+  const initial = fields.map(v);
+  const job = window.SeoryuIdOCR.recognize(idCardFileObj, function(p) {
+    if (activeIdRecognition === job && status) status.textContent = '신분증 읽는 중 ' + Math.round(p * 100) + '%';
+  });
+  activeIdRecognition = job;
+  idRecognitionBusy = true;
+  if (status) status.textContent = '신분증 읽는 중… 연락처를 입력해 주세요.';
+  job.promise.then(function(result) {
+    if (selection !== idCardSelection || activeIdRecognition !== job) return;
+    [result.name,result.birth,result.address].forEach(function(value,i) {
+      // Never overwrite edits made while OCR was running.
+      if (value && v(fields[i]) === initial[i]) document.getElementById(fields[i]).value = value;
+    });
+    resetIdentityReview();
+    if (status) status.textContent = fields.every(id=>v(id)) ? '인식한 정보를 확인해 주세요.' : '빈 항목을 입력하고 정보를 확인해 주세요.';
+  }).catch(function() {
+    if (selection === idCardSelection && activeIdRecognition === job && status) status.textContent = '자동입력이 어려워요. 직접 입력해 주세요.';
+  }).finally(function() {
+    if (activeIdRecognition === job) { activeIdRecognition = null; idRecognitionBusy = false; }
+    done();
+  });
 }
 
 /* ================================================
@@ -2226,19 +2194,11 @@ function copyIntakeAccount(button) {
 
 function submitForm() {
   if (submissionBusy || submissionComplete) return;
+  if (!validate(2)) { goToStep(2); return; }
   if (!validateContactFields()) { goToStep(2); return; }
   if (deliveryMethod === 'post' && !v('postAddress').trim()) { alert('등기 받을 주소를 입력해줘.'); goToStep(4); return; }
   if (submissionUncertain && !confirm('이전 신청이 접수됐을 수 있어. 먼저 접수 상태를 확인해줘.\n접수번호: ' + submissionOrderId + '\n\n확인 후에도 다시 전송할까? 중복 접수될 수 있어.')) return;
-  var sameR = document.getElementById('sameDepositor');
-  var diffR = document.getElementById('diffDepositor');
-  if (!(sameR && sameR.checked) && !(diffR && diffR.checked)) {
-    alert('입금자가 신청인과 같은지/다른지 선택해줘.');
-    return;
-  }
-  if (diffR && diffR.checked && !document.getElementById('depositorName').value.trim()) {
-    alert('실제 입금하시는 분 이름을 입력해줘.');
-    return;
-  }
+
   // ── 신분증 첨부 최종 검증 (빈 신분증으로 접수되는 것 차단) ──
   if (idCardLoading) {
     alert('신분증 사진을 확인하고 있어. 잠깐만 기다려줘.');
@@ -2255,8 +2215,8 @@ function submitForm() {
   }
   var orderId = submissionOrderId || ('SRY' + Date.now());
   submissionOrderId = orderId;
-  var depositorInput = document.getElementById('depositorName').value.trim();
-  var depositorName = diffR && diffR.checked ? depositorInput : v('patientName');
+  var depositorName = v('patientName').trim();
+  alert('입금자명은 신청인 이름 ‘' + depositorName + '’으로 해 주세요.');
   var fd = {
     patientName:    v('patientName'),
     patientBirth:   v('patientBirth'),
@@ -2269,12 +2229,12 @@ function submitForm() {
     treatmentPeriod: v('treatPeriod_1'),
     treatmentStart: v('treatPeriod_1'),
     treatmentEnd:   '',
-    reason:         v('reason_1'),
+    reason:         '보험사 제출용',
     documents:      collectDocs(1),
     hospitals:      Array.from({length:hospitalCount},(_,i)=>({
                       name:    v('hospital_'+(i+1)),
                       period:  v('treatPeriod_'+(i+1)),
-                      reason:  v('reason_'+(i+1)),
+                      reason:  '보험사 제출용',
                       documents: collectDocs(i+1)
                     })),
     hospitalCount:  hospitalCount,
@@ -2286,7 +2246,7 @@ function submitForm() {
 
   submissionBusy = true;
   document.querySelectorAll('.btn-next.submit').forEach(function(button) { button.disabled = true; });
-  document.getElementById('screen6').classList.remove('active');
+  document.getElementById('screen2').classList.remove('active');
   document.getElementById('screen7').classList.remove('active');
   document.getElementById('loading').classList.add('show');
   const submittedFile = idCardFileObj;
@@ -2298,7 +2258,7 @@ function submitForm() {
     document.getElementById('loading').classList.remove('show');
     document.getElementById('success').classList.remove('show');
     // Do not navigate through initSig(): the customer's existing signature stays intact.
-    document.getElementById('screen6').classList.add('active');
+    document.getElementById('screen2').classList.add('active');
     currentStep = 6;
     var message = errorMessage || (uncertain ? '접수 결과를 확인하지 못했어.' : '신분증 사진을 읽지 못해 전송하지 않았어. 사진을 다시 선택해줘.');
     if (submissionUncertain) message += '\n\n이전 신청은 이미 접수됐을 수 있으니 다시 신청하기 전에 문의해줘.\n접수번호: ' + orderId;
@@ -2365,15 +2325,15 @@ function submitForm() {
       document.getElementById('receiptMeta').textContent = res.receiptNo !== res.orderId ? '접수번호: ' + res.receiptNo : '';
       document.getElementById('successFee').textContent = res.baseAmount.toLocaleString() + '원';
       document.getElementById('successDepositor').textContent = depositorName;
-      document.getElementById('successDelivery').textContent = fd.deliveryMethod === 'email' ? '완료된 서류는 ' + fd.email + '로 보내줄게.' : '서류 원본·영상CD는 신청한 등기 주소로 보내줄게.';
+      document.getElementById('successDelivery').textContent = fd.deliveryMethod === 'email' ? '서류 수령: ' + fd.email : '서류 수령: 빠른 등기';
       const waiting = res.state === 'waiting_payment';
       document.getElementById('successBank').style.display = waiting ? '' : 'none';
       document.getElementById('successNext').style.display = waiting || res.state === 'paid' ? '' : 'none';
       const statusCopy = {
-        waiting_payment: ['접수 완료!', '아래 계좌로 대행료를 입금해줘. 입금 확인되면 시작할게.'],
-        paid: ['입금 확인됐어!', '대행료 입금이 확인된 접수야. 진행 중 필요한 내용은 문자로 안내할게.'],
-        delivered: ['전달 완료된 접수야.', '서류 확인이나 다시 받기가 필요하면 아래로 문의해줘.'],
-        cancelled: ['취소된 접수야.', '대행료를 입금하지 말고, 다시 진행하려면 아래로 문의해줘.']
+        waiting_payment: ['신청 완료', '입금 확인 후 진행합니다.'],
+        paid: ['입금 확인 완료', '진행 상황은 문자로 안내합니다.'],
+        delivered: ['서류 전달 완료', '문의사항은 카카오톡으로 연락해 주세요.'],
+        cancelled: ['취소된 신청', '입금하지 마세요. 재신청은 카카오톡으로 문의해 주세요.']
       }[res.state];
       document.getElementById('successHeading').textContent = statusCopy[0];
       document.getElementById('successIntro').textContent = statusCopy[1];
