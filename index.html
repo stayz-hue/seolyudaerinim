@@ -828,26 +828,10 @@ canvas#signaturePad1{
           <div class="upload-sub" id="uploadSub">주민번호 뒷자리는 가려 주세요</div>
         </div>
 
-        <p id="ocrStatus" role="status" aria-live="polite" class="compact-status">사진을 올리면 성명·생년월일·주소를 입력해요.</p>
-        <button type="button" class="manual-id" onclick="useManualIdentity()">직접 입력</button>
-        <div class="identity-grid">
-        <div class="field">
-          <label class="field-label">성명 <span class="req">*</span></label>
-          <input type="text" id="patientName" autocomplete="name" placeholder="성명" oninput="resetIdentityReview()">
-        </div>
-        <div>
-          <div class="field">
-            <label class="field-label">생년월일 <span class="req">*</span></label>
-            <input type="text" id="patientBirth" placeholder="19900101" maxlength="8" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'');resetIdentityReview()">
-          </div>
-
-        </div>
-        <div class="field">
-          <label class="field-label">주소 <span class="req">*</span></label>
-          <input type="text" id="patientAddress" autocomplete="street-address" placeholder="주소" oninput="resetIdentityReview()">
-        </div>
-        </div>
-        <label class="compact-check"><input type="checkbox" id="identityReviewed">성명·생년월일·주소를 확인했습니다</label>
+        <p id="ocrStatus" role="status" aria-live="polite" class="compact-status"></p>
+        <input type="hidden" id="patientName">
+        <input type="hidden" id="patientBirth">
+        <input type="hidden" id="patientAddress">
           <div class="field">
             <label class="field-label" for="patientPhone">연락받을 휴대폰 번호 <span class="req">*</span></label>
             <input type="tel" id="patientPhone" placeholder="010-0000-0000">
@@ -1185,14 +1169,7 @@ function updateProgress(current) {
 function validate(step) {
   if (step === 1) return true;
   if (step === 2) {
-    if (idRecognitionBusy) { alert('신분증을 읽고 있어요. 직접 입력하려면 직접 입력을 눌러 주세요.'); return false; }
-    if (!v('patientName'))    { alert('성명을 입력해줘.'); return false; }
-    const b = v('patientBirth');
-    if (!b || b.length !== 8) { alert('생년월일을 8자리로 입력해줘.'); return false; }
-    if (!v('patientPhone'))   { alert('연락받을 휴대폰 번호를 입력해 주세요.'); return false; }
-    if (!v('patientAddress')) { alert('주소를 입력해줘.'); return false; }
     if (!validate(5) || !validate(6)) return false;
-    if (!document.getElementById("identityReviewed").checked) { alert("신분증 정보를 확인해 주세요."); return false; }
     return validateContactFields();
   }
   if (step === 3) {
@@ -2053,14 +2030,10 @@ function cancelIdRecognition() {
   activeIdRecognition = null;
   idRecognitionBusy = false;
 }
-function useManualIdentity() {
-  cancelIdRecognition();
-  document.getElementById('ocrStatus').textContent = '성명·생년월일·주소를 직접 입력해 주세요.';
-}
 function extractIdInfo(done) {
   const status = document.getElementById('ocrStatus');
   if (!idCardFileObj || !window.SeoryuIdOCR) {
-    if (status) status.textContent = '성명·생년월일·주소를 직접 입력해 주세요.';
+    if (status) status.textContent = '사진 첨부 완료';
     done(); return;
   }
   cancelIdRecognition();
@@ -2080,9 +2053,9 @@ function extractIdInfo(done) {
       if (value && v(fields[i]) === initial[i]) document.getElementById(fields[i]).value = value;
     });
     resetIdentityReview();
-    if (status) status.textContent = fields.every(id=>v(id)) ? '인식한 정보를 확인해 주세요.' : '빈 항목을 입력하고 정보를 확인해 주세요.';
+    if (status) status.textContent = '사진 첨부 완료';
   }).catch(function() {
-    if (selection === idCardSelection && activeIdRecognition === job && status) status.textContent = '자동입력이 어려워요. 직접 입력해 주세요.';
+    if (selection === idCardSelection && activeIdRecognition === job && status) status.textContent = '사진 첨부 완료';
   }).finally(function() {
     if (activeIdRecognition === job) { activeIdRecognition = null; idRecognitionBusy = false; }
     done();
@@ -2220,6 +2193,7 @@ function submitForm(depositConfirmed) {
     });
     return;
   }
+  cancelIdRecognition();
   var orderId = submissionOrderId || ('SRY' + Date.now());
   submissionOrderId = orderId;
   var depositorName = v('patientName').trim();
@@ -2283,7 +2257,7 @@ function submitForm(depositConfirmed) {
   var sendData = function(idB64, idMime, idName) {
     var payload = {
       action: 'sendMail',
-      schemaVersion: 2,
+      schemaVersion: 3,
       patientName: fd.patientName, patientBirth: fd.patientBirth,
       patientPhone: fd.patientPhone, patientAddress: fd.patientAddress,
       contactPhone: fd.contactPhone, email: fd.email,
@@ -2330,7 +2304,7 @@ function submitForm(depositConfirmed) {
       document.getElementById('receiptNum').textContent = res.orderId;
       document.getElementById('receiptMeta').textContent = res.receiptNo !== res.orderId ? '접수번호: ' + res.receiptNo : '';
       document.getElementById('successFee').textContent = res.baseAmount.toLocaleString() + '원';
-      document.getElementById('successDepositor').textContent = depositorName;
+      document.getElementById('successDepositor').textContent = depositorName || '신청인 이름';
       document.getElementById('successDelivery').textContent = fd.deliveryMethod === 'email' ? '서류 수령: ' + fd.email : '서류 수령: 빠른 등기';
       const waiting = res.state === 'waiting_payment';
       document.getElementById('successBank').style.display = waiting ? '' : 'none';
