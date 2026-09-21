@@ -104,7 +104,7 @@ function fixture(options = {}) {
     set('patientPhone', '010-0000-0000'); set('patientAddress', '테스트 주소');
     set('email', 'test@example.com');
     set('hospital_1', '테스트 병원'); set('treatPeriod_1', '2025'); set('reason_1', '보험사 제출'); set('docEtc_1', '진료기록');
-    elements.get('identityReviewed').checked = true;
+
     elements.get('screen2').classList.add('active');
     run("idCardFileObj = {name:'test.jpg',type:'image/jpeg',size:100}; signaturePad={isEmpty:()=>false,toDataURL:()=> 'data:image/png;base64,c2ln'}; currentStep=2; hospitalCoords=[{name:'테스트 병원',address:'병원 주소',lat:1,lng:2}]");
   }
@@ -266,7 +266,7 @@ test('email delivery is the default; contact phone reuses current patient phone 
   f.set('patientPhone','010-1234-5678');f.set('email','  reply@example.com  ');
   f.run('submitForm(true)');await tick();
   const payload=f.requests[0].payload;
-  assert.equal(payload.schemaVersion,2);assert.equal(payload.deliveryMethod,'email');
+  assert.equal(payload.schemaVersion,3);assert.equal(payload.deliveryMethod,'email');
   assert.equal(payload.patientPhone,'010-1234-5678');assert.equal(payload.contactPhone,'01012345678');
   assert.equal(payload.email,'reply@example.com');assert.equal(payload.postAddress,'');
   assert.ok(f.elements.get('successDelivery').textContent.includes('reply@example.com'));
@@ -407,9 +407,10 @@ test('two-step flow fixes insurance purpose even if hidden fields change',async(
  assert.ok(!html.includes('id="screen6"'));
  assert.ok(!html.includes('병원 서류 발급 비용은 별도로 문자 안내'));
 });
-test('identity review and OCR in progress block submission',()=>{
- const f=fixture();f.seedForm();f.elements.get('identityReviewed').checked=false;f.run('submitForm(true)');assert.equal(f.requests.length,0);
- f.elements.get('identityReviewed').checked=true;f.run('idRecognitionBusy=true;submitForm(true)');assert.equal(f.requests.length,0);
+test('missing identity does not block intake and is sent as blank',async()=>{
+ const f=fixture();f.seedForm();['patientName','patientBirth','patientAddress'].forEach(id=>f.set(id,''));
+ f.run('submitForm(true)');await tick();assert.equal(f.requests.length,1);
+ const body=f.requests[0].payload;assert.equal(body.patientName,'');assert.equal(body.patientBirth,'');assert.equal(body.patientAddress,'');
 });
 test('OCR fills fields but preserves typing during recognition',async()=>{
  const f=fixture();f.seedForm();let resolve;
@@ -420,13 +421,13 @@ test('OCR fills fields but preserves typing during recognition',async()=>{
  assert.equal(f.elements.get('patientName').value,'직접수정');
  assert.equal(f.elements.get('patientBirth').value,'19900101');
  assert.equal(f.elements.get('patientAddress').value,'서울 테스트로 1');
- assert.equal(f.elements.get('identityReviewed').checked,false);
+
  assert.equal(f.run('idRecognitionBusy'),false);assert.equal(f.requests.length,0);
 });
 test('cancelled recognition cannot overwrite manual input',async()=>{
  const f=fixture();f.seedForm();let resolve,cancelled=false;
  f.context.window.SeoryuIdOCR={recognize:()=>({promise:new Promise(r=>resolve=r),cancel(){cancelled=true;}})};
- f.run('extractIdInfo(()=>{});useManualIdentity()');
+ f.run('extractIdInfo(()=>{});cancelIdRecognition()');
  resolve({name:'오래된값',birth:'20000101',address:'오래된주소'});await tick();
  assert.equal(cancelled,true);assert.equal(f.elements.get('patientName').value,'테스트 신청인');
  assert.equal(f.run('idRecognitionBusy'),false);
@@ -435,13 +436,13 @@ test('failed recognition falls back to manual without network submission',async(
  const f=fixture();f.seedForm();
  f.context.window.SeoryuIdOCR={recognize:()=>({promise:Promise.reject(new Error('offline')),cancel(){}})};
  f.run('extractIdInfo(()=>{})');await tick();
- assert.match(f.elements.get('ocrStatus').textContent,/직접 입력/);assert.equal(f.requests.length,0);assert.equal(f.run('idRecognitionBusy'),false);
+ assert.match(f.elements.get('ocrStatus').textContent,/사진 첨부 완료/);assert.equal(f.requests.length,0);assert.equal(f.run('idRecognitionBusy'),false);
 });
 test('new photo clears old identity, review and signature',()=>{
  const f=fixture();f.seedForm();f.run('signaturePad.clear=()=>{window.cleared=true}');
  f.run('handleUpload({files:[{name:"new.jpg",type:"image/jpeg",size:100}]})');
  assert.equal(f.elements.get('patientName').value,'');assert.equal(f.elements.get('patientBirth').value,'');assert.equal(f.elements.get('patientAddress').value,'');
- assert.equal(f.elements.get('identityReviewed').checked,false);assert.equal(f.context.window.cleared,true);
+assert.equal(f.context.window.cleared,true);
 });
 
 test('deposit warning shares diagnosis sheet and sends only after confirmation',async()=>{

@@ -14,3 +14,19 @@ test('invalid birth is not populated',()=>assert.equal(parse('990230-1******').b
 test('explicit labeled birth works without resident number',()=>assert.equal(parse('생년월일: 1990. 1. 2.').birth,'19900102'));
 test('ambiguous name is left for review',()=>assert.equal(parse('주민등록증\n홍길동\n김철수').name,''));
 test('blank or unrelated text produces no fabricated identity',()=>assert.deepEqual(parse('random unreadable image'),{name:'',birth:'',address:''}));
+
+for(const correctAngle of [0,90,180,270]) test('rotation retry finds synthetic identity at '+correctAngle+' degrees',async()=>{
+ const vm=require('node:vm'),fs=require('node:fs');
+ const calls=[];let closed=0,terminated=0;
+ const worker={setParameters:async()=>{},terminate:async()=>{terminated++;},recognize:async image=>{
+  const angle=image.angle||0;calls.push(angle);
+  return {data:{text:angle===correctAngle?'주민등록증\n홍길동\n900101-1******\n서울특별시 테스트로 1\n2020. 1. 1.':'unreadable'}};
+ }};
+ const ctx={module:{exports:{}},setTimeout,clearTimeout,Tesseract:{createWorker:async()=>worker},
+ createImageBitmap:async()=>({width:120,height:80,close(){closed++;}}),
+ document:{createElement(){const c={};c.getContext=()=>({translate(){},rotate(r){c.angle=Math.round(r*180/Math.PI);},drawImage(){}});return c;}}};
+ vm.runInNewContext(fs.readFileSync(require.resolve('../id-ocr.js'),'utf8'),ctx);
+ const result=await ctx.module.exports.recognize({}).promise;
+ assert.equal(result.name,'홍길동');assert.equal(result.birth,'19900101');
+ assert.equal(calls.at(-1),correctAngle);assert.equal(terminated,1);assert.equal(closed,correctAngle?1:0);
+});

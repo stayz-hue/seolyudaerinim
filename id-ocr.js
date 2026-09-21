@@ -53,7 +53,7 @@
     return library;
   }
   function recognize(file,onProgress) {
-    let worker, stopped=false, timer, rejectStop;
+    let worker, bitmap, stopped=false, timer, rejectStop;
     const stopPromise=new Promise((_,reject)=>{rejectStop=reject;});
     const terminate=()=>{if(worker) Promise.resolve(worker.terminate()).catch(()=>{});};
     const task=(async()=>{
@@ -68,11 +68,35 @@
       });
       if(stopped) {terminate();throw new Error('cancelled');}
       await worker.setParameters({tessedit_pageseg_mode:'11'});
-      const result=await worker.recognize(file);
-      if(stopped) throw new Error('cancelled');
-      return parse(result.data.text);
+      let best={name:'',birth:'',address:''}, bestCount=0;
+      for (const angle of [0,90,180,270]) {
+        if(stopped) throw new Error('cancelled');
+        let input=file, canvas;
+        if(angle) {
+          if(!root.createImageBitmap) break;
+          if(!bitmap) bitmap=await root.createImageBitmap(file);
+          if(stopped) {bitmap.close();bitmap=null;throw new Error('cancelled');}
+          canvas=document.createElement('canvas');
+          canvas.width=angle===180?bitmap.width:bitmap.height;
+          canvas.height=angle===180?bitmap.height:bitmap.width;
+          const ctx=canvas.getContext('2d');
+          ctx.translate(canvas.width/2,canvas.height/2);
+          ctx.rotate(angle*Math.PI/180);
+          ctx.drawImage(bitmap,-bitmap.width/2,-bitmap.height/2);
+          input=canvas;
+        }
+        let result;
+        try { result=await worker.recognize(input); }
+        finally { if(canvas) {canvas.width=0;canvas.height=0;} }
+        if(stopped) throw new Error('cancelled');
+        const parsed=parse(result.data.text);
+        const count=Object.values(parsed).filter(Boolean).length;
+        if(count>bestCount) {best=parsed;bestCount=count;}
+        if(count===3) break;
+      }
+      return best;
     })();
-    const promise=Promise.race([task,stopPromise]).finally(()=>{clearTimeout(timer);terminate();});
+    const promise=Promise.race([task,stopPromise]).finally(()=>{clearTimeout(timer);terminate();if(bitmap){bitmap.close();bitmap=null;}});
     const cancel=()=>{stopped=true;terminate();rejectStop(new Error('cancelled'));};
     timer=setTimeout(cancel,45000);
     return {promise,cancel};
