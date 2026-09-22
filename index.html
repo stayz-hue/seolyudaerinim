@@ -677,7 +677,7 @@ canvas#signaturePad1{
   .fp-total-val{font-size:19px;}
 }
 </style>
-<script src="id-ocr.js" defer></script>
+<script src="id-ocr.js?v=20260922-name-review" defer></script>
 <style>
 #screen2 .fscroll,#screen4 .fscroll{padding-top:12px}
 #screen2 .field{margin-bottom:16px}
@@ -829,7 +829,12 @@ canvas#signaturePad1{
         </div>
 
         <p id="ocrStatus" role="status" aria-live="polite" class="compact-status"></p>
-        <input type="hidden" id="patientName">
+        <div class="field" id="identityNameField" hidden>
+          <label class="field-label" for="patientName">신분증 이름 <span class="req">*</span></label>
+          <input type="text" id="patientName" maxlength="40" autocomplete="off" spellcheck="false" placeholder="신분증에 적힌 이름" oninput="resetIdentityReview()" aria-describedby="identityNameHint">
+          <div id="identityNameHint" style="font-size:13px;color:var(--t3);margin-top:7px;line-height:1.6;">사진의 이름과 비교해줘. 이 이름이 입금자명으로 사용돼.</div>
+          <button type="button" onclick="retryIdRecognition()" style="margin-top:8px;border:0;background:none;color:var(--amber);font:inherit;text-decoration:underline;">사진에서 다시 읽기</button>
+        </div>
         <input type="hidden" id="patientBirth">
         <input type="hidden" id="patientAddress">
           <div class="field">
@@ -1170,6 +1175,7 @@ function validate(step) {
   if (step === 1) return true;
   if (step === 2) {
     if (!validate(5) || !validate(6)) return false;
+    if (!validateIdentityName()) return false;
     return validateContactFields();
   }
   if (step === 3) {
@@ -1190,6 +1196,12 @@ function validate(step) {
         var el2 = document.getElementById('hospital_' + i); if (el2) el2.focus();
         return false;
       }
+      if (hospitalCoords[i-1].manual && !v('hospAddr_' + i).trim()) {
+        alert(i + '번째 병원 주소를 입력해줘.');
+        document.getElementById('hospAddr_' + i).focus();
+        return false;
+      }
+      if (hospitalCoords[i-1].manual) hospitalCoords[i-1].address = v('hospAddr_' + i).trim();
       if (!v('treatPeriod_' + i).trim()) {
         alert(i + '번째 병원 진료 기간을 입력해줘.');
         var el3 = document.getElementById('treatPeriod_' + i); if (el3) el3.focus();
@@ -1400,7 +1412,7 @@ function hospitalBlockHTML(i) {
             <div id="hospBadge_${i}" class="hosp-selected-badge" style="display:none;"></div>
             <div id="hospManualAddr_${i}" class="hosp-manual-addr" style="display:none;">
               <input type="text" id="hospAddr_${i}" placeholder="주소 입력 (예: 서울시 노원구 상계동 1234)" autocomplete="off"
-                     onblur="geocodeAddress(${i})">
+                     oninput="updateManualHospitalAddress(${i})" onblur="geocodeAddress(${i})">
               <div id="hospAddrStatus_${i}" class="hosp-addr-status"></div>
             </div>
           </div>
@@ -1531,7 +1543,7 @@ function searchHospital(query, idx) {
         var div = document.createElement('div');
         div.className = 'hosp-item';
         // 종별 배지 (네이버: "병원>종합병원", 심평원: "상급종합")
-        var badge = '';
+        var category = '';
         if (place.category) {
           var catText = place.category;
           if (catText.includes('>')) {
@@ -1539,12 +1551,29 @@ function searchHospital(query, idx) {
             catText = parts[parts.length - 1].trim();
           }
           if (/상급종합|종합병원|병원|의원|치과|한의원/.test(catText)) {
-            badge = '<span class="hosp-cat-badge">' + catText + '</span>';
+            category = catText;
           }
         }
-        var telLine = place.tel ? '<span class="hosp-item-tel">' + place.tel + '</span>' : '';
-        div.innerHTML = '<div class="hosp-item-name">' + place.name + badge + '</div>'
-          + '<div class="hosp-item-addr">' + place.address + telLine + '</div>';
+        const nameEl = document.createElement('div');
+        nameEl.className = 'hosp-item-name';
+        nameEl.textContent = String(place.name || '');
+        if (category) {
+          const badgeEl = document.createElement('span');
+          badgeEl.className = 'hosp-cat-badge';
+          badgeEl.textContent = category;
+          nameEl.appendChild(badgeEl);
+        }
+        const addressEl = document.createElement('div');
+        addressEl.className = 'hosp-item-addr';
+        addressEl.textContent = String(place.address || '');
+        if (place.tel) {
+          const telEl = document.createElement('span');
+          telEl.className = 'hosp-item-tel';
+          telEl.textContent = String(place.tel);
+          addressEl.appendChild(telEl);
+        }
+        div.appendChild(nameEl);
+        div.appendChild(addressEl);
         div.onclick = function(e) {
           e.stopPropagation();
           selectHospital(idx, {
@@ -1591,7 +1620,7 @@ function manualInput(idx) {
   if (!name) { alert('병원 이름을 먼저 입력해줘.'); return; }
   hospitalCoords[idx - 1] = {
     lat: null, lng: null,
-    name: name, address: '(직접 입력)',
+    name: name, address: v('hospAddr_' + idx).trim(),
     manual: true
   };
   bundleResult = null;
@@ -1608,10 +1637,19 @@ function manualInput(idx) {
 }
 
 // 주소 → 좌표 변환 (카카오 로컬 API via Netlify Function)
+function updateManualHospitalAddress(idx) {
+  hospitalCoords[idx - 1] = {
+    lat: null, lng: null, name: v('hospital_' + idx).trim(),
+    address: v('hospAddr_' + idx).trim(), manual: true
+  };
+  bundleResult = null;
+}
 function geocodeAddress(idx) {
   var addr = (document.getElementById('hospAddr_' + idx) || {}).value || '';
   addr = addr.trim();
+  updateManualHospitalAddress(idx);
   if (!addr) return;
+  const requestedCoords = hospitalCoords[idx - 1];
   var status = document.getElementById('hospAddrStatus_' + idx);
   var addressInput = document.getElementById('hospAddr_' + idx);
   status.textContent = '📍 좌표 확인 중...';
@@ -1619,7 +1657,7 @@ function geocodeAddress(idx) {
   fetch('/.netlify/functions/geocode?address=' + encodeURIComponent(addr))
     .then(function(r) { return r.json(); })
     .then(function(res) {
-      if (document.getElementById('hospAddr_' + idx) !== addressInput || addressInput.value.trim() !== addr) return;
+      if (document.getElementById('hospAddr_' + idx) !== addressInput || addressInput.value.trim() !== addr || hospitalCoords[idx - 1] !== requestedCoords) return;
       if (res.ok && res.lat && res.lng) {
         // 좌표 업데이트
         var coords = hospitalCoords[idx - 1];
@@ -1638,7 +1676,7 @@ function geocodeAddress(idx) {
       }
     })
     .catch(function() {
-      if (document.getElementById('hospAddr_' + idx) !== addressInput || addressInput.value.trim() !== addr) return;
+      if (document.getElementById('hospAddr_' + idx) !== addressInput || addressInput.value.trim() !== addr || hospitalCoords[idx - 1] !== requestedCoords) return;
       status.textContent = '⚠️ 좌표 확인 실패';
       status.style.color = '#c44';
     });
@@ -1779,11 +1817,14 @@ let currentRect = null;
 
 function handleUpload(input) {
   if (!input.files || !input.files[0]) return;
+  if (submissionBusy || submissionComplete) return;
   const selection = ++idCardSelection;
   cancelIdRecognition();
   resetIdentityReview();
   if (signaturePad && typeof signaturePad.clear === 'function') signaturePad.clear();
   ['patientName', 'patientBirth', 'patientAddress'].forEach(function(id) { document.getElementById(id).value = ''; });
+  document.getElementById('identityNameField').hidden = true;
+  document.getElementById('ocrStatus').textContent = '';
   const file = input.files[0];
   idCardFileObj = null;
   idCardLoading = true;
@@ -2021,43 +2062,96 @@ function clearMask() {
    ================================================ */
 let activeIdRecognition = null;
 let idRecognitionBusy = false;
+let identityReviewedName = '';
+let identityReviewedSelection = -1;
+let identityOcrName = '';
+let identityOcrStatus = 'missing';
 function resetIdentityReview() {
-  const el = document.getElementById('identityReviewed');
-  if (el) el.checked = false;
+  identityReviewedName = '';
+  identityReviewedSelection = -1;
+}
+function normalizedIdentityName(value) {
+  const name = String(value || '').normalize('NFKC').replace(/\s+/g, ' ').trim();
+  return /^[가-힣 ]+$/.test(name) ? name.replace(/ /g, '') : name;
+}
+function validIdentityName(value) {
+  const name = normalizedIdentityName(value);
+  if (/^(신청인|신청인이름|고객|고객명|환자|환자명|성명|이름|홍길동예시|확인필요|발급일|발급일자|주소|주민등록증|운전면허증|대한민국)$/.test(name)) return false;
+  return /^[가-힣]{2,10}$/.test(name.replace(/ /g, '')) || /^[A-Za-z][A-Za-z .'-]{1,38}[A-Za-z]$/.test(name);
+}
+function validateIdentityName() {
+  if (idRecognitionBusy) {
+    alert('신분증에서 이름을 읽고 있어. 완료되면 이름을 확인해줘.');
+    return false;
+  }
+  const name = normalizedIdentityName(v('patientName'));
+  if (!validIdentityName(name)) {
+    document.getElementById('identityNameField').hidden = false;
+    alert('신분증에 적힌 이름을 확인해서 입력해줘.');
+    document.getElementById('patientName').focus();
+    return false;
+  }
+  document.getElementById('patientName').value = name;
+  return true;
+}
+function retryIdRecognition() {
+  if (!idCardFileObj || idRecognitionBusy || submissionBusy || submissionComplete) return;
+  ['patientName', 'patientBirth', 'patientAddress'].forEach(function(id) { document.getElementById(id).value = ''; });
+  extractIdInfo(function() {});
 }
 function cancelIdRecognition() {
-  if (activeIdRecognition) activeIdRecognition.cancel();
+  const job = activeIdRecognition;
   activeIdRecognition = null;
   idRecognitionBusy = false;
+  if (job) job.cancel();
 }
 function extractIdInfo(done) {
+  done = typeof done === 'function' ? done : function() {};
   const status = document.getElementById('ocrStatus');
-  if (!idCardFileObj || !window.SeoryuIdOCR) {
-    if (status) status.textContent = '사진 첨부 완료';
+  const field = document.getElementById('identityNameField');
+  const input = document.getElementById('patientName');
+  cancelIdRecognition();
+  resetIdentityReview();
+  identityOcrName = '';
+  identityOcrStatus = 'missing';
+  field.hidden = !idCardFileObj;
+  input.disabled = false;
+  if (!idCardFileObj || !window.SeoryuIdOCR || typeof window.SeoryuIdOCR.recognize !== 'function') {
+    if (status) status.textContent = idCardFileObj ? '이름을 자동으로 읽지 못했어. 사진을 보고 이름을 입력해줘.' : '';
     done(); return;
   }
-  cancelIdRecognition();
   const selection = idCardSelection;
   const fields = ['patientName','patientBirth','patientAddress'];
   const initial = fields.map(v);
-  const job = window.SeoryuIdOCR.recognize(idCardFileObj, function(p) {
-    if (activeIdRecognition === job && status) status.textContent = '신분증 읽는 중 ' + Math.round(p * 100) + '%';
-  });
+  let job;
+  try {
+    job = window.SeoryuIdOCR.recognize(idCardFileObj, function(p) {
+      if (job && activeIdRecognition === job && status) status.textContent = '신분증 이름 확인 중…';
+    });
+    if (!job || !job.promise || typeof job.cancel !== 'function') throw new Error('ocr_unavailable');
+  } catch (err) {
+    if (status) status.textContent = '이름을 자동으로 읽지 못했어. 사진을 보고 이름을 입력해줘.';
+    done(); return;
+  }
   activeIdRecognition = job;
   idRecognitionBusy = true;
+  input.disabled = true;
   if (status) status.textContent = '신분증 읽는 중… 연락처를 입력해 주세요.';
   job.promise.then(function(result) {
     if (selection !== idCardSelection || activeIdRecognition !== job) return;
-    [result.name,result.birth,result.address].forEach(function(value,i) {
+    const name = result.nameStatus !== 'conflict' && validIdentityName(result.name) ? normalizedIdentityName(result.name) : '';
+    identityOcrName = name;
+    identityOcrStatus = result.nameStatus || (name ? 'single' : 'missing');
+    [name,result.birth,result.address].forEach(function(value,i) {
       // Never overwrite edits made while OCR was running.
       if (value && v(fields[i]) === initial[i]) document.getElementById(fields[i]).value = value;
     });
     resetIdentityReview();
-    if (status) status.textContent = '사진 첨부 완료';
+    if (status) status.textContent = name ? '이름을 읽었어. 신분증과 같은지 확인해줘.' : '이름이 또렷하지 않아. 사진을 보고 이름을 입력하거나 사진을 다시 올려줘.';
   }).catch(function() {
-    if (selection === idCardSelection && activeIdRecognition === job && status) status.textContent = '사진 첨부 완료';
+    if (selection === idCardSelection && activeIdRecognition === job && status) status.textContent = '이름을 자동으로 읽지 못했어. 사진을 보고 이름을 입력해줘.';
   }).finally(function() {
-    if (activeIdRecognition === job) { activeIdRecognition = null; idRecognitionBusy = false; }
+    if (activeIdRecognition === job) { activeIdRecognition = null; idRecognitionBusy = false; input.disabled = false; }
     done();
   });
 }
@@ -2167,6 +2261,7 @@ function copyIntakeAccount(button) {
 
 function submitForm(depositConfirmed) {
   if (submissionBusy || submissionComplete) return;
+  if (!validate(4)) { goToStep(4); return; }
   if (!validate(2)) { goToStep(2); return; }
   if (!validateContactFields()) { goToStep(2); return; }
   if (deliveryMethod === 'post' && !v('postAddress').trim()) { alert('등기 받을 주소를 입력해줘.'); goToStep(4); return; }
@@ -2186,19 +2281,31 @@ function submitForm(depositConfirmed) {
     alert('서명을 해줘.');
     return;
   }
-  if (depositConfirmed !== true) {
-    openWarningModal(function() { submitForm(true); }, {
-      title: '입금자명은 신청인 이름으로 해 주세요',
-      detail: v('patientName').trim()
+  const confirmedName = normalizedIdentityName(v('patientName'));
+  if (depositConfirmed !== true || identityReviewedName !== confirmedName || identityReviewedSelection !== idCardSelection) {
+    const reviewSelection = idCardSelection;
+    openWarningModal(function() {
+      if (reviewSelection !== idCardSelection || confirmedName !== normalizedIdentityName(v('patientName')) || idRecognitionBusy) {
+        resetIdentityReview();
+        alert('사진이나 이름이 바뀌었어. 이름을 다시 확인해줘.');
+        return;
+      }
+      identityReviewedName = confirmedName;
+      identityReviewedSelection = reviewSelection;
+      submitForm(true);
+    }, {
+      title: '신분증 이름과 같은지 확인해줘. 입금도 이 이름으로 해줘.',
+      detail: confirmedName,
+      confirmLabel: '이름이 맞아, 신청할게 →'
     });
     return;
   }
   cancelIdRecognition();
   var orderId = submissionOrderId || ('SRY' + Date.now());
   submissionOrderId = orderId;
-  var depositorName = v('patientName').trim();
+  var depositorName = confirmedName;
   var fd = {
-    patientName:    v('patientName'),
+    patientName:    confirmedName,
     patientBirth:   v('patientBirth'),
     patientPhone:   v('patientPhone'),
     patientAddress: v('patientAddress'),
@@ -2239,7 +2346,7 @@ function submitForm(depositConfirmed) {
     document.getElementById('success').classList.remove('show');
     // Do not navigate through initSig(): the customer's existing signature stays intact.
     document.getElementById('screen2').classList.add('active');
-    currentStep = 6;
+    currentStep = 2;
     var message = errorMessage || (uncertain ? '접수 결과를 확인하지 못했어.' : '신분증 사진을 읽지 못해 전송하지 않았어. 사진을 다시 선택해줘.');
     if (submissionUncertain) message += '\n\n이전 신청은 이미 접수됐을 수 있으니 다시 신청하기 전에 문의해줘.\n접수번호: ' + orderId;
     alert(message);
@@ -2273,6 +2380,13 @@ function submitForm(depositConfirmed) {
       treatmentPeriod: fd.treatmentPeriod,
       hospitals: fd.hospitals,
       depositorName: depositorName,
+      identityReview: {
+        version: 1,
+        name: confirmedName,
+        confirmed: true,
+        source: identityOcrName === confirmedName ? 'ocr_reviewed' : 'manual_reviewed',
+        ocrStatus: identityOcrStatus
+      },
       hospitalCoords: hospitalCoords.map(function(c){ return c ? {lat:c.lat,lng:c.lng,name:c.name,address:c.address} : null; }),
       bundleResult: bundleResult,
       extraNote: buildExtra()
@@ -2296,6 +2410,10 @@ function submitForm(depositConfirmed) {
         return;
       }
       if (!res || res.ok !== true || res.orderId !== orderId || typeof res.receiptNo !== 'string' || !res.receiptNo.trim() || !Number.isSafeInteger(res.baseAmount) || res.baseAmount <= 0 || !['waiting_payment', 'paid', 'delivered', 'cancelled'].includes(res.state)) throw new Error('Unconfirmed receipt');
+      // A server that echoes names must agree with the reviewed submission.
+      ['patientName', 'depositorName'].forEach(function(key) {
+        if (Object.prototype.hasOwnProperty.call(res, key) && normalizedIdentityName(res[key]) !== confirmedName) throw new Error('Identity mismatch');
+      });
       submissionComplete = true;
       submissionBusy = false;
       submissionUncertain = false;
@@ -2304,7 +2422,7 @@ function submitForm(depositConfirmed) {
       document.getElementById('receiptNum').textContent = res.orderId;
       document.getElementById('receiptMeta').textContent = res.receiptNo !== res.orderId ? '접수번호: ' + res.receiptNo : '';
       document.getElementById('successFee').textContent = res.baseAmount.toLocaleString() + '원';
-      document.getElementById('successDepositor').textContent = depositorName || '신청인 이름';
+      document.getElementById('successDepositor').textContent = confirmedName;
       document.getElementById('successDelivery').textContent = fd.deliveryMethod === 'email' ? '서류 수령: ' + fd.email : '서류 수령: 빠른 등기';
       const waiting = res.state === 'waiting_payment';
       document.getElementById('successBank').style.display = waiting ? '' : 'none';
@@ -2523,7 +2641,7 @@ function openWarningModal(onConfirm, copy) {
           진단서 최초발급이면 대행 불가!
         </div>
         <div id="warningModalDetail" style="display:none;text-align:center;font-size:22px;font-weight:800;color:var(--t1);margin:-12px 0 24px;overflow-wrap:anywhere;"></div>
-        <button onclick="confirmWarning()" style="width:100%;padding:20px;background:var(--btn);border:none;border-radius:var(--r);font-family:inherit;font-size:20.25px;font-weight:700;letter-spacing:-.01em;color:var(--btn-txt);cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 4px 14px rgba(122,85,48,.28),0 1px 3px rgba(0,0,0,.18);margin-bottom:10px;">
+        <button id="warningModalConfirm" onclick="confirmWarning()" style="width:100%;padding:20px;background:var(--btn);border:none;border-radius:var(--r);font-family:inherit;font-size:20.25px;font-weight:700;letter-spacing:-.01em;color:var(--btn-txt);cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 4px 14px rgba(122,85,48,.28),0 1px 3px rgba(0,0,0,.18);margin-bottom:10px;">
           확인했어, 계속 진행할게 →
         </button>
         <button onclick="closeWarningModal()" style="width:100%;padding:16px;background:none;border:none;font-family:inherit;font-size:18.9px;font-weight:600;color:var(--t3);cursor:pointer;">
@@ -2534,6 +2652,7 @@ function openWarningModal(onConfirm, copy) {
   }
   const sheet = document.getElementById('warningModalSheet');
   document.getElementById('warningModalTitle').textContent = copy ? copy.title : '진단서 최초발급이면 대행 불가!';
+  document.getElementById('warningModalConfirm').textContent = copy && copy.confirmLabel || '확인했어, 계속 진행할게 →';
   const detail = document.getElementById('warningModalDetail');
   detail.textContent = copy && copy.detail || '';
   detail.style.display = detail.textContent ? 'block' : 'none';
