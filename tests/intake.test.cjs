@@ -100,13 +100,13 @@ function fixture(options = {}) {
   function set(id, value) { elements.get(id).value = value; }
   function seedForm() {
     run('buildHospitalBlocks()');
-    set('patientName', '테스트 신청인'); set('patientBirth', '19900101');
+    set('patientName', '홍가람'); set('patientBirth', '19900101');
     set('patientPhone', '010-0000-0000'); set('patientAddress', '테스트 주소');
     set('email', 'test@example.com');
     set('hospital_1', '테스트 병원'); set('treatPeriod_1', '2025'); set('reason_1', '보험사 제출'); set('docEtc_1', '진료기록');
 
     elements.get('screen2').classList.add('active');
-    run("idCardFileObj = {name:'test.jpg',type:'image/jpeg',size:100}; signaturePad={isEmpty:()=>false,toDataURL:()=> 'data:image/png;base64,c2ln'}; currentStep=2; hospitalCoords=[{name:'테스트 병원',address:'병원 주소',lat:1,lng:2}]");
+    run("idCardFileObj = {name:'test.jpg',type:'image/jpeg',size:100}; signaturePad={isEmpty:()=>false,toDataURL:()=> 'data:image/png;base64,c2ln'}; currentStep=2; hospitalCoords=[{name:'테스트 병원',address:'병원 주소',lat:1,lng:2}]; identityReviewedName='홍가람';identityReviewedSelection=idCardSelection");
   }
   return {context, run, set, elements, htmlWrites, alerts, confirms, requests, readers, images, blobs, timers, buttons, prompts,
     seedForm, setReadMode(value) { readMode = value; },
@@ -120,7 +120,7 @@ function assertRecovered(f) {
   assert.equal(f.elements.get('loading').classList.contains('show'), false);
   assert.equal(f.elements.get('success').classList.contains('show'), false);
   assert.equal(f.elements.get('screen2').classList.contains('active'), true);
-  assert.equal(f.elements.get('patientName').value, '테스트 신청인');
+  assert.equal(f.elements.get('patientName').value, '홍가람');
   assert.equal(f.elements.get('email').value, 'test@example.com');
   assert.equal(f.run('signaturePad.toDataURL()'), 'data:image/png;base64,c2ln');
   assert.equal(f.run('submissionBusy'), false);
@@ -364,9 +364,9 @@ test('depositor is always applicant and a reminder precedes submission',async()=
   assert.equal(f.elements.has('depositorName'),false);
   assert.equal(f.elements.has('diffDepositor'),false);
   f.run('submitForm(true)');await tick();
-  assert.equal(f.requests[0].payload.depositorName,'테스트 신청인');
+  assert.equal(f.requests[0].payload.depositorName,'홍가람');
   assert.equal(f.alerts.length,0);
-  assert.equal(f.elements.get('successDepositor').textContent,'테스트 신청인');
+  assert.equal(f.elements.get('successDepositor').textContent,'홍가람');
 });
 
 test('network failure retains single contact, email, physical-delivery address and signature',async()=>{
@@ -407,10 +407,9 @@ test('two-step flow fixes insurance purpose even if hidden fields change',async(
  assert.ok(!html.includes('id="screen6"'));
  assert.ok(!html.includes('병원 서류 발급 비용은 별도로 문자 안내'));
 });
-test('missing identity does not block intake and is sent as blank',async()=>{
+test('missing identity blocks intake before network submission',async()=>{
  const f=fixture();f.seedForm();['patientName','patientBirth','patientAddress'].forEach(id=>f.set(id,''));
- f.run('submitForm(true)');await tick();assert.equal(f.requests.length,1);
- const body=f.requests[0].payload;assert.equal(body.patientName,'');assert.equal(body.patientBirth,'');assert.equal(body.patientAddress,'');
+ f.run('submitForm(true)');await tick();assert.equal(f.requests.length,0);assert.match(f.alerts.at(-1),/신분증/);
 });
 test('OCR fills fields but preserves typing during recognition',async()=>{
  const f=fixture();f.seedForm();let resolve;
@@ -429,14 +428,14 @@ test('cancelled recognition cannot overwrite manual input',async()=>{
  f.context.window.SeoryuIdOCR={recognize:()=>({promise:new Promise(r=>resolve=r),cancel(){cancelled=true;}})};
  f.run('extractIdInfo(()=>{});cancelIdRecognition()');
  resolve({name:'오래된값',birth:'20000101',address:'오래된주소'});await tick();
- assert.equal(cancelled,true);assert.equal(f.elements.get('patientName').value,'테스트 신청인');
+ assert.equal(cancelled,true);assert.equal(f.elements.get('patientName').value,'홍가람');
  assert.equal(f.run('idRecognitionBusy'),false);
 });
 test('failed recognition falls back to manual without network submission',async()=>{
  const f=fixture();f.seedForm();
  f.context.window.SeoryuIdOCR={recognize:()=>({promise:Promise.reject(new Error('offline')),cancel(){}})};
  f.run('extractIdInfo(()=>{})');await tick();
- assert.match(f.elements.get('ocrStatus').textContent,/사진 첨부 완료/);assert.equal(f.requests.length,0);assert.equal(f.run('idRecognitionBusy'),false);
+ assert.match(f.elements.get('ocrStatus').textContent,/자동으로 읽지 못했어/);assert.equal(f.requests.length,0);assert.equal(f.run('idRecognitionBusy'),false);
 });
 test('new photo clears old identity, review and signature',()=>{
  const f=fixture();f.seedForm();f.run('signaturePad.clear=()=>{window.cleared=true}');
@@ -448,8 +447,8 @@ assert.equal(f.context.window.cleared,true);
 test('deposit warning shares diagnosis sheet and sends only after confirmation',async()=>{
  const f=fixture();f.seedForm();f.run('submitForm()');
  assert.equal(f.requests.length,0);assert.equal(f.alerts.length,0);
- assert.match(f.elements.get('warningModalTitle').textContent,/입금자명/);
- assert.equal(f.elements.get('warningModalDetail').textContent,'테스트 신청인');
+ assert.match(f.elements.get('warningModalTitle').textContent,/신분증 이름/);
+ assert.equal(f.elements.get('warningModalDetail').textContent,'홍가람');
  f.run('confirmWarning()');
  for(const timer of [...f.timers.values()])if(timer.delay===100)timer.callback();
  await tick();assert.equal(f.requests.length,1);

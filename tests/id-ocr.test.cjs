@@ -1,7 +1,8 @@
 'use strict';
 const test=require('node:test');
 const assert=require('node:assert/strict');
-const {parse}=require('../id-ocr.js');
+const ocr=require('../id-ocr.js');
+const parse=text=>{const {name,birth,address}=ocr.parse(text);return {name,birth,address};};
 test('reads synthetic resident card and excludes issuer and issue date',()=>{
   assert.deepEqual(parse('주민등록증\n홍길동 (洪吉童)\n900101-1******\n서울특별시 중구 테스트로 123\n101동 202호\n2020. 1. 1.\n서울특별시 중구청장'),{name:'홍길동',birth:'19900101',address:'서울특별시 중구 테스트로 123 101동 202호'});
 });
