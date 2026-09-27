@@ -27,7 +27,6 @@
 <meta name="description" content="의무기록 발급 대행 · 서울/경기">
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/4.1.7/signature_pad.umd.js"></script>
-<!-- 카카오 로컬 검색: GAS proxy 방식 (SDK 불필요) -->
 <style>
 
 /* ============================================
@@ -450,22 +449,12 @@ textarea{resize:none;min-height:76px;}
 .hosp-item-tel{margin-left:8px;color:var(--t3);font-size:14.18px;}
 .hosp-manual-addr{margin-top:6px;}
 .hosp-manual-addr input{padding:13px 14px;border:1.5px dashed var(--amber);border-radius:var(--r);background:var(--amber-pale);}
-.hosp-addr-status{font-size:14.85px;color:var(--t3);margin-top:4px;min-height:20px;}
 .hosp-selected-badge{
   display:inline-flex;align-items:center;gap:4px;
   font-size:14.18px;font-weight:600;color:var(--ok);background:var(--ok-pale);
   padding:5px 10px;border-radius:20px;margin-top:6px;
 }
 .hosp-searching{padding:14px;text-align:center;font-size:16.2px;color:var(--t3);}
-/* 묶음 판정 배너 */
-.bundle-banner{
-  background:var(--amber-pale);border:.5px solid rgba(182,141,97,.3);
-  border-radius:var(--r-sm);padding:10px 14px;margin-top:4px;
-  font-size:12px;color:var(--amber);font-weight:600;
-  display:none;
-}
-.bundle-banner.show{display:block;}
-.bundle-banner.individual{background:var(--danger-pale);border-color:rgba(184,64,64,.15);color:var(--danger);}
 .doc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
 .doc-chip{
   display:flex;align-items:center;gap:8px;
@@ -1059,15 +1048,11 @@ let submissionUncertain = false;
 let deliveryMethod = 'email'; // email | post
 const URGENT_MAX  = 3;
 
-// ── 병원 좌표 + 묶음 판정 ──
+// 병원 검색 또는 직접 입력에서 받은 이름과 주소를 보관한다.
 let hospitalCoords = []; // [{lat, lng, name, address}] 인덱스=병원순서(0-based)
-let bundleResult   = null; // {isBundled, routeMinutes, failed}
-let kakaoReady     = true;  // GAS proxy 방식 — 항상 준비됨
 let searchTimers   = {};   // debounce용
 
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwcOjgmyqA4D7PP1AzYp05sNLsBWcdqbnqcKh9acXwJNeqzaS6e3Il08DzTPxz41R77/exec';
-
-// ── 카카오 로컬 검색: GAS proxy (SDK 불필요) ──
 
 /* ================================================
    입금자명 토글
@@ -1124,27 +1109,6 @@ function nextStep(from) {
         goToStep(from + 1);
       }
     };
-
-    // Step 4→5: 특급 병원 2곳+ → 묶음 판정 실행
-    if (from === 4) {
-      var urgCnt = urgentFlags.filter(function(f){return f;}).length;
-      if (urgCnt >= 2) {
-        var urgentHospitals = [];
-        for (var i = 0; i < hospitalCount; i++) {
-          if (urgentFlags[i] && hospitalCoords[i] && hospitalCoords[i].lat) {
-            urgentHospitals.push(hospitalCoords[i]);
-          }
-        }
-        if (urgentHospitals.length >= 2) {
-          // 좌표 있는 특급 병원 2곳+ → API 호출
-          checkBundleRoute(urgentHospitals, proceedNext);
-          return;
-        }
-        // 좌표 없는 특급 병원 → fallback (개별 특급)
-        bundleResult = { isBundled: false, routeMinutes: -1, failed: true };
-        refreshFeePreview();
-      }
-    }
 
     proceedNext();
   } catch (e) {
@@ -1293,7 +1257,6 @@ function adjustCount(d) {
   urgentFlags = urgentFlags.slice(0, hospitalCount);
   while (hospitalCoords.length < hospitalCount) hospitalCoords.push(null);
   hospitalCoords = hospitalCoords.slice(0, hospitalCount);
-  bundleResult = null;
   document.getElementById('countDisplay').textContent = hospitalCount;
   buildUrgentToggles();
   refreshFeePreview();
@@ -1330,7 +1293,6 @@ function toggleUrgent(i) {
   const turningOn = !urgentFlags[i];
   if (turningOn && urgentFlags.filter(f=>f).length >= URGENT_MAX) return;
   urgentFlags[i] = turningOn;
-  bundleResult = null; // 특급 변경 시 재판정 필요
   buildUrgentToggles();
   refreshFeePreview();
 }
@@ -1339,27 +1301,16 @@ function calcFee() {
   const base    = 25000 * hospitalCount;
   const addHosp = 0;
   const urgCnt  = urgentFlags.filter(f=>f).length;
-  let addUrg;
-  let isBundled = false;
-  if (urgCnt >= 2 && bundleResult && bundleResult.isBundled) {
-    // 묶음특급: 몇 개든 1건으로 취급 = +2만
-    addUrg = 20000;
-    isBundled = true;
-  } else {
-    // 개별특급: 각각 +2만
-    addUrg = urgCnt * 20000;
-  }
+  const addUrg = urgCnt * 20000;
   const addPost = deliveryMethod === 'post' ? 20000 : 0;
-  return { base, addHosp, addUrg, urgCnt, addPost, isBundled, total: base + addHosp + addUrg + addPost };
+  return { base, addHosp, addUrg, urgCnt, addPost, total: base + addHosp + addUrg + addPost };
 }
 
 function refreshFeePreview() {
   const f = calcFee();
   const rows = document.getElementById('feeRows');
   let html = `<div class="fp-row"><span class="fp-key">대행 — 병원 ${hospitalCount}곳</span><span class="fp-val">${f.base.toLocaleString()}원</span></div>`;
-  if (f.urgCnt && f.isBundled) {
-    html += `<div class="fp-row"><span class="fp-key">🚗 묶음 특급 (${f.urgCnt}개 병원)</span><span class="fp-val" style="color:#3D7A52;">+20,000원</span></div>`;
-  } else if (f.addUrg) {
+  if (f.addUrg) {
     html += `<div class="fp-row"><span class="fp-key">당일 특급 ${f.urgCnt}개 병원</span><span class="fp-val" style="color:#C8B478;">+${f.addUrg.toLocaleString()}원</span></div>`;
   }
   if (f.addPost) html += `<div class="fp-row"><span class="fp-key">당일 빠른 등기 발송</span><span class="fp-val">+20,000원</span></div>`;
@@ -1412,8 +1363,7 @@ function hospitalBlockHTML(i) {
             <div id="hospBadge_${i}" class="hosp-selected-badge" style="display:none;"></div>
             <div id="hospManualAddr_${i}" class="hosp-manual-addr" style="display:none;">
               <input type="text" id="hospAddr_${i}" placeholder="주소 입력 (예: 서울시 노원구 상계동 1234)" autocomplete="off"
-                     oninput="updateManualHospitalAddress(${i})" onblur="geocodeAddress(${i})">
-              <div id="hospAddrStatus_${i}" class="hosp-addr-status"></div>
+                     oninput="updateManualHospitalAddress(${i})">
             </div>
           </div>
           <div class="field">
@@ -1441,7 +1391,6 @@ function buildHospitalBlocks() {
   wrap.innerHTML = '';
   while (hospitalCoords.length < hospitalCount) hospitalCoords.push(null);
   hospitalCoords = hospitalCoords.slice(0, hospitalCount);
-  bundleResult = null;
   for (let i = 1; i <= hospitalCount; i++) appendHospitalBlock(i);
   document.addEventListener('click', closeAllDropdowns);
 }
@@ -1451,7 +1400,6 @@ function addHospital() {
   hospitalCount++;
   hospitalCoords.push(null);
   urgentFlags.push(false);
-  bundleResult = null;
   appendHospitalBlock(hospitalCount);
   refreshFeePreview();
 }
@@ -1468,9 +1416,7 @@ function removeHospital(index) {
       coords: hospitalCoords[i - 1], urgent: urgentFlags[i - 1],
       badge: document.getElementById('hospBadge_' + i).textContent,
       badgeDisplay: document.getElementById('hospBadge_' + i).style.display,
-      manualDisplay: document.getElementById('hospManualAddr_' + i).style.display,
-      status: document.getElementById('hospAddrStatus_' + i).textContent,
-      statusColor: document.getElementById('hospAddrStatus_' + i).style.color
+      manualDisplay: document.getElementById('hospManualAddr_' + i).style.display
     });
   }
   searchTimers = {};
@@ -1487,9 +1433,6 @@ function removeHospital(index) {
     badge.textContent = item.badge;
     badge.style.display = item.badgeDisplay;
     document.getElementById('hospManualAddr_' + i).style.display = item.manualDisplay;
-    const status = document.getElementById('hospAddrStatus_' + i);
-    status.textContent = item.status;
-    status.style.color = item.statusColor;
   });
   document.getElementById('countDisplay').textContent = hospitalCount;
   refreshFeePreview();
@@ -1498,17 +1441,16 @@ function removeHospital(index) {
 function removeLastHospital() { removeHospital(hospitalCount); }
 
 /* ================================================
-   병원 검색 — 카카오 로컬 SDK
+   병원 검색 — 심평원 병원정보서비스
    ================================================ */
 function onHospInput(idx) {
   const q = v('hospital_' + idx).trim();
-  // 직접 입력 시 좌표 초기화
+  // 검색어가 바뀌면 이전 선택을 해제한다.
   hospitalCoords[idx - 1] = null;
-  bundleResult = null;
   var badge = document.getElementById('hospBadge_' + idx);
   if (badge) { badge.style.display = 'none'; badge.textContent = ''; }
 
-  if (!kakaoReady || q.length < 2) {
+  if (q.length < 2) {
     closeDropdown(idx);
     return;
   }
@@ -1518,7 +1460,7 @@ function onHospInput(idx) {
 
 function onHospFocus(idx) {
   var q = v('hospital_' + idx).trim();
-  if (kakaoReady && q.length >= 2) searchHospital(q, idx);
+  if (q.length >= 2) searchHospital(q, idx);
 }
 
 function searchHospital(query, idx) {
@@ -1607,12 +1549,11 @@ function searchHospital(query, idx) {
 function selectHospital(idx, place) {
   document.getElementById('hospital_' + idx).value = place.place_name;
   hospitalCoords[idx - 1] = {
-    lat: parseFloat(place.y),
-    lng: parseFloat(place.x),
+    lat: place.y ? parseFloat(place.y) : null,
+    lng: place.x ? parseFloat(place.x) : null,
     name: place.place_name,
     address: place.road_address_name || place.address_name
   };
-  bundleResult = null; // 변경 시 재판정 필요
   var badge = document.getElementById('hospBadge_' + idx);
   badge.textContent = '📍 ' + (place.road_address_name || place.address_name);
   badge.style.display = 'inline-flex';
@@ -1632,7 +1573,6 @@ function manualInput(idx) {
     name: name, address: v('hospAddr_' + idx).trim(),
     manual: true
   };
-  bundleResult = null;
   var badge = document.getElementById('hospBadge_' + idx);
   badge.textContent = '✏️ 직접 입력';
   badge.style.display = 'inline-flex';
@@ -1645,50 +1585,11 @@ function manualInput(idx) {
   closeDropdown(idx);
 }
 
-// 주소 → 좌표 변환 (카카오 로컬 API via Netlify Function)
 function updateManualHospitalAddress(idx) {
   hospitalCoords[idx - 1] = {
     lat: null, lng: null, name: v('hospital_' + idx).trim(),
     address: v('hospAddr_' + idx).trim(), manual: true
   };
-  bundleResult = null;
-}
-function geocodeAddress(idx) {
-  var addr = (document.getElementById('hospAddr_' + idx) || {}).value || '';
-  addr = addr.trim();
-  updateManualHospitalAddress(idx);
-  if (!addr) return;
-  const requestedCoords = hospitalCoords[idx - 1];
-  var status = document.getElementById('hospAddrStatus_' + idx);
-  var addressInput = document.getElementById('hospAddr_' + idx);
-  status.textContent = '📍 좌표 확인 중...';
-
-  fetch('/.netlify/functions/geocode?address=' + encodeURIComponent(addr))
-    .then(function(r) { return r.json(); })
-    .then(function(res) {
-      if (document.getElementById('hospAddr_' + idx) !== addressInput || addressInput.value.trim() !== addr || hospitalCoords[idx - 1] !== requestedCoords) return;
-      if (res.ok && res.lat && res.lng) {
-        // 좌표 업데이트
-        var coords = hospitalCoords[idx - 1];
-        if (coords) {
-          coords.lat = parseFloat(res.lat);
-          coords.lng = parseFloat(res.lng);
-          coords.address = res.address || addr;
-        }
-        var badge = document.getElementById('hospBadge_' + idx);
-        badge.textContent = '📍 ' + (res.address || addr);
-        status.textContent = '✅ 좌표 확인 완료 — 묶음판정 가능';
-        status.style.color = '#3D7A52';
-      } else {
-        status.textContent = '⚠️ 좌표 변환 실패 — 주소를 더 정확하게 입력해줘';
-        status.style.color = '#c44';
-      }
-    })
-    .catch(function() {
-      if (document.getElementById('hospAddr_' + idx) !== addressInput || addressInput.value.trim() !== addr || hospitalCoords[idx - 1] !== requestedCoords) return;
-      status.textContent = '⚠️ 좌표 확인 실패';
-      status.style.color = '#c44';
-    });
 }
 
 function closeDropdown(idx) {
@@ -1700,83 +1601,6 @@ function closeAllDropdowns(e) {
     var wrap = document.getElementById('hospWrap_' + i);
     if (wrap && !wrap.contains(e.target)) closeDropdown(i);
   }
-}
-
-/* ================================================
-   묶음 판정 — GAS proxy → 카카오 모빌리티
-   ================================================ */
-function checkBundleRoute(urgentHospitals, callback) {
-  // urgentHospitals = [{lat, lng, name}, ...] 좌표가 있는 특급 병원만
-  if (urgentHospitals.length < 2) { bundleResult = null; callback(); return; }
-
-  // 판정 로딩 표시
-  showRouteLoading(true);
-
-  var coords = urgentHospitals.map(function(h) { return h.lat + ',' + h.lng; }).join(';');
-  var url = '/.netlify/functions/route?coords=' + encodeURIComponent(coords);
-
-  fetch(url)
-    .then(function(r) { return r.json(); })
-    .then(function(res) {
-      if (res.ok) {
-        var isBundled = res.maxMinutes <= 30;
-        bundleResult = { isBundled: isBundled, routeMinutes: res.maxMinutes, failed: false };
-        // 판정 결과 표시 (1.5초 후 다음 step)
-        showRouteResult(isBundled, res.maxMinutes, function() {
-          refreshFeePreview();
-          callback();
-        });
-      } else {
-        bundleResult = { isBundled: false, routeMinutes: -1, failed: true };
-        showRouteLoading(false);
-        refreshFeePreview();
-        callback();
-      }
-    })
-    .catch(function() {
-      showRouteLoading(false);
-      bundleResult = { isBundled: false, routeMinutes: -1, failed: true };
-      refreshFeePreview();
-      callback();
-    });
-}
-
-function showRouteLoading(show) {
-  var el = document.getElementById('routeLoadingOverlay');
-  if (show) {
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'routeLoadingOverlay';
-      el.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(28,20,9,.4);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;';
-      el.innerHTML = '<div style="background:var(--base);border-radius:var(--r);padding:28px 36px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.2);"><div style="font-size:28px;margin-bottom:12px;">🚗</div><div style="font-size:14px;font-weight:600;color:var(--t1);margin-bottom:6px;">병원 간 이동시간 확인 중...</div><div style="font-size:12px;color:var(--t3);">묶음 특급 가능 여부를 판정하고 있어</div></div>';
-      document.body.appendChild(el);
-    }
-    el.style.display = 'flex';
-  } else {
-    if (el) el.style.display = 'none';
-  }
-}
-
-function showRouteResult(isBundled, minutes, callback) {
-  var el = document.getElementById('routeLoadingOverlay');
-  if (!el) { callback(); return; }
-  if (isBundled) {
-    el.querySelector('div > div').innerHTML =
-      '<div style="font-size:32px;margin-bottom:12px;">🎉</div>'
-      + '<div style="font-size:15px;font-weight:700;color:#3D7A52;margin-bottom:6px;">묶음 특급 가능!</div>'
-      + '<div style="font-size:13px;color:var(--t2);">병원 간 이동시간 <b>' + minutes + '분</b> (30분 이내)</div>'
-      + '<div style="font-size:12px;color:var(--t3);margin-top:8px;">특급 요금이 묶음 할인 적용돼</div>';
-  } else {
-    el.querySelector('div > div').innerHTML =
-      '<div style="font-size:32px;margin-bottom:12px;">📍</div>'
-      + '<div style="font-size:15px;font-weight:700;color:var(--t1);margin-bottom:6px;">개별 특급 적용</div>'
-      + '<div style="font-size:13px;color:var(--t2);">병원 간 이동시간 <b>' + minutes + '분</b> (30분 초과)</div>'
-      + '<div style="font-size:12px;color:var(--t3);margin-top:8px;">병원별 각각 특급 요금이 적용돼</div>';
-  }
-  setTimeout(function() {
-    el.style.display = 'none';
-    callback();
-  }, 1800);
 }
 
 function toggleDoc(el, event) {
@@ -2397,7 +2221,6 @@ function submitForm(depositConfirmed) {
         ocrStatus: identityOcrStatus
       },
       hospitalCoords: hospitalCoords.map(function(c){ return c ? {lat:c.lat,lng:c.lng,name:c.name,address:c.address} : null; }),
-      bundleResult: bundleResult,
       extraNote: buildExtra()
     };
     const controller = new AbortController();
