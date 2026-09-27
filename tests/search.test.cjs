@@ -66,3 +66,19 @@ test('exact hospital name comes before a containing branch name', async () => {
   const places = JSON.parse((await run('서울대학교병원')).body).places;
   assert.equal(places[0].name, '서울대학교병원');
 });
+
+test('common short names resolve without calling an AI service', async () => {
+  process.env.HIRA_API_KEY = 'test-key';
+  process.env.ANTHROPIC_API_KEY = 'test-anthropic-key';
+  const calls = [];
+  global.fetch = async url => {
+    calls.push(url);
+    return { ok: true, json: async () => hira({
+      yadmNm: '서울대학교병원', addr: '서울특별시 종로구', XPos: 127, YPos: 37
+    }) };
+  };
+  assert.equal(JSON.parse((await run('서울대병원')).body).places[0].name, '서울대학교병원');
+  assert.equal(calls.length, 1);
+  assert.ok(calls[0].includes(encodeURIComponent('서울대학교병원')));
+  delete process.env.ANTHROPIC_API_KEY;
+});
