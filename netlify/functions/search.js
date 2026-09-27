@@ -77,11 +77,12 @@ function toPlace(item) {
   const lng = Number(item.XPos);
   const name = String(item.yadmNm || '').trim();
   const address = String(item.addr || '').trim();
-  // 좌표 없는 검색결과는 선택 시 경로 계산을 망가뜨리므로 직접 입력으로 안내한다.
-  if (!name || !address || !Number.isFinite(lat) || !Number.isFinite(lng)
-      || lat < 33 || lat > 39 || lng < 124 || lng > 132) return null;
+  if (!name || !address) return null;
+  const validCoords = item.YPos != null && item.YPos !== '' && item.XPos != null && item.XPos !== ''
+    && Number.isFinite(lat) && Number.isFinite(lng)
+    && lat >= 33 && lat <= 39 && lng >= 124 && lng <= 132;
   return {
-    name, address, lat: String(lat), lng: String(lng),
+    name, address, lat: validCoords ? String(lat) : null, lng: validCoords ? String(lng) : null,
     tel: String(item.telno || ''), category: String(item.clCdNm || ''), source: 'hira'
   };
 }
