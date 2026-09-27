@@ -239,11 +239,43 @@ test('removing a middle hospital preserves later fields, coordinates and urgency
   f.run('removeHospital(2);removeHospital(1)');assert.equal(f.run('hospitalCount'),1);assert.equal(f.elements.get('hospital_1').value,'hospital_1');
 });
 
-test('an address response for a deleted hospital cannot modify the replacement at that index',async()=>{
-  let resolve;const f=fixture({fetch:()=>new Promise(done=>{resolve=done})});f.seedForm();f.run('addHospital();addHospital()');
-  f.set('hospAddr_2','삭제할 주소');f.run("hospitalCoords=[{name:'one'},{name:'two'},{name:'three',address:'보존할 주소'}];geocodeAddress(2);removeHospital(2)");
-  resolve({json:()=>Promise.resolve({ok:true,lat:99,lng:99,address:'늦은 이전 응답'})});await tick();
-  assert.equal(f.run('hospitalCoords[1].address'),'보존할 주소');
+test('manual hospital address is retained without a map lookup and survives removing another hospital',()=>{
+  const f=fixture();f.seedForm();f.run('addHospital();addHospital()');
+  f.set('hospital_3','수기 병원');f.run('manualInput(3)');f.set('hospAddr_3','서울특별시 테스트로 3');
+  f.run('updateManualHospitalAddress(3);removeHospital(2)');
+  assert.equal(f.run('hospitalCoords[1].address'),'서울특별시 테스트로 3');
+  assert.equal(f.elements.get('hospAddr_2').value,'서울특별시 테스트로 3');
+  assert.equal(f.requests.length,0);
+});
+
+test('retired bundle pricing and route are absent; per-hospital urgent and postal fees remain',()=>{
+  const f=fixture();f.seedForm();f.run('addHospital()');
+  f.set('hospital_2','두 번째 병원');f.set('treatPeriod_2','2026');f.set('docEtc_2','진료기록');
+  f.run("hospitalCoords[1]={name:'두 번째 병원',address:'서울특별시 테스트로 2',lat:37,lng:127};urgentFlags=[true,true]");
+  assert.equal(f.run('calcFee().total'),90000); // 병원 2곳 50,000 + 특급 2곳 40,000
+  f.run('nextStep(4)');
+  assert.equal(f.requests.length,0);
+  assert.equal(f.elements.has('routeLoadingOverlay'),false);
+  assert.ok(!f.htmlWrites.some(value=>value.includes('묶음 특급')));
+  f.run('addHospital();urgentFlags=[true,true,true]');
+  assert.equal(f.run('calcFee().total'),135000);
+  f.run("setDelivery('post')");
+  assert.equal(f.run('calcFee().total'),155000);
+});
+
+test('official search result without coordinates and direct-entry address remain valid in submission',async()=>{
+  const f=fixture();f.seedForm();
+  f.run("selectHospital(1,{place_name:'주소만 있는 병원',y:null,x:null,address_name:'서울특별시 테스트로 1'})");
+  assert.equal(f.run('hospitalCoords[0].lat'),null);
+  assert.equal(f.run('hospitalCoords[0].address'),'서울특별시 테스트로 1');
+  assert.equal(f.run('validate(4)'),true);
+  f.set('hospital_1','수기 병원');f.run('manualInput(1)');f.set('hospAddr_1','경기도 테스트로 2');
+  f.run('updateManualHospitalAddress(1)');
+  assert.equal(f.run('validate(4)'),true);
+  assert.equal(f.run('hospitalCoords[0].address'),'경기도 테스트로 2');
+  f.run('submitForm(true)');await tick();
+  assert.equal(f.requests[0].payload.hospitalCoords[0].address,'경기도 테스트로 2');
+  assert.equal(Object.hasOwn(f.requests[0].payload,'bundleResult'),false);
 });
 
 test('confirmation renders customer-entered HTML as plain text',()=>{
