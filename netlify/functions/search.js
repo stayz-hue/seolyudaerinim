@@ -1,85 +1,42 @@
-// netlify/functions/search.js
-// ══════════════════════════════════════════════════════════════
-// 병원 검색 — 3단 안전망 (오차 0건 목표)
-//
-// ① Claude 정규화  (줄임말→정식명, 오타 교정)
-// ② 네이버 지역검색 (메인 — 좌표 정밀, 주소/이름 전부)
-// ③ 심평원 병원정보서비스 (fallback — 신규/마이너 병원 누락 방지)
-//
-// 좌표 원칙: 네이버 우선. 심평원 좌표는 최후 수단(네이버 미등록 시만).
-// 심평원 역할: 병원명 확보 + 신규병원 좌표 fallback
-// ══════════════════════════════════════════════════════════════
+// 병원 검색: 건강보험심사평가원 병원정보서비스.
+// 네이버 검색결과의 가공·혼합 및 개발자센터 검색 API 의존을 제거한다.
+// 신청 화면 응답 스키마 {ok, places:[{name,address,lat,lng,tel,category,source}]} 유지.
 
 exports.handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store'
   };
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers, body: '' };
-  }
-
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers, body: '' };
+  if (event.httpMethod !== 'GET') return resp(headers, { ok: false, error: '허용되지 않은 요청' }, 405);
   const query = (event.queryStringParameters?.q || '').trim();
-  if (!query || query.length < 2) {
-    return resp(headers, { ok: false, error: '검색어 2자 이상' });
-  }
+  if (query.length < 2) return resp(headers, { ok: false, error: '검색어 2자 이상' });
+  if (query.length > 80) return resp(headers, { ok: false, error: '검색어가 너무 깁니다' });
+  if (!process.env.HIRA_API_KEY) return resp(headers, { ok: false, error: '병원 검색 설정을 확인해 주세요' }, 503);
 
   try {
-    // ── Step 1: Claude 정규화 ──
     let normalized = query;
     try {
       normalized = await normalizeHospitalName(query);
-      if (normalized !== query) console.log(`[정규화] "${query}" → "${normalized}"`);
-    } catch (e) {
-      console.log(`[정규화 실패] 원본 사용: ${e.message}`);
+    } catch (err) {
+      console.log('[병원명 정규화 실패]', err.message);
     }
-
-    // ── Step 2: 네이버 검색 (메인) ──
-    let result = await searchNaver(normalized);
-
-    // 정규화 결과로 못 찾으면 → 원본으로 재시도
-    if (empty(result) && normalized !== query) {
-      console.log(`[네이버 재검색] 원본 "${query}"`);
-      result = await searchNaver(query);
-    }
-
-    // ── Step 3: 네이버 성공 → 끝 ──
-    if (!empty(result)) {
-      return resp(headers, result);
-    }
-
-    // ── Step 4: 네이버 실패 → 심평원 fallback ──
-    console.log(`[심평원 진입] 네이버 결과 없음`);
-    let hiraPlaces = await searchHIRA(normalized);
-
-    if ((!hiraPlaces || hiraPlaces.length === 0) && normalized !== query) {
-      hiraPlaces = await searchHIRA(query);
-    }
-
-    if (!hiraPlaces || hiraPlaces.length === 0) {
-      return resp(headers, { ok: true, places: [] });
-    }
-
-    // ── Step 5: 심평원 병원명으로 네이버 좌표 업그레이드 ──
-    const upgraded = await upgradeWithNaver(hiraPlaces);
-    return resp(headers, { ok: true, places: upgraded });
-
+    let places = await searchHIRA(normalized);
+    if (!places.length && normalized !== query) places = await searchHIRA(query);
+    return resp(headers, { ok: true, places });
   } catch (err) {
-    console.error('[search] 에러:', err.message);
-    return resp(headers, { ok: false, error: err.message });
+    console.error('[병원 검색 실패]', err.message);
+    return resp(headers, { ok: false, error: '병원 검색에 실패했습니다' }, 503);
   }
 };
 
+function resp(headers, data, statusCode = 200) {
+  return { statusCode, headers, body: JSON.stringify(data) };
+}
 
-// ═══════════ 유틸 ═══════════
-function empty(r) { return !r || !r.ok || !r.places || r.places.length === 0; }
-function resp(h, data) { return { statusCode: 200, headers: h, body: JSON.stringify(data) }; }
-
-
-// ══════════════════════════════════════════════════
-// ① Claude API 병원명 정규화
-// ══════════════════════════════════════════════════
+// Claude는 고객이 입력한 검색어만 정규화하며, 병원 API 결과를 전달하지 않는다.
 async function normalizeHospitalName(query) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return query;
@@ -120,174 +77,33 @@ async function normalizeHospitalName(query) {
 }
 
 
-// ══════════════════════════════════════════════════
-// ② 네이버 지역검색 (메인 — 좌표 정밀)
-// ══════════════════════════════════════════════════
-async function searchNaver(query) {
-  const cid = process.env.NAVER_CLIENT_ID;
-  const csc = process.env.NAVER_CLIENT_SECRET;
-  if (!cid || !csc) return { ok: false, error: 'NAVER키 없음' };
-
-  const q = query;
-
-  const res = await fetch(
-    'https://openapi.naver.com/v1/search/local.json?query='
-    + encodeURIComponent(q) + '&display=5',
-    { headers: { 'X-Naver-Client-Id': cid, 'X-Naver-Client-Secret': csc } }
-  );
-  if (!res.ok) return { ok: false, error: 'NAVER_' + res.status };
-
-  const body = await res.json();
-  const items = body.items || [];
-
-  // 의료기관 필터 (정신병원 제외)
-  let filtered = items.filter(d => {
-    const cat = (d.category || '');
-    const name = (d.title || '').replace(/<[^>]*>/g, '');
-    if (name.includes('정신') || cat.includes('정신')) return false;
-    return cat.includes('병원') || cat.includes('의원') || cat.includes('의료')
-      || cat.includes('클리닉') || cat.includes('치과') || cat.includes('한의')
-      || name.includes('병원') || name.includes('의원') || name.includes('클리닉');
-  });
-  if (filtered.length === 0) filtered = items;
-
-  const places = filtered.slice(0, 6).map(d => {
-    let lng = parseFloat(d.mapx);
-    let lat = parseFloat(d.mapy);
-    if (lng > 1000) lng /= 10000000;
-    if (lat > 1000) lat /= 10000000;
-    return {
-      name: d.title.replace(/<[^>]*>/g, ''),
-      address: d.roadAddress || d.address || '',
-      lat: String(lat),
-      lng: String(lng),
-      tel: d.telephone || '',
-      category: d.category || '',
-      source: 'naver'
-    };
-  });
-
-  return { ok: true, places };
-}
-
-
-// ══════════════════════════════════════════════════
-// ③ 심평원 병원정보서비스 (fallback)
-//    공공데이터포털: apis.data.go.kr/B551182/hospInfoServicev2
-//    역할: 병원명 확보 + 신규병원 좌표(fallback)
-// ══════════════════════════════════════════════════
+// 심평원 병원정보서비스. 운영 프리뷰에서 JSON, resultCode 00, 좌표를 확인했다.
 async function searchHIRA(query) {
-  const key = process.env.HIRA_API_KEY;
-  if (!key) {
-    console.log('[심평원] HIRA_API_KEY 미설정 — 스킵');
-    return [];
-  }
-
-  const url = 'http://apis.data.go.kr/B551182/hospInfoServicev2/getHospBasisList'
-    + '?serviceKey=' + encodeURIComponent(key)
+  const url = 'https://apis.data.go.kr/B551182/hospInfoServicev2/getHospBasisList'
+    + '?serviceKey=' + encodeURIComponent(process.env.HIRA_API_KEY)
     + '&yadmNm=' + encodeURIComponent(query)
-    + '&numOfRows=10&pageNo=1&_type=json';
-
-  try {
-    const res = await fetch(url);
-    if (!res.ok) {
-      console.log(`[심평원] HTTP ${res.status}`);
-      return [];
-    }
-
-    const data = await res.json();
-    const items = data?.response?.body?.items?.item;
-    if (!items) return [];
-
-    // 공공API: 단건이면 객체, 복수건이면 배열
-    const list = Array.isArray(items) ? items : [items];
-
-    return list
-      .filter(d => !(d.yadmNm || '').includes('정신') && !(d.clCdNm || '').includes('정신'))
-      .slice(0, 6)
-      .map(d => ({
-        name: d.yadmNm || '',
-        address: d.addr || '',
-        lat: d.YPos ? String(d.YPos) : '',
-        lng: d.XPos ? String(d.XPos) : '',
-        tel: d.telno || '',
-        category: d.clCdNm || '',  // 상급종합, 종합병원, 병원, 의원
-        source: 'hira'
-      }));
-
-  } catch (err) {
-    console.log(`[심평원] 에러: ${err.message}`);
-    return [];
+    + '&numOfRows=20&pageNo=1&_type=json';
+  const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+  if (!res.ok) throw new Error('HIRA HTTP ' + res.status);
+  const data = await res.json();
+  if (data?.response?.header?.resultCode !== '00') {
+    throw new Error('HIRA resultCode ' + String(data?.response?.header?.resultCode || 'unknown'));
   }
+  const items = data?.response?.body?.items?.item;
+  const list = Array.isArray(items) ? items : items ? [items] : [];
+  return list.map(toPlace).filter(Boolean).slice(0, 6);
 }
 
-
-// ══════════════════════════════════════════════════
-// 심평원 결과 → 네이버 좌표 업그레이드
-// 심평원 병원명(정식명)으로 네이버 재검색 → 좌표 교체
-// 네이버 못 찾으면 심평원 좌표 유지 (최후 수단)
-// ══════════════════════════════════════════════════
-async function upgradeWithNaver(hiraPlaces) {
-  const results = [];
-
-  for (const hp of hiraPlaces) {
-    try {
-      const naverResult = await searchNaver(hp.name);
-
-      if (!empty(naverResult)) {
-        const match = bestMatch(hp.name, naverResult.places);
-        if (match) {
-          console.log(`[좌표 업그레이드] "${hp.name}" → 네이버 좌표`);
-          results.push({
-            name: hp.name,                        // 심평원 공식명 유지
-            address: match.address || hp.address,  // 네이버 주소 우선
-            lat: match.lat,                        // ★ 네이버 좌표
-            lng: match.lng,                        // ★ 네이버 좌표
-            tel: hp.tel || match.tel,
-            category: hp.category,                 // 심평원 종별 유지
-            source: 'hira+naver'
-          });
-          continue;
-        }
-      }
-
-      // 네이버 매칭 실패 → 심평원 좌표 그대로 (좌표 있을 때만)
-      if (hp.lat && hp.lng) {
-        console.log(`[좌표 fallback] "${hp.name}" → 심평원 좌표`);
-        results.push(hp);
-      }
-
-    } catch (err) {
-      console.log(`[업그레이드 실패] "${hp.name}": ${err.message}`);
-      if (hp.lat && hp.lng) results.push(hp);
-    }
-  }
-
-  return results;
-}
-
-
-// ══════════════════════════════════════════════════
-// 이름 유사도 매칭
-// ══════════════════════════════════════════════════
-function bestMatch(hiraName, naverPlaces) {
-  if (!naverPlaces?.length) return null;
-
-  const norm = s => (s || '').replace(/[\s\(\)·\-]/g, '');
-  const target = norm(hiraName);
-
-  let best = null;
-  let bestScore = 0;
-
-  for (const np of naverPlaces) {
-    const c = norm(np.name);
-    if (c === target) return np;  // 정확 일치 → 즉시 반환
-
-    if (c.includes(target) || target.includes(c)) {
-      const score = Math.min(c.length, target.length) / Math.max(c.length, target.length);
-      if (score > bestScore) { bestScore = score; best = np; }
-    }
-  }
-
-  return bestScore >= 0.6 ? best : null;
+function toPlace(item) {
+  const lat = Number(item.YPos);
+  const lng = Number(item.XPos);
+  const name = String(item.yadmNm || '').trim();
+  const address = String(item.addr || '').trim();
+  // 좌표 없는 검색결과는 선택 시 경로 계산을 망가뜨리므로 직접 입력으로 안내한다.
+  if (!name || !address || !Number.isFinite(lat) || !Number.isFinite(lng)
+      || lat < 33 || lat > 39 || lng < 124 || lng > 132) return null;
+  return {
+    name, address, lat: String(lat), lng: String(lng),
+    tel: String(item.telno || ''), category: String(item.clCdNm || ''), source: 'hira'
+  };
 }
