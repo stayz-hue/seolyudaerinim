@@ -11,9 +11,15 @@ exports.handler = async () => {
         + '&numOfRows=2&pageNo=1&_type=json';
       const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
       const body = await res.text();
+      const parsed = body.trimStart().startsWith('{') ? JSON.parse(body) : {};
+      const item = parsed?.response?.body?.items?.item;
+      const first = Array.isArray(item) ? item[0] : item;
       state.hira = { configured: true, status: res.status,
         type: body.trimStart().startsWith('<') ? 'xml' : 'json',
-        matches: (body.match(/<item>|"yadmNm"/g) || []).length };
+        resultCode: parsed?.response?.header?.resultCode,
+        count: parsed?.response?.body?.totalCount || 0,
+        example: first ? { name: first.yadmNm, address: first.addr,
+          lat: first.YPos, lng: first.XPos } : null };
     } catch (err) { state.hira = { configured: true, error: err.name }; }
   }
   const kakao = process.env.KAKAO_REST_KEY;
