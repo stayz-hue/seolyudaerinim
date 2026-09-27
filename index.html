@@ -1526,7 +1526,7 @@ function searchHospital(query, idx) {
   drop.innerHTML = '<div class="hosp-searching">🔍 검색 중...</div>';
   drop.classList.add('show');
 
-  // Netlify Function — Claude 정규화 + 네이버 지역검색
+  // Netlify Function — 심평원 병원정보 검색
   var url = '/.netlify/functions/search?q=' + encodeURIComponent(query);
   fetch(url)
     .then(function(r) { return r.json(); })
@@ -1542,7 +1542,7 @@ function searchHospital(query, idx) {
       res.places.forEach(function(place) {
         var div = document.createElement('div');
         div.className = 'hosp-item';
-        // 종별 배지 (네이버: "병원>종합병원", 심평원: "상급종합")
+        // 심평원 종별 배지
         var category = '';
         if (place.category) {
           var catText = place.category;
@@ -1586,6 +1586,15 @@ function searchHospital(query, idx) {
         };
         drop.appendChild(div);
       });
+      var manual = document.createElement('div');
+      manual.className = 'hosp-item hosp-manual';
+      manual.textContent = '검색에 없어요 · 직접 입력';
+      manual.onclick = function() { manualInput(idx); };
+      drop.appendChild(manual);
+      var source = document.createElement('div');
+      source.className = 'hosp-searching';
+      source.textContent = '병원 정보: 건강보험심사평가원 공공데이터';
+      drop.appendChild(source);
     })
     .catch(function() {
       if (document.getElementById('hospDrop_' + idx) !== drop || v('hospital_' + idx).trim() !== query) return;
