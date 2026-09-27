@@ -91,7 +91,13 @@ async function searchHIRA(query) {
   }
   const items = data?.response?.body?.items?.item;
   const list = Array.isArray(items) ? items : items ? [items] : [];
-  return list.map(toPlace).filter(Boolean).slice(0, 6);
+  const places = list.map(toPlace).filter(Boolean);
+  const key = query.replace(/\s+/g, '');
+  const rank = name => {
+    const value = name.replace(/\s+/g, '');
+    return value === key ? 3 : value.endsWith(key) ? 2 : value.includes(key) ? 1 : 0;
+  };
+  return places.sort((a, b) => rank(b.name) - rank(a.name)).slice(0, 6);
 }
 
 function toPlace(item) {
