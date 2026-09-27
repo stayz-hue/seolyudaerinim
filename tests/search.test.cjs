@@ -32,7 +32,7 @@ test('real HIRA JSON shape preserves hospital coordinates and never calls Naver'
   assert.ok(!calls[0].includes('naver.com'));
 });
 
-test('missing and invalid coordinates are excluded so UI offers direct input', async () => {
+test('hospital names and addresses remain selectable even without valid coordinates', async () => {
   process.env.HIRA_API_KEY = 'test-key';
   global.fetch = async () => ({ ok: true, json: async () => hira([
     { yadmNm: '주소만 있는 병원', addr: '서울시', XPos: '', YPos: '' },
@@ -40,7 +40,8 @@ test('missing and invalid coordinates are excluded so UI offers direct input', a
     { yadmNm: '정상 병원', addr: '서울시', XPos: 127, YPos: 37 }
   ]) });
   const places = JSON.parse((await run('병원')).body).places;
-  assert.deepEqual(places.map(x => x.name), ['정상 병원']);
+  assert.deepEqual(places.map(x => x.name), ['주소만 있는 병원', '외국 좌표 병원', '정상 병원']);
+  assert.deepEqual(places.map(x => [x.lat, x.lng]), [[null, null], [null, null], ['37', '127']]);
 });
 
 test('missing credentials and provider failure fail safely', async () => {
