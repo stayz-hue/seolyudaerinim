@@ -107,10 +107,10 @@ test('two matching reads of the same orientation produce review-required agreeme
   assert.equal(result.name, '홍길동');
   assert.equal(result.nameStatus, 'agreement');
   assert.equal(result.reviewRequired, true);
-  assert.deepEqual(state.parameters, ['11','6']);
-  assert.equal(result.evidence.length, 2);
+  assert.deepEqual(state.parameters, ['11','6','11','6','11','6','11','6']);
+  assert.equal(result.evidence.length, 8);
   assert.equal(result.evidence[0].angle, 0);
-  assert.equal(state.canvases.length, 0);
+  assert.equal(state.canvases.length, 3);
   assert.equal(state.terminated, 1);
   job.cancel();
   assert.equal(state.terminated, 1);
@@ -147,14 +147,14 @@ test('matching names with conflicting ancillary fields keep those fields empty',
   assert.equal(result.address, '');
 });
 
-test('rotates only after both original readings fail and frees canvas/bitmap', async () => {
+test('checks every rotation and frees canvas/bitmap', async () => {
   const {api, state} = mockRuntime(['','',identity('홍길동'),identity('홍길동')]);
   const result = await api.recognize({}).promise;
   assert.equal(result.name, '홍길동');
-  assert.equal(state.calls.length, 4);
+  assert.equal(state.calls.length, 8);
   assert.equal(result.evidence[2].angle, 90);
   assert.equal(state.closed, 1);
-  assert.equal(state.canvases.length, 1);
+  assert.equal(state.canvases.length, 3);
   assert.equal(state.canvases[0].width, 0);
   assert.equal(state.canvases[0].height, 0);
   assert.equal(state.terminated, 1);
@@ -262,7 +262,7 @@ test('failed library download rejects cleanly and permits a later retry', async 
   const scripts = [];
   const {api, state, worker, sandbox} = mockRuntime([identity('홍길동'),identity('홍길동')], {
     Tesseract:undefined,
-    document:{createElement:() => ({remove(){}}),head:{appendChild:script => scripts.push(script)}}
+    document:{createElement:tag => tag === 'canvas' ? {getContext:()=>({translate(){},rotate(){},drawImage(){}})} : {remove(){}},head:{appendChild:script => scripts.push(script)}}
   });
   const failed = api.recognize({});
   scripts[0].onerror();
@@ -280,7 +280,7 @@ test('hung library download times out, removes its script, and allows a successf
   let removed = 0;
   const {api, state, worker, sandbox} = mockRuntime([identity('홍길동'),identity('홍길동')], {
     Tesseract:undefined,
-    document:{createElement:() => ({remove(){removed++;}}),head:{appendChild:script => scripts.push(script)}}
+    document:{createElement:tag => tag === 'canvas' ? {getContext:()=>({translate(){},rotate(){},drawImage(){}})} : {remove(){removed++;}},head:{appendChild:script => scripts.push(script)}}
   });
   const hung = api.recognize({});
   const staleLoad = scripts[0].onload;
@@ -310,4 +310,69 @@ test('timeout rejects a hung OCR task and terminates the worker once', async () 
   assert.equal(state.terminated, 1);
   late.resolve({data:{text:identity('홍길동')}});
   await tick();
+});
+
+test('a plausible early name cannot hide a conflicting upright reading', async () => {
+  const {api,state} = mockRuntime(['성명: 김철수','',identity('홍길동'),identity('홍길동')]);
+  const result = await api.recognize({}).promise;
+  assert.equal(state.calls.length,8);
+  assert.equal(result.nameStatus,'conflict');
+  assert.equal(result.name,'');assert.equal(result.birth,'');assert.equal(result.address,'');
+});
+
+test('a damaged title can corroborate the exact anchored name in the same orientation', async () => {
+  const {api} = mockRuntime([identity('홍길동'),'즈미드로즈\n홍 길 동\n880305-1******\n서 울 특별시 강남구 테스트로 10\n2026. 1. 1.\n서 울 특별시 강남구청장']);
+  const result = await api.recognize({}).promise;
+  assert.equal(result.nameStatus,'agreement');assert.equal(result.name,'홍길동');
+  assert.equal(result.birth,'19880305');assert.equal(result.address,'서울특별시 강남구 테스트로 10');
+});
+
+test('an unanchored reading at another orientation cannot supply identity fields', async () => {
+  const {api} = mockRuntime(['성명: 홍길동','','홍길동\n990101-1******\n서울특별시 다른로 12','']);
+  const result = await api.recognize({}).promise;
+  assert.equal(result.nameStatus,'single');assert.equal(result.birth,'');assert.equal(result.address,'');
+});
+
+test('unrelated dates and addresses remain empty when there is no anchored name', async () => {
+  const {api} = mockRuntime(['880305-1******\n서울특별시 테스트로 10']);
+  const result = await api.recognize({}).promise;
+  assert.equal(result.nameStatus,'missing');assert.equal(result.birth,'');assert.equal(result.address,'');
+});
+
+test('spaced regions and issuers are handled without inventing date digits', () => {
+  const p=parser.parse('주민등록증\n홍길동\n900101-1#¥*xxx\n서 울 특별시 중구 검증로 123\n101 동 202 호\n서 울 특별시 중 구 청 장');
+  assert.equal(p.name,'홍길동');assert.equal(p.birth,'19900101');
+  assert.equal(p.address,'서울특별시 중구 검증로 123 101동 202호');
+  assert.equal(parser.parse('성명: 홍길동\n9O0101-1******').birth,'');
+});
+
+test('image element fallback checks all rotations and revokes its object URL', async () => {
+  let revoked=0,images=0;
+  class Image {constructor(){this.width=100;this.height=60;images++;}set src(value){if(value)queueMicrotask(()=>this.onload&&this.onload());}}
+  const {api,state}=mockRuntime(['','',identity('홍길동'),identity('홍길동')],{
+    createImageBitmap:undefined,Image,URL:{createObjectURL:()=> 'blob:test',revokeObjectURL:()=>revoked++}
+  });
+  const result=await api.recognize({}).promise;
+  assert.equal(result.name,'홍길동');assert.equal(state.calls.length,8);assert.equal(images,1);assert.equal(revoked,1);
+});
+
+test('cancellation during image fallback decoding revokes the pending URL', async () => {
+  let revoked=0;
+  class Image {set src(value){this.value=value;}}
+  const {api,state}=mockRuntime(['',''],{createImageBitmap:undefined,Image,URL:{createObjectURL:()=> 'blob:test',revokeObjectURL:()=>revoked++}});
+  const job=api.recognize({});await tick();job.cancel();
+  await assert.rejects(job.promise,/cancelled/);await tick();assert.equal(revoked,1);assert.equal(state.terminated,1);
+});
+
+test('large phone photos are bounded before every OCR pass',async()=>{
+ const {api,worker}=mockRuntime([],{createImageBitmap:async()=>({width:6000,height:4000,close(){}})});
+ const dimensions=[];worker.recognize=async input=>{dimensions.push([input.width,input.height]);return {data:{text:identity('홍길동')}};};
+ const result=await api.recognize({}).promise;
+ assert.equal(result.name,'홍길동');assert.equal(dimensions.length,8);
+ assert.deepEqual(dimensions,[[2400,1600],[2400,1600],[1600,2400],[1600,2400],[2400,1600],[2400,1600],[1600,2400],[1600,2400]]);
+});
+
+test('merged masking marks do not erase an exactly read date and century',()=>{
+ for(const suffix of ['1*','1****','1**~'])assert.equal(parser.parse('900101-'+suffix).birth,'19900101');
+ for(const value of ['900101-*******','900101-1234','9001071-1******','9O0101-1*'])assert.equal(parser.parse(value).birth,'',value);
 });

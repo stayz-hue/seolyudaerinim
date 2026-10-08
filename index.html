@@ -1017,6 +1017,7 @@ let urgentFlags   = [false];
 let urgentSoldOut = false;
 let signaturePad  = null;
 let idCardFileObj = null;
+let idCardOcrFileObj = null;
 let idCardSelection = 0;
 let idCardLoading = false;
 let submissionBusy = false;
@@ -1698,6 +1699,7 @@ function handleUpload(input) {
   syncIdentityDisplay();
   const file = input.files[0];
   idCardFileObj = null;
+  idCardOcrFileObj = null;
   idCardLoading = true;
   const area = document.getElementById('uploadArea');
   if (area) area.classList.remove('has-file');
@@ -1709,6 +1711,7 @@ function handleUpload(input) {
   function fail() {
     if (selection !== idCardSelection) return;
     idCardFileObj = null;
+    idCardOcrFileObj = null;
     idCardLoading = false;
     maskImg = null;
     input.value = '';
@@ -1720,6 +1723,8 @@ function handleUpload(input) {
   function accept(accepted, img) {
     if (selection !== idCardSelection) return;
     idCardFileObj = accepted;
+    // OCR reads the original pixels; the smaller copy is only for submission.
+    idCardOcrFileObj = file;
     idCardLoading = false;
     maskImg = img;
     if (area) area.classList.add('has-file');
@@ -1913,6 +1918,7 @@ function exportMasked() {
     if (!blob || selection !== idCardSelection || idCardLoading) return;
     const file = new File([blob], 'id_masked.jpg', {type:'image/jpeg'});
     idCardFileObj = file;
+    idCardOcrFileObj = file;
   }, 'image/jpeg', 0.92);
 }
 
@@ -1998,7 +2004,7 @@ function extractIdInfo(done) {
   const initial = fields.map(v);
   let job;
   try {
-    job = window.SeoryuIdOCR.recognize(idCardFileObj, function(p) {
+    job = window.SeoryuIdOCR.recognize(idCardOcrFileObj || idCardFileObj, function(p) {
       if (job && activeIdRecognition === job && status) status.textContent = '신분증 이름 확인 중…';
     });
     if (!job || !job.promise || typeof job.cancel !== 'function') throw new Error('ocr_unavailable');

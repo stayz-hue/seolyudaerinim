@@ -28,6 +28,12 @@
     const found = unique(values);
     return found.length === 1 ? found[0] : '';
   }
+  function addressLine(value) {
+    return String(value || '').replace(/^주소[ \t]*[:：]?[ \t]*/, '')
+      .replace(/^서\s*울\s*특\s*별\s*시/, '서울특별시')
+      .replace(/^경\s*기\s*도/, '경기도')
+      .replace(/(\d)[ \t]+(동|호)(?=[ \t]|$)/g, '$1$2');
+  }
   function isAddressOrIssuer(value) {
     const compact = normalizeName(value);
     return REGION.test(compact) || /주소|거주지|발급|청장|경찰청|구청|시장|군수|시청|공화국|면허|등록|적성검사|갱신|주민번호|생년월일|신청인|본인|도로명|일반|보통|대형|소형|원동기|장기등기증/.test(compact);
@@ -49,7 +55,10 @@
     const births = [];
     // The first digit AFTER the dash establishes the century. Six digits alone
     // (or a completely masked suffix) deliberately cannot establish a birthday.
-    const rrnPattern = /(?:^|[^\d])(\d{2})(\d{2})(\d{2})[ \t]*[-–][ \t]*([1-4])(?:[\d*●•xX][ \t]*){6}(?!\d)/g;
+    // OCR may merge a run of masking marks into fewer marks. The six date
+    // digits and the century digit must still be read exactly; truncated
+    // numeric suffixes and a masked century are never used to guess a date.
+    const rrnPattern = /(?:^|[^\d])(\d{2})(\d{2})(\d{2})[ \t]*[-–][ \t]*([1-4])(?:(?:[\d*●•xX#¥][ \t]*){6}|(?:[*●•xX#¥~][ \t]*){1,6})(?![\d*●•xX#¥~])/g;
     for (const rrn of joined.matchAll(rrnPattern)) births.push(date((+rrn[4] <= 2 ? '19' : '20') + rrn[1], rrn[2], rrn[3]));
     const labeledDates = /생[ \t]*년[ \t]*월[ \t]*일[ \t]*[:：]?[ \t]*((?:19|20)\d{2})[.년/ -]+(\d{1,2})[.월/ -]+(\d{1,2})/g;
     for (const value of joined.matchAll(labeledDates)) births.push(date(value[1], value[2], value[3]));
@@ -65,7 +74,7 @@
     for (let i = 0; i < lines.length; i++) {
       if (!TITLE.test(lines[i])) continue;
       for (let j = i + 1; j < Math.min(lines.length, i + 6); j++) {
-        if (/^주소|^생[ \t]*년[ \t]*월[ \t]*일|^\d{6}[ \t]*[-–]|발급|적성검사|갱신/.test(lines[j]) || REGION.test(lines[j])) break;
+        if (/^주소|^생[ \t]*년[ \t]*월[ \t]*일|^\d{6}[ \t]*[-–]|발급|적성검사|갱신/.test(lines[j]) || REGION.test(normalizeName(lines[j]))) break;
         if (LABEL.test(lines[j])) continue;
         const name = nameOnLine(lines[j]);
         if (name) named.push({name, source:'title'});
@@ -75,14 +84,14 @@
     const name = candidates.length === 1 ? candidates[0] : '';
     const nameStatus = candidates.length > 1 ? 'conflict' : name ? 'single' : 'missing';
 
-    const start = lines.findIndex(line => REGION.test(line.replace(/^주소[ \t]*[:：]?[ \t]*/, '')) && !/(?:청장|시장|구청장|군수|경찰청)[ \t]*$/.test(line));
+    const start = lines.findIndex(line => REGION.test(normalizeName(addressLine(line))) && !/(?:청장|시장|구청장|군수|경찰청)$/.test(normalizeName(line)));
     if (start >= 0) {
       const pieces = [];
       for (let i = start; i < Math.min(lines.length, start + 4); i++) {
         const line = lines[i];
-        if (/(?:청장|시장|구청장|군수|경찰청)[ \t]*$/.test(line) || /^\d{4}[.년/ -]/.test(line) || /^\d{6}[ \t]*[-–]/.test(line) || /발급|적성검사|갱신|면허번호/.test(line) || TITLE.test(line) || LABEL.test(line)) break;
-        if (i > start && REGION.test(line.replace(/^주소[ \t]*[:：]?[ \t]*/, ''))) break;
-        pieces.push(line.replace(/^주소[ \t]*[:：]?[ \t]*/, ''));
+        if (/(?:청장|시장|구청장|군수|경찰청)$/.test(normalizeName(line)) || /^\d{4}[.년/ -]/.test(line) || /^\d{6}[ \t]*[-–]/.test(line) || /발급|적성검사|갱신|면허번호/.test(line) || TITLE.test(line) || LABEL.test(line)) break;
+        if (i > start && REGION.test(normalizeName(addressLine(line)))) break;
+        pieces.push(addressLine(line));
       }
       address = pieces.join(' ').trim();
       if (!/\d/.test(address)) address = '';
@@ -119,7 +128,7 @@
     return library;
   }
   function recognize(file, onProgress) {
-    let worker, terminatedWorker, bitmap, stopped = false, finished = false, timer, rejectStop;
+    let worker, terminatedWorker, bitmap, cancelDecode, stopped = false, finished = false, timer, rejectStop;
     const stopPromise = new Promise((_, reject) => { rejectStop = reject; });
     const terminate = () => {
       if (!worker || terminatedWorker === worker) return;
@@ -136,44 +145,62 @@
     const stop = reason => {
       if (finished || stopped) return;
       stopped = true;
+      if (cancelDecode) cancelDecode();
       terminate();
       closeBitmap();
       rejectStop(new Error(reason));
     };
+    const decode = async () => {
+      if (root.createImageBitmap) {
+        try { return await root.createImageBitmap(file); }
+        catch (error) { if (!root.Image || !root.URL) throw error; }
+      }
+      check();
+      if (!root.Image || !root.URL || !root.URL.createObjectURL) return null;
+      return new Promise((resolve, reject) => {
+        const image = new root.Image(), url = root.URL.createObjectURL(file);
+        const clear = () => { image.onload = image.onerror = null; root.URL.revokeObjectURL(url); cancelDecode = null; };
+        cancelDecode = () => { clear(); image.src = ''; reject(new Error('cancelled')); };
+        image.onload = () => { clear(); image.close = () => { image.src = ''; }; resolve(image); };
+        image.onerror = () => { clear(); reject(new Error('ocr_image_unavailable')); };
+        image.src = url;
+      });
+    };
     const task = (async () => {
       const lib = await load();
       check();
-      worker = await lib.createWorker('kor+eng', 1, {
+      worker = await lib.createWorker('kor', 1, {
         logger: message => { if (!stopped && !finished && onProgress && message.status === 'recognizing text') onProgress(message.progress); },
         workerPath:'https://cdn.jsdelivr.net/npm/tesseract.js@6.0.1/dist/worker.min.js',
-        corePath:'https://cdn.jsdelivr.net/npm/tesseract.js-core@6.0.0',
-        langPath:'https://tessdata.projectnaptha.com/4.0.0',
+        corePath:'https://cdn.jsdelivr.net/npm/tesseract.js-core@6.1.2',
+        langPath:'https://tessdata.projectnaptha.com/4.0.0_best',
+        cachePath:'seoryu-id-kor-best-v1',
         cacheMethod:'write'
       });
       if (stopped) { terminate(); check(); }
+      const decoded = await decode();
+      if (stopped) { if (decoded) { try { decoded.close(); } catch (_) {} } check(); }
+      bitmap = decoded;
+      // Keep more detail than the submission thumbnail, but bound WASM/canvas
+      // memory for full-resolution phone photos in every orientation.
+      const scale = bitmap ? Math.min(1, 2400 / Math.max(bitmap.width, bitmap.height)) : 1;
       const observations = [];
       for (const angle of [0, 90, 180, 270]) {
         check();
         let input = file, canvas;
         try {
-          if (angle) {
-            if (!root.createImageBitmap) break;
-            if (!bitmap) {
-              const decoded = await root.createImageBitmap(file);
-              if (stopped) { try { decoded.close(); } catch (_) {} check(); }
-              bitmap = decoded;
-            }
+          if (angle && !bitmap) break;
+          if (bitmap && (angle || scale < 1)) {
             canvas = root.document.createElement('canvas');
-            canvas.width = angle === 180 ? bitmap.width : bitmap.height;
-            canvas.height = angle === 180 ? bitmap.height : bitmap.width;
+            canvas.width = Math.max(1, Math.round((angle % 180 ? bitmap.height : bitmap.width) * scale));
+            canvas.height = Math.max(1, Math.round((angle % 180 ? bitmap.width : bitmap.height) * scale));
             const ctx = canvas.getContext('2d');
             if (!ctx) throw new Error('ocr_canvas_unavailable');
             ctx.translate(canvas.width / 2, canvas.height / 2);
             ctx.rotate(angle * Math.PI / 180);
-            ctx.drawImage(bitmap, -bitmap.width / 2, -bitmap.height / 2);
+            ctx.drawImage(bitmap, -bitmap.width * scale / 2, -bitmap.height * scale / 2, bitmap.width * scale, bitmap.height * scale);
             input = canvas;
           }
-          const current = [];
           // Sparse text and a single text block provide two readings of the SAME
           // orientation. Their agreement is evidence, NOT independent accuracy.
           for (const psm of [11, 6]) {
@@ -183,10 +210,10 @@
             const result = await worker.recognize(input);
             check();
             const parsed = parse(result && result.data && result.data.text);
-            current.push({angle, psm, parsed});
-            observations.push({angle, psm, parsed});
+            observations.push({angle, psm, parsed, text:result && result.data && result.data.text || ''});
           }
-          if (current.some(item => item.parsed.candidates.length)) break;
+          // Check every orientation: a plausible name from sideways text must
+          // not prevent us from reading the upright card or exposing a conflict.
         } finally {
           if (canvas) { canvas.width = 0; canvas.height = 0; }
         }
@@ -194,12 +221,16 @@
       const candidates = unique(observations.flatMap(item => item.parsed.candidates));
       const conflict = candidates.length > 1 || observations.some(item => item.parsed.nameStatus === 'conflict');
       const name = !conflict && candidates.length === 1 ? candidates[0] : '';
-      const matching = observations.filter(item => name ? item.parsed.name === name : item.parsed.nameStatus === 'missing');
+      const anchoredAngles = new Set(observations.filter(item => item.parsed.name === name).map(item => item.angle));
+      // A damaged title must not discard a second exact reading of an already
+      // anchored name. Never use an unrelated orientation or guess a new name.
+      const matching = observations.filter(item => name && (item.parsed.name === name ||
+        (anchoredAngles.has(item.angle) && item.text.split(/\r?\n/).some(line => nameOnLine(line) === name))));
       const nameStatus = conflict ? 'conflict' : name ? (matching.length >= 2 ? 'agreement' : 'single') : 'missing';
       return {
         name,
-        birth:conflict ? '' : consensus(matching.map(item => item.parsed.birth)),
-        address:conflict ? '' : consensus(matching.map(item => item.parsed.address)),
+        birth:!name ? '' : consensus(matching.map(item => item.parsed.birth)),
+        address:!name ? '' : consensus(matching.map(item => item.parsed.address)),
         nameStatus, candidates, reviewRequired:true,
         evidence:observations.map(item => ({angle:item.angle, psm:item.psm, name:item.parsed.name, nameStatus:item.parsed.nameStatus}))
       };
@@ -210,7 +241,7 @@
       terminate();
       closeBitmap();
     });
-    timer = setTimeout(() => stop('ocr_timeout'), 45000);
+    timer = setTimeout(() => stop('ocr_timeout'), 180000);
     return {promise, cancel:() => stop('cancelled')};
   }
   const api = {parse, recognize, normalizeName, isValidName};

@@ -29,5 +29,5 @@ for(const correctAngle of [0,90,180,270]) test('rotation retry finds synthetic i
  vm.runInNewContext(fs.readFileSync(require.resolve('../id-ocr.js'),'utf8'),ctx);
  const result=await ctx.module.exports.recognize({}).promise;
  assert.equal(result.name,'홍길동');assert.equal(result.birth,'19900101');
- assert.equal(calls.at(-1),correctAngle);assert.equal(terminated,1);assert.equal(closed,correctAngle?1:0);
+ assert.equal(calls.length,8);assert.ok(result.evidence.some(e=>e.angle===correctAngle && e.name==='홍길동'));assert.equal(terminated,1);assert.equal(closed,1);
 });

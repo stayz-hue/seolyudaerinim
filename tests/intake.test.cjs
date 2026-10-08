@@ -511,3 +511,13 @@ test('closing warning sends nothing and diagnosis text resets on reuse',()=>{
  f.run('openWarningModal(()=>{})');assert.match(f.elements.get('warningModalTitle').textContent,/진단서/);
  assert.equal(f.elements.get('warningModalDetail').style.display,'none');
 });
+
+test('OCR reads the original upload while the request keeps the smaller copy',async()=>{
+ const f=fixture();let seen;
+ f.context.window.SeoryuIdOCR={recognize:file=>{seen=file;return {promise:Promise.resolve({name:'홍가람',birth:'19900101',address:'검증 주소',nameStatus:'agreement'}),cancel(){}};}};
+ const original=f.file('original-phone-photo.jpg');f.context.uploadInput=f.input(original);
+ f.run('handleUpload(uploadInput)');f.loadImage(4000,3000);f.blobs[0]({size:80});await tick();
+ assert.equal(seen,original);assert.equal(f.run('idCardOcrFileObj'),original);
+ assert.equal(f.run('idCardFileObj.name'),'id_resized.jpg');assert.equal(f.run('idRecognitionBusy'),false);
+ assert.equal(f.elements.get('patientName').value,'홍가람');
+});
