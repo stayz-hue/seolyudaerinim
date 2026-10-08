@@ -155,6 +155,9 @@ body{
 .w-fval{font-size:18.9px;font-weight:700;color:var(--t1);letter-spacing:-.02em;}
 .w-fval.lead{font-size:20.93px;color:var(--amber);}
 .w-cta{display:flex;flex-direction:column;gap:12px;opacity:0;animation:fadeUp .4s cubic-bezier(.22,1,.36,1) .80s both;}
+.w-kakao-link{display:flex;align-items:center;justify-content:center;min-height:44px;color:var(--t3);font-size:14px;text-underline-offset:4px;}
+.w-kakao-link:hover{color:var(--amber);}
+.w-kakao-link:focus-visible{outline:2px solid var(--amber);outline-offset:2px;border-radius:var(--r);}
 .w-fine{text-align:center;font-size:11.5px;font-weight:400;color:var(--t4);line-height:1.7;letter-spacing:-.005em;}
 
 /* ── FORM SCREENS ── */
@@ -725,6 +728,7 @@ canvas#signaturePad1{
         <button class="btn-next" style="border-radius:var(--r);padding:17px;" onclick="openCheckModal()">
           신청하기 <span style="font-size:17px;">→</span>
         </button>
+        <a class="w-kakao-link" href="https://pf.kakao.com/_XxjhEX/chat" target="_blank" rel="noopener noreferrer">카카오톡 문의</a>
       </div>
     </div>
   </div>
