@@ -20,7 +20,9 @@ exports.handler = async (event) => {
     const normalized = normalizeHospitalName(query);
     let places = await searchHIRA(normalized);
     if (!places.length && normalized !== query) places = await searchHIRA(query);
-    return resp(headers, { ok: true, places });
+    return resp({ ...headers, 'Cache-Control': 'public, max-age=60',
+      'Netlify-CDN-Cache-Control': 'public, durable, s-maxage=' + (places.length ? 3600 : 60)
+    }, { ok: true, places });
   } catch (err) {
     console.error('[병원 검색 실패]', err.message);
     return resp(headers, { ok: false, error: '병원 검색에 실패했습니다' }, 503);
