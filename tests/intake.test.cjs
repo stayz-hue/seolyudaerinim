@@ -50,6 +50,7 @@ function fixture(options = {}) {
     appendChild(child) { this.children.push(child); child.parent = this; return child; }
     remove() { this.unregister(); if (this.parent) this.parent.children = this.parent.children.filter(child => child !== this); }
     addEventListener() {}
+    setAttribute(name,value) { this[name]=String(value); }
     focus() { this.focused = true; }
     contains(child) { return child === this || this.children.some(item => item.contains(child)); }
     getBoundingClientRect() { return {width:320, height:200}; }
@@ -391,10 +392,9 @@ test('mismatched receipt, invalid fee and unsupported state retain the form with
   }
 });
 
-test('depositor is always applicant and a reminder precedes submission',async()=>{
+test('default depositor uses applicant when no different payer is selected',async()=>{
   const f=fixture();f.seedForm();
-  assert.equal(f.elements.has('depositorName'),false);
-  assert.equal(f.elements.has('diffDepositor'),false);
+  assert.equal(f.elements.get('diffDepositor').checked,false);
   f.run('submitForm(true)');await tick();
   assert.equal(f.requests[0].payload.depositorName,'홍가람');
   assert.equal(f.alerts.length,0);
@@ -408,6 +408,28 @@ test('network failure retains single contact, email, physical-delivery address a
   assertRecovered(f);assert.equal(f.elements.get('patientPhone').value,'010-2222-3333');
   assert.equal(f.elements.has('sameContact'),false);assert.equal(f.elements.get('postAddress').value,'보존할 등기 주소');
   assert.equal(f.run('deliveryMethod'),'post');
+});
+
+test('different payer is sent and receipt validates each echoed name independently',async()=>{
+ const f=fixture({fetch:(_url,request)=>Promise.resolve(successResponse(request,{patientName:'홍가람',depositorName:'김입금'}))});f.seedForm();
+ f.elements.get('diffDepositor').checked=true;f.set('depositorName','김입금');
+ f.run('submitForm()');await tick();
+ assert.equal(f.requests[0].payload.patientName,'홍가람');assert.equal(f.requests[0].payload.depositorName,'김입금');
+ assert.equal(f.elements.get('successDepositor').textContent,'김입금');assert.equal(f.run('submissionComplete'),true);
+});
+
+test('payer edits survive identity updates and unchecked payer uses latest applicant',async()=>{
+ const f=fixture();f.seedForm();f.elements.get('diffDepositor').checked=true;f.set('depositorName','김입금');
+ f.run("depositorEdited=true;syncIdentityDisplay()");assert.equal(f.elements.get('depositorName').value,'김입금');
+ f.elements.get('diffDepositor').checked=false;f.run('toggleDepositor();submitForm()');await tick();
+ assert.equal(f.requests[0].payload.depositorName,'홍가람');assert.equal(f.elements.get('depositorName').value,'김입금');
+});
+
+test('whole period is default and switching restores a custom period draft',()=>{
+ const f=fixture();f.run('buildHospitalBlocks()');
+ f.elements.get('periodToggle_1').checked=true;f.run('togglePeriod(1)');f.set('treatPeriod_1','2025.01 ~ 2026.03');
+ f.elements.get('periodToggle_1').checked=false;f.run('togglePeriod(1)');assert.equal(f.elements.get('treatPeriod_1').value,'전체 기간');
+ f.elements.get('periodToggle_1').checked=true;f.run('togglePeriod(1)');assert.equal(f.elements.get('treatPeriod_1').value,'2025.01 ~ 2026.03');
 });
 
 test('confirmed pre-save validation rejection explains correction and preserves photo and signature without requiring inquiry',async()=>{
@@ -452,6 +474,8 @@ test('OCR fills fields but preserves typing during recognition',async()=>{
  assert.equal(f.elements.get('patientName').value,'직접수정');
  assert.equal(f.elements.get('patientBirth').value,'19900101');
  assert.equal(f.elements.get('patientAddress').value,'서울 테스트로 1');
+ assert.equal(f.elements.get('identityNameField').hidden,true);
+ assert.equal(f.elements.get('identityResult').hidden,false);
 
  assert.equal(f.run('idRecognitionBusy'),false);assert.equal(f.requests.length,0);
 });
@@ -476,17 +500,12 @@ test('new photo clears old identity, review and signature',()=>{
 assert.equal(f.context.window.cleared,true);
 });
 
-test('deposit warning shares diagnosis sheet and sends only after confirmation',async()=>{
+test('valid signed application submits directly without another confirmation',async()=>{
  const f=fixture();f.seedForm();f.run('submitForm()');
- assert.equal(f.requests.length,0);assert.equal(f.alerts.length,0);
- assert.match(f.elements.get('warningModalTitle').textContent,/신분증 이름/);
- assert.equal(f.elements.get('warningModalDetail').textContent,'홍가람');
- f.run('confirmWarning()');
- for(const timer of [...f.timers.values()])if(timer.delay===100)timer.callback();
- await tick();assert.equal(f.requests.length,1);
+ await tick();assert.equal(f.requests.length,1);assert.equal(f.alerts.length,0);
 });
 test('closing warning sends nothing and diagnosis text resets on reuse',()=>{
- const f=fixture();f.seedForm();f.run('submitForm();closeWarningModal();confirmWarning()');
+ const f=fixture();f.seedForm();f.run('openWarningModal(()=>{});closeWarningModal();confirmWarning()');
  for(const timer of [...f.timers.values()])if(timer.delay===100)timer.callback();
  assert.equal(f.requests.length,0);
  f.run('openWarningModal(()=>{})');assert.match(f.elements.get('warningModalTitle').textContent,/진단서/);

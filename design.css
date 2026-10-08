@@ -1,0 +1,409 @@
+@font-face { font-family: 'SD Pretendard'; font-weight: 45 920; font-style: normal; font-display: swap; src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/web/variable/woff2/PretendardVariable.woff2') format('woff2'); }
+    #app { padding: 28px 12px 24px; color-scheme: light dark; }
+    #app .sd-preview-label { margin: 0 auto 12px; max-width: 420px; font: 500 12px/1.5 'SD Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; color: light-dark(#685a4f,#c4b9aa); letter-spacing: .03em; }
+    #app { --sd-bg: light-dark(#FDFAF5,#221d18); --sd-soft: light-dark(#F4EDE0,#302820); --sd-ink: light-dark(#1C1409,#f5ece0); --sd-sub: light-dark(#5A4430,#cdbca8); --sd-line: light-dark(#ddd0be,#564638); --sd-brand: light-dark(#7A5530,#e4bd8c); --sd-action: light-dark(#7A5530,#d9b384); --sd-on-action: light-dark(#FDF8F0,#24180d); --sd-selected: light-dark(#EEE1CF,#433425); --sd-good: light-dark(#3d6650,#a1c1a6); max-width: 420px; margin: 0 auto; border-radius: 24px; background: var(--sd-bg); color: var(--sd-ink); box-shadow: 0 12px 48px light-dark(#3b27181a,#0000002e); font-family: 'SD Pretendard', "Pretendard", -apple-system, BlinkMacSystemFont, "Noto Sans KR", sans-serif; font-size: 15px; line-height: 1.6; letter-spacing: -.025em; overflow: clip; }
+    #app * { box-sizing: border-box; font-family: inherit; }
+    #app [hidden] { display: none !important; }
+    #app h1, #app h2, #app h3, #app p { margin: 0; }
+    #app button, #app input, #app select { font: inherit; letter-spacing: inherit; }
+    #app button { -webkit-tap-highlight-color: transparent; }
+    #app .sd-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 22px 24px 18px; border-bottom: 1px solid var(--sd-line); }
+    #app .sd-brand { display: inline-flex; align-items: center; gap: 9px; color: var(--sd-brand); font-size: 18px; font-weight: 750; }
+    #app .sd-brand svg { width: 21px; height: 21px; }
+    #app .sd-header-note { font-size: 12px; color: var(--sd-sub); white-space: nowrap; }
+    #app .sd-main { padding: 30px 24px 26px; }
+    #app .sd-eyebrow { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--sd-brand); margin-bottom: 5px; }
+    #app .sd-scope-note { font-size: 12px; line-height: 1.6; color: var(--sd-sub); margin-bottom: 20px !important; }
+    #app .sd-eyebrow svg { width: 15px; height: 15px; }
+    #app .sd-hero h1 { font-size: 34px; line-height: 1.28; font-weight: 750; letter-spacing: -.055em; word-break: keep-all; }
+    #app .sd-hero h1 span { color: var(--sd-brand); }
+    #app .sd-hero-copy { margin-top: 15px !important; color: var(--sd-sub); font-size: 15px; line-height: 1.75; word-break: keep-all; }
+    #app .sd-fee { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 24px; padding: 19px 18px; background: var(--sd-soft); border-radius: 16px; }
+    #app .sd-fee-label { font-size: 13px; font-weight: 600; color: var(--sd-sub); }
+    #app .sd-fee-amount { margin: 3px 0 7px; font-size: 31px; line-height: 1.15; font-weight: 750; letter-spacing: -.05em; font-variant-numeric: tabular-nums; }
+    #app .sd-fee-amount small { font-size: 17px; font-weight: 650; margin-left: 2px; }
+    #app .sd-fee-note { font-size: 13px; color: var(--sd-sub); line-height: 1.5; }
+    #app .sd-envelope { display: block; width: 82px; height: 106px; object-fit: cover; object-position: center 22%; border-radius: 10px; flex: 0 0 auto; }
+    #app .sd-primary { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 56px; padding: 13px 18px; border: 0; border-radius: 12px; background: var(--sd-action); color: var(--sd-on-action); font-size: 17px; font-weight: 700; }
+    #app .sd-primary svg { width: 19px; height: 19px; }
+    #app .sd-primary:disabled { opacity: .5; cursor: default; }
+    #app .sd-hero-actions { margin-top: 20px; }
+    #app .sd-secondary { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; min-height: 46px; padding: 9px 12px; background: transparent; border: 0; color: var(--sd-sub); font-size: 14px; font-weight: 500; }
+    #app .sd-secondary svg { width: 16px; height: 16px; }
+    #app .sd-exception { margin-top: 7px !important; color: var(--sd-sub); font-size: 12px; text-align: center; }
+    #app .sd-section { padding-top: 30px; }
+    #app .sd-section h2 { margin-bottom: 17px; font-size: 18px; font-weight: 700; letter-spacing: -.035em; }
+    #app .sd-flow { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+    #app .sd-flow li { min-width: 0; }
+    #app .sd-flow-num { display: block; color: var(--sd-brand); font-size: 12px; letter-spacing: .02em; margin-bottom: 7px; font-weight: 650; }
+    #app .sd-flow-title { display: block; font-size: 14px; font-weight: 650; }
+    #app .sd-flow-copy { display: block; margin-top: 5px; color: var(--sd-sub); font-size: 12px; line-height: 1.6; word-break: keep-all; }
+    #app .sd-faq { border-top: 1px solid var(--sd-line); }
+    #app .sd-faq details { border-bottom: 1px solid var(--sd-line); }
+    #app .sd-faq summary { min-height: 49px; padding: 13px 0; font-size: 14px; font-weight: 550; display: flex; align-items: center; justify-content: space-between; gap: 10px; list-style: none; }
+    #app .sd-faq summary::-webkit-details-marker { display: none; }
+    #app .sd-faq summary svg { width: 17px; height: 17px; flex: 0 0 auto; }
+    #app .sd-faq details[open] summary svg { transform: rotate(180deg); }
+    #app .sd-faq details p { padding: 0 0 16px; color: var(--sd-sub); font-size: 13px; line-height: 1.75; word-break: keep-all; }
+    #app .sd-footer { border-top: 1px solid var(--sd-line); padding: 19px 24px 22px; color: var(--sd-sub); font-size: 12px; }
+    #app .sd-form-header { padding: 18px 24px 0; }
+    #app .sd-back { display: inline-flex; align-items: center; gap: 5px; min-height: 44px; border: 0; background: transparent; color: var(--sd-sub); padding: 0 4px 0 0; font-size: 14px; }
+    #app .sd-back svg { width: 17px; height: 17px; }
+    #app .sd-stepbar { display: flex; gap: 6px; margin: 11px 0 13px; }
+    #app .sd-stepbar span { flex: 1; height: 3px; border-radius: 3px; background: var(--sd-line); }
+    #app .sd-stepbar span.sd-current { background: var(--sd-brand); }
+    #app .sd-step-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--sd-sub); font-size: 12px; }
+    #app .sd-step-label strong { color: var(--sd-brand); font-weight: 650; }
+    #app .sd-form-main { padding: 23px 24px 27px; }
+    #app .sd-form-main h1 { font-size: 26px; font-weight: 750; line-height: 1.3; letter-spacing: -.05em; }
+    #app .sd-form-intro { margin-top: 8px !important; font-size: 14px; color: var(--sd-sub); word-break: keep-all; }
+    #app .sd-field-group { margin-top: 25px; }
+    #app .sd-field-group + .sd-field-group { padding-top: 23px; border-top: 1px solid var(--sd-line); }
+    #app .sd-label { display: block; margin-bottom: 9px; font-size: 15px; font-weight: 650; }
+    #app .sd-label small { font-size: 12px; font-weight: 500; color: var(--sd-sub); margin-left: 5px; }
+    #app .sd-search-wrap { position: relative; }
+    #app .sd-search-wrap > svg { position: absolute; left: 14px; top: 15px; width: 19px; height: 19px; color: var(--sd-sub); }
+    #app .sd-input { width: 100%; min-width: 0; min-height: 49px; border: 1px solid var(--sd-line); border-radius: 10px; padding: 12px 14px; color: var(--sd-ink); background: var(--sd-bg); font-size: 16px; }
+    #app .sd-search-wrap .sd-input { padding-left: 42px; }
+    #app .sd-input::placeholder { color: var(--sd-sub); opacity: .85; }
+    #app .sd-help { margin-top: 8px !important; color: var(--sd-sub); font-size: 12px; line-height: 1.6; }
+    #app .sd-hospital-choice { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; text-align: left; padding: 14px; margin-top: 10px; background: var(--sd-bg); color: var(--sd-ink); border: 1px solid var(--sd-line); border-radius: 10px; }
+    #app .sd-hospital-choice span { display: block; }
+    #app .sd-hospital-choice strong { font-size: 15px; font-weight: 650; }
+    #app .sd-hospital-choice small { display: block; margin-top: 3px; color: var(--sd-sub); font-size: 12px; }
+    #app .sd-hospital-choice svg { width: 18px; height: 18px; }
+    #app .sd-hospital-choice[aria-pressed="true"] { background: var(--sd-selected); border-color: var(--sd-brand); }
+    #app .sd-hospital-choice .sd-selection-label { display: inline; margin-left: 7px; font-size: 12px; font-weight: 600; color: var(--sd-brand); }
+    #app .sd-form-main .sd-choice-group { border: 0; padding: 0; margin: 25px 0 0; min-width: 0; }
+    #app .sd-choice-group legend { padding: 0; margin-bottom: 12px; }
+    #app .sd-chip-row { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+    #app .sd-chip { display: flex; align-items: center; gap: 7px; min-height: 48px; padding: 10px 11px; border: 1px solid var(--sd-line); border-radius: 9px; font-size: 13px; background: var(--sd-bg); color: var(--sd-ink); word-break: keep-all; }
+    #app .sd-chip input { accent-color: var(--sd-brand); width: 15px; height: 15px; margin: 0; flex: 0 0 auto; }
+    #app .sd-chip:has(input:checked) { border-color: var(--sd-brand); background: var(--sd-selected); }
+    #app .sd-options { display: flex; flex-direction: column; gap: 9px; }
+    #app .sd-option { display: flex; align-items: center; gap: 10px; padding: 14px; border: 1px solid var(--sd-line); border-radius: 10px; background: var(--sd-bg); }
+    #app .sd-option:has(input:checked) { background: var(--sd-selected); border-color: var(--sd-brand); }
+    #app .sd-option input { accent-color: var(--sd-brand); width: 17px; height: 17px; margin: 0; }
+    #app .sd-option-copy { flex: 1; min-width: 0; }
+    #app .sd-option-copy strong { display: block; font-size: 14px; font-weight: 650; }
+    #app .sd-option-copy small { display: block; margin-top: 2px; color: var(--sd-sub); font-size: 12px; }
+    #app .sd-option-price { font-size: 13px; font-weight: 650; white-space: nowrap; }
+    #app .sd-total { margin: 25px 0 17px; padding-top: 18px; border-top: 1px solid var(--sd-line); }
+    #app .sd-total-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+    #app .sd-total-row span { color: var(--sd-sub); font-size: 14px; }
+    #app .sd-total-row strong { font-size: 23px; letter-spacing: -.04em; }
+    #app .sd-upload { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; min-height: 85px; background: var(--sd-soft); border: 1px dashed var(--sd-line); border-radius: 10px; color: var(--sd-sub); font-size: 14px; }
+    #app .sd-upload svg { width: 21px; height: 21px; }
+    #app .sd-two-fields { display: grid; grid-template-columns: 1fr; gap: 17px; margin-top: 20px; }
+    #app .sd-sign { padding: 15px; min-height: 105px; border: 1px solid var(--sd-line); border-radius: 10px; background: var(--sd-soft); display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--sd-sub); }
+    #app .sd-demo-note { font-size: 12px; color: var(--sd-sub); text-align: center; margin-top: 14px !important; }
+    #app .sd-toast { padding: 11px 14px; margin-top: 12px; color: var(--sd-sub); background: var(--sd-soft); border-radius: 9px; font-size: 13px; }
+    #app .sd-a11y { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    @media (max-width: 370px) {
+      #app { padding: 20px 6px; }
+      #app .sd-header { padding-left: 20px; padding-right: 20px; }
+      #app .sd-main, #app .sd-form-main, #app .sd-form-header { padding-left: 20px; padding-right: 20px; }
+      #app .sd-hero h1 { font-size: 30px; }
+      #app .sd-envelope { width: 66px; height: 94px; }
+      #app .sd-fee { padding: 17px 14px; gap: 8px; }
+      #app .sd-fee-amount { font-size: 29px; }
+      #app .sd-flow { gap: 9px; }
+      #app .sd-header-note { font-size: 11px; }
+    }
+  
+
+    #app .sd-field-group { margin-top: 22px; }
+    #app .sd-hospital-unit + .sd-hospital-unit { border-top: 1px solid var(--sd-line); margin-top: 22px; padding-top: 17px; }
+    #app .sd-hospital-unit .sd-field-group + .sd-field-group { padding-top: 0; border: 0; margin-top: 18px; }
+    #app .sd-unit-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--sd-sub); }
+    #app .sd-text-action { min-height: 44px; padding: 8px 0 8px 8px; border: 0; background: transparent; color: var(--sd-sub); font-size: 12px; }
+    #app .sd-search-wrap .sd-input { padding-right: 37px; }
+    #app .sd-search-wrap .sd-selected-tick { left: auto; right: 13px; color: var(--sd-brand); }
+    #app .sd-period-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 7px; min-height: 44px; font-size: 12px; color: var(--sd-sub); }
+    #app .sd-period-check { display: flex; align-items: center; gap: 7px; min-height: 44px; }
+    #app .sd-period-check input { accent-color: var(--sd-brand); margin: 0; width: 16px; height: 16px; }
+    #app .sd-add-hospital { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; min-height: 48px; margin-top: 16px; padding: 11px 14px; border: 1px dashed var(--sd-line); border-radius: 10px; background: transparent; color: var(--sd-brand); font-size: 14px; font-weight: 600; }
+    #app .sd-add-hospital span { display: inline-flex; align-items: center; gap: 6px; }
+    #app .sd-add-hospital svg { width: 17px; height: 17px; }
+    #app .sd-add-hospital small { font-size: 12px; font-weight: 500; color: var(--sd-sub); white-space: nowrap; }
+    #app .sd-delivery-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+    #app .sd-delivery-grid .sd-option { padding: 13px 11px; gap: 8px; min-height: 74px; }
+    #app .sd-delivery-grid .sd-option input { flex: 0 0 auto; }
+    #app .sd-delivery-grid .sd-option-copy strong { font-size: 13px; }
+    #app .sd-delivery-grid .sd-option-copy small { font-size: 12px; }
+    #app .sd-identity { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 0 0; }
+    #app .sd-identity-copy { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+    #app .sd-identity-copy strong { font-size: 15px; font-weight: 650; }
+    #app .sd-identity-copy span { font-size: 12px; color: var(--sd-sub); }
+    #app .sd-name-edit { margin-top: 7px; }
+    #app .sd-upload[aria-pressed="true"] { border-style: solid; background: var(--sd-selected); color: var(--sd-brand); }
+    #app .sd-label-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 9px; }
+    #app .sd-label-row .sd-label { margin: 0; }
+    #app .sd-sign { position: relative; height: 116px; padding: 0; }
+    #app .sd-sign canvas { display: block; width: 100%; height: 114px; border-radius: 10px; touch-action: none; }
+    #app .sd-sign-hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 7px; pointer-events: none; font-size: 13px; }
+    #app .sd-sign-hint svg { width: 17px; height: 17px; }
+    #app .sd-submit-notice { margin: 20px 0 12px; color: var(--sd-sub); font-size: 12px; line-height: 1.65; }
+    #app .sd-complete { padding: 32px 24px 27px; }
+    #app .sd-complete-icon { width: 48px; height: 48px; border-radius: 50%; background: var(--sd-selected); color: var(--sd-brand); display: flex; align-items: center; justify-content: center; margin-bottom: 19px; }
+    #app .sd-complete-icon svg { width: 24px; height: 24px; }
+    #app .sd-complete h1 { font-size: 32px; line-height: 1.3; letter-spacing: -.05em; font-weight: 750; }
+    #app .sd-complete-intro { margin-top: 10px !important; font-size: 14px; color: var(--sd-sub); }
+    #app .sd-payment { padding: 20px 18px; margin: 24px 0 20px; border-radius: 16px; background: var(--sd-soft); }
+    #app .sd-payment-cap { color: var(--sd-sub); font-size: 13px; }
+    #app .sd-payment-amount { font-size: 34px; font-weight: 750; line-height: 1.25; letter-spacing: -.04em; margin-top: 4px; font-variant-numeric: tabular-nums; }
+    #app .sd-bank-line { border-top: 1px solid var(--sd-line); margin-top: 16px; padding-top: 14px; }
+    #app .sd-bank-number { margin-top: 4px !important; font-size: 17px; font-weight: 600; }
+    #app .sd-payment .sd-primary { margin-top: 15px; font-size: 15px; }
+    #app .sd-receipt { margin: 0; }
+    #app .sd-receipt div { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; padding: 8px 0; font-size: 13px; }
+    #app .sd-receipt dt { color: var(--sd-sub); white-space: nowrap; }
+    #app .sd-receipt dd { margin: 0; text-align: right; overflow-wrap: anywhere; min-width: 0; font-weight: 550; }
+    #app .sd-complete-actions { margin-top: 19px; border-top: 1px solid var(--sd-line); padding-top: 12px; }
+    @media (max-width:370px) { #app .sd-complete { padding-left:20px; padding-right:20px; } }
+  
+
+    #app .sd-header { min-height: 64px; padding-top: 18px; padding-bottom: 18px; }
+    #app .sd-header-note { font-size: 11px; }
+    #app .sd-form-header { padding-top: 14px; }
+    #app .sd-stepbar { margin: 0 0 12px; }
+    #app .sd-step-label { min-height: 44px; font-size: 12px; }
+    #app .sd-step-label .sd-back { font-size: 12px; min-height: 44px; gap: 5px; }
+    #app .sd-step-label .sd-back svg { width: 15px; height: 15px; }
+    #app .sd-form-main { padding-top: 16px; }
+    #app .sd-form-main h1 { font-weight: 700; margin-bottom: 24px; }
+    #app .sd-label { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+    #app .sd-hospital-unit { padding: 16px; border-radius: 14px; background: var(--sd-soft); }
+    #app .sd-hospital-unit .sd-field-group { margin-top: 0; }
+    #app .sd-hospital-unit .sd-field-group + .sd-field-group { margin-top: 18px; }
+    #app .sd-hospital-unit + .sd-hospital-unit { margin-top: 12px; border: 0; padding-top: 12px; }
+    #app .sd-unit-head { margin-bottom: 8px; }
+    #app .sd-add-hospital { min-height: 48px; border: 0; padding: 4px 2px; margin-top: 4px; font-size: 13px; font-weight: 500; }
+    #app .sd-period-field { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 49px; padding: 0 12px 0 14px; border: 1px solid var(--sd-line); border-radius: 10px; background: var(--sd-bg); }
+    #app .sd-period-field [data-role="period-status"] { font-size: 16px; color: var(--sd-ink); }
+    #app .sd-period-field [data-role="period-custom"] { flex: 1; min-width: 0; }
+    #app .sd-period-field [data-role="period"] { padding: 12px 0; min-height: 47px; border: 0; background: transparent; }
+    #app .sd-period-field .sd-period-check { flex: 0 0 auto; gap: 6px; font-size: 12px; color: var(--sd-brand); }
+    #app .sd-period-field .sd-period-check input { width: 14px; height: 14px; }
+    #app .sd-delivery-grid .sd-option { min-height: 64px; padding: 11px 12px; }
+    #app .sd-delivery-grid .sd-option input { width: 16px; height: 16px; }
+    #app .sd-choice-group { margin-top: 20px; }
+    #app .sd-total { margin-top: 24px; margin-bottom: 20px; padding-top: 18px; }
+    #app .sd-total .sd-help { margin-top: 4px !important; }
+    #app .sd-upload[aria-pressed="true"] { min-height: 44px; border: 0; justify-content: flex-start; padding: 0; background: transparent; color: var(--sd-sub); font-size: 12px; }
+    #app .sd-upload[aria-pressed="true"] svg { width: 16px; height: 16px; }
+    #app .sd-field-group:has(.sd-upload[aria-pressed="true"]) > .sd-label,
+    #app .sd-field-group:has(.sd-upload[aria-pressed="true"]) > .sd-help { display: none; }
+    #app .sd-identity { padding: 12px 16px; background: var(--sd-soft); border-radius: 12px; }
+    #app .sd-identity-copy strong { font-size: 16px; font-weight: 600; }
+    #app .sd-two-fields { margin-top: 24px; gap: 20px; }
+    #app .sd-payment { margin-top: 24px; margin-bottom: 16px; }
+    #app .sd-depositor-line { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; font-size: 13px; }
+    #app .sd-depositor-line span { color: var(--sd-sub); }
+    #app .sd-depositor-line strong { font-weight: 600; }
+    #app .sd-payment .sd-primary { min-height: 48px; margin-top: 18px; }
+    #app .sd-complete h1 { font-size: 28px; font-weight: 700; }
+    #app .sd-complete-icon { width: 40px; height: 40px; margin-bottom: 16px; }
+    #app .sd-complete-icon svg { width: 20px; height: 20px; }
+    #app .sd-receipt div { font-size: 12px; }
+    #app .sd-complete-actions { border: 0; margin-top: 12px; padding-top: 0; }
+    #app .sd-complete-actions .sd-secondary { min-height: 44px; background: transparent; border: 0; color: var(--sd-sub); font-size: 13px; }
+  
+
+    #app .sd-header { padding-top: 18px; padding-bottom: 18px; }
+    #app .sd-brand { font-size: 17px; font-weight: 700; gap: 8px; }
+    #app .sd-brand svg { width: 20px; height: 20px; }
+    #app .sd-step-label { min-height: 40px; }
+    #app .sd-step-label .sd-back { min-height: 40px; }
+    #app .sd-form-main { padding-top: 18px; padding-bottom: 24px; }
+    #app .sd-form-main h1 { font-size: 25px; line-height: 1.35; font-weight: 700; margin-bottom: 24px; word-break: keep-all; }
+    #app .sd-hospital-unit { padding: 18px 16px; }
+    #app .sd-hospital-unit .sd-field-group + .sd-field-group { margin-top: 20px; }
+    #app .sd-add-hospital { margin-top: 6px; min-height: 48px; padding: 6px 0; }
+    #app .sd-add-hospital small { font-weight: 400; }
+    #app .sd-choice-group { margin-top: 24px; }
+    #app .sd-choice-group legend { margin-bottom: 10px; }
+    #app .sd-delivery-grid { gap: 10px; }
+    #app .sd-delivery-grid .sd-option { min-height: 66px; border-radius: 10px; padding: 12px; }
+    #app .sd-delivery-grid .sd-option-copy strong { font-size: 14px; font-weight: 600; }
+    #app .sd-delivery-grid .sd-option-copy small { margin-top: 1px; }
+    #app .sd-total { margin-top: 24px; padding-top: 20px; margin-bottom: 20px; }
+    #app .sd-total-row strong { font-size: 24px; font-weight: 700; line-height: 1.35; }
+    #app .sd-primary { font-size: 16px; font-weight: 600; border-radius: 10px; }
+    #app .sd-demo-note { margin-top: 16px !important; font-size: 11px; }
+    #app .sd-form-main > h1 + .sd-field-group { margin-top: 0; }
+    #app .sd-field-group:has(.sd-upload[aria-pressed="true"]) { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 0 12px; padding: 10px 14px; background: var(--sd-soft); border-radius: 12px; }
+    #app .sd-upload[aria-pressed="true"] { grid-column: 2; grid-row: 1; width: auto; min-height: 44px; font-size: 12px; }
+    #app .sd-identity { grid-column: 1; grid-row: 1; padding: 0; border-radius: 0; background: transparent; gap: 4px; }
+    #app .sd-identity-copy { gap: 2px; align-items: flex-start; flex-direction: column; }
+    #app .sd-identity-copy strong { font-size: 16px; }
+    #app .sd-identity-copy span { font-size: 11px; }
+    #app .sd-identity .sd-text-action { padding-left: 4px; padding-right: 4px; min-height: 44px; }
+    #app .sd-name-edit { grid-column: 1 / -1; margin-top: 8px; }
+    #app .sd-two-fields { gap: 20px; margin-top: 24px; }
+    #app .sd-sign { height: 116px; border-radius: 10px; background: var(--sd-bg); }
+    #app .sd-label-row { min-height: 44px; margin-bottom: 4px; }
+    #app .sd-label-row .sd-text-action { padding-top: 8px; padding-bottom: 8px; }
+    #app .sd-submit-notice { margin-top: 24px; margin-bottom: 12px; }
+    #app .sd-complete { padding-top: 32px; padding-bottom: 24px; }
+    #app .sd-payment { padding: 20px; border-radius: 14px; margin-top: 28px; margin-bottom: 16px; }
+    #app .sd-payment-amount { font-size: 32px; font-weight: 700; margin-top: 6px; }
+    #app .sd-bank-line { margin-top: 20px; padding-top: 16px; }
+    #app .sd-bank-number { margin-top: 6px !important; font-size: 17px; font-weight: 600; }
+    #app .sd-depositor-line { margin-top: 16px; }
+    #app .sd-complete-actions { margin-top: 16px; }
+    @media (max-width:370px) {
+      #app .sd-form-main h1 { font-size: 23px; }
+      #app .sd-field-group:has(.sd-upload[aria-pressed="true"]) { gap: 0 4px; padding-left: 12px; padding-right: 12px; }
+      #app .sd-upload[aria-pressed="true"] { gap: 5px; }
+    }
+  
+
+    #app .sd-search-wrap { z-index: 2; }
+    #app .sd-search-wrap:has([aria-expanded="true"]) { z-index: 5; }
+    #app .sd-search-results { position: absolute; top: calc(100% + 6px); left: 0; right: 0; padding: 4px; border: 1px solid var(--sd-line); border-radius: 10px; background: var(--sd-bg); box-shadow: 0 8px 24px light-dark(#3b27181f,#00000055); z-index: 6; }
+    #app .sd-search-results .sd-hospital-choice { margin: 0; padding: 11px 10px; min-height: 64px; border: 0; border-radius: 7px; gap: 10px; background: var(--sd-bg); }
+    #app .sd-search-results .sd-hospital-choice:hover,
+    #app .sd-search-results .sd-hospital-choice[aria-selected="true"] { background: var(--sd-soft); }
+    #app .sd-search-results .sd-hospital-choice > svg { color: var(--sd-sub); flex: 0 0 auto; width: 17px; height: 17px; }
+    #app .sd-search-results .sd-hospital-choice > span { flex: 1; min-width: 0; }
+    #app .sd-search-results .sd-hospital-choice strong { font-size: 14px; font-weight: 600; }
+    #app .sd-search-results .sd-hospital-choice small { margin-top: 2px; font-size: 12px; font-weight: 400; }
+    #app .sd-search-empty { padding: 16px 10px; font-size: 13px; color: var(--sd-sub); }
+  
+
+    #app .sd-chosen-address { display:flex; align-items:flex-start; gap:6px; margin:9px 2px 0; color:var(--sd-sub); font-size:12px; line-height:1.5; }
+    #app .sd-chosen-address svg { width:14px; height:14px; flex:0 0 auto; margin-top:2px; }
+    #app .sd-depositor-choice { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:44px; }
+    #app .sd-depositor-choice .sd-label { margin:0; }
+    #app .sd-depositor-choice .sd-period-check { font-size:12px; color:var(--sd-sub); }
+    #app #sd-depositor-custom { margin-top:8px; }
+  
+
+    #app .sd-chosen-address { margin:8px 0 0; padding:0 14px; gap:9px; }
+    #app .sd-chosen-address svg { width:19px; height:16px; margin-top:1px; }
+    #app .sd-depositor-field { display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:49px; padding:0 12px 0 14px; border:1px solid var(--sd-line); border-radius:10px; background:var(--sd-bg); }
+    #app #sd-depositor-default { font-size:16px; min-width:0; overflow-wrap:anywhere; }
+    #app #sd-depositor-custom { margin:0; flex:1; min-width:0; }
+    #app #sd-depositor-input { padding:12px 0; min-height:47px; border:0; background:transparent; }
+    #app .sd-depositor-field .sd-period-check { flex:0 0 auto; gap:6px; font-size:12px; color:var(--sd-brand); }
+    #app .sd-depositor-field .sd-period-check input,
+    #app .sd-period-field .sd-period-check input { width:14px; height:14px; }
+    #app .sd-two-fields { gap:20px; }
+  
+
+    #app .sd-main { padding:24px 24px 24px; }
+    #app .sd-eyebrow { font-size:12px; font-weight:500; gap:6px; margin-bottom:4px; }
+    #app .sd-scope-note { font-size:11px; margin-bottom:22px !important; }
+    #app .sd-hero h1 { font-size:30px; font-weight:700; line-height:1.35; letter-spacing:-.045em; }
+    #app .sd-hero-copy { font-size:14px; line-height:1.65; margin-top:12px !important; }
+    #app .sd-fee { margin-top:24px; padding:18px 16px; border-radius:14px; gap:12px; }
+    #app .sd-fee-label { font-size:12px; font-weight:500; }
+    #app .sd-fee-amount { font-size:28px; font-weight:700; margin:4px 0 6px; }
+    #app .sd-fee-amount small { font-size:16px; font-weight:500; }
+    #app .sd-fee-note { font-size:12px; }
+    #app .sd-envelope { width:64px; height:82px; border-radius:8px; }
+    #app .sd-hero-actions { margin-top:16px; }
+    #app .sd-hero-actions .sd-secondary { font-size:12px; margin-top:4px; }
+    #app .sd-section { padding-top:28px; }
+    #app .sd-section h2 { font-size:16px; font-weight:600; margin-bottom:16px; }
+    #app .sd-flow { gap:12px; }
+    #app .sd-flow-num { font-size:11px; font-weight:500; margin-bottom:6px; }
+    #app .sd-flow-title { font-size:13px; font-weight:600; }
+    #app .sd-flow-copy { font-size:12px; margin-top:4px; }
+    #app .sd-faq summary { font-size:13px; font-weight:500; min-height:49px; }
+    #app .sd-faq details p { font-size:12px; line-height:1.65; }
+    #app .sd-footer { padding:16px 24px; font-size:11px; }
+    @media (max-width:370px) {
+      #app .sd-main { padding-left:20px; padding-right:20px; }
+      #app .sd-hero h1 { font-size:27px; }
+      #app .sd-fee { padding:16px 14px; }
+      #app .sd-envelope { width:56px; height:72px; }
+      #app .sd-flow { gap:8px; }
+    }
+  
+/* Production adapters retain the existing intake, OCR and search handlers. */
+body { background:#f4ede0; }
+#app { max-width:420px; min-height:100dvh; margin:0 auto; border-radius:0; padding:0; color-scheme:light; overflow:clip; }
+#app .welcome-screen { display:block; }
+#app .sd-secondary { text-decoration:none; }
+#app .form-screen { flex:none; }
+#app .fhdr { padding:14px 24px 0; border:0; background:var(--sd-bg); }
+#app .progress { gap:6px; margin:0 0 12px; }
+#app .progress-step { height:3px; border:0; background:var(--sd-line); }
+#app .progress-step.active,#app .progress-step.done { background:var(--sd-brand); }
+#app .step-meta { display:block; margin:0; }
+#app .step-num { display:none; }
+#app .step-title { font-size:25px; line-height:1.35; font-weight:700; padding:20px 0 24px; }
+#app .fscroll { padding:0 24px; overflow:visible; flex:none; }
+#app .bottom { position:static; padding:20px 24px 24px; border:0; background:var(--sd-bg); gap:12px; }
+#app .btn-next { min-height:56px; border-radius:10px; font-size:16px; font-weight:600; box-shadow:none; background:var(--sd-action); color:var(--sd-on-action); }
+#app .btn-back { min-width:44px; min-height:44px; border:0; background:transparent; box-shadow:none; color:var(--sd-sub); }
+#app .field { margin:0 0 20px; }
+#app .field-label { font-size:13px; font-weight:600; margin-bottom:8px; color:var(--sd-ink); letter-spacing:inherit; }
+#app .req { display:none; }
+#app input:not([type=checkbox]):not([type=file]) { min-width:0; width:100%; min-height:49px; padding:12px 14px; font-size:16px; border:1px solid var(--sd-line); border-radius:10px; background:var(--sd-bg); color:var(--sd-ink); box-shadow:none; }
+#app .scard { border:0; box-shadow:none; padding:18px 16px; margin:0 0 12px; background:var(--sd-soft); border-radius:14px; }
+#app .scard-head { padding:0 0 12px; background:none; border:0; font-size:12px; color:var(--sd-sub); }
+#app .scard-num { display:none; }
+#app #hblock1:only-child .scard-head { display:none; }
+#app .scard-body { padding:0; }
+#app .scard-body .field:last-child { margin-bottom:0; }
+#app .hosp-search-wrap { position:relative; z-index:2; }
+#app .hosp-dropdown { position:absolute; top:calc(100% + 6px); left:0; right:0; width:100%; z-index:20; border:1px solid var(--sd-line); border-radius:10px; padding:4px; background:var(--sd-bg); box-shadow:0 8px 24px #3b27181f; max-height:320px; overflow:auto; }
+#app .hosp-item { padding:11px 10px; border:0; border-radius:7px; min-height:60px; }
+#app .hosp-item-name { font-size:14px; font-weight:600; }
+#app .hosp-item-addr,#app .hosp-item-tel { font-size:12px; color:var(--sd-sub); }
+#app .hosp-selected-badge { display:block; margin:8px 0 0; padding:0 14px; font-size:12px; font-weight:400; color:var(--sd-sub); border:0; border-radius:0; background:none; }
+#app .sd-add-hospital { border:0!important; background:none!important; padding:4px 2px!important; margin:4px 0 24px!important; font-size:13px!important; font-weight:500!important; }
+#app .sd-period-field input[type=text] { flex:1; width:0; padding:12px 0; border:0; background:transparent; min-height:47px; }
+#app #depositorCustom { flex:1; min-width:0; }
+#app #depositorDefault { font-size:16px; }
+#app #depositorName { padding:12px 0; border:0; min-height:47px; }
+#app .sd-depositor-field .sd-period-check { font-size:12px; color:var(--sd-brand); flex:0 0 auto; }
+#app .sd-period-check input { flex:0 0 auto; width:14px; height:14px; }
+#app [hidden] { display:none!important; }
+#app .fee-preview { background:none; border:0; border-top:1px solid var(--sd-line); padding:20px 0 0; margin:24px 0 0; border-radius:0; }
+#app .fp-total { border:0; padding:0; margin:0; }
+#app .fp-total-label { color:var(--sd-sub); font-size:14px; font-weight:400; }
+#app .fp-total-val { color:var(--sd-ink); font-size:24px; font-weight:700; }
+#app .upload-area { margin:0 0 20px; padding:20px 14px; min-height:85px; background:var(--sd-soft); border:1px dashed var(--sd-line); border-radius:10px; }
+#app .upload-icon { font-size:18px; margin:0 0 4px; }
+#app .upload-title { font-size:14px; font-weight:500; }
+#app .upload-sub:empty,#app #identityNameHint { display:none; }
+#app .upload-area.has-file { min-height:44px; border:0; padding:4px 0; background:none; text-align:right; margin:0; }
+#app .upload-area.has-file .upload-icon,#app .upload-area.has-file .upload-ok { display:none; }
+#app #identityResult { margin:4px 0 24px; padding:10px 14px; }
+#app .compact-status:empty { display:none; }
+#app .compact-status { font-size:12px; margin-bottom:16px; }
+#app .sig-wrap { border:0; border-radius:0; overflow:visible; background:none; margin-top:24px; }
+#app .sig-bar { background:none; padding:0 0 8px; border:0; }
+#app .sig-hint { color:var(--sd-ink); font-size:13px; font-weight:600; }
+#app .sig-clear { min-height:44px; font-size:12px; color:var(--sd-sub); }
+#app #signaturePad1 { border:1px solid var(--sd-line); border-radius:10px; }
+#app .success { padding:32px 24px 24px; text-align:left; align-items:stretch; }
+#app .success-icon { font-size:24px; margin-bottom:16px; }
+#app .success-h { font-size:28px; font-weight:700; margin:0 0 8px; }
+#app .success-p { font-size:14px; margin:0 0 28px; }
+#app #successBank { text-align:left!important; border:0!important; border-radius:14px!important; background:var(--sd-soft)!important; }
+#app #successBank button { width:100%; min-height:48px; }
+#app .receipt-box { background:none; border:0; padding:8px 0; margin:0; }
+#app .receipt-label,#app .receipt-num { font-size:12px; }
+#app .kakao-contact { font-size:12px; color:var(--sd-sub); }
+@media (min-width:768px) { #app { margin:24px auto; border-radius:24px; min-height:0; } }
+@media (max-width:370px) { #app .fhdr,#app .fscroll,#app .bottom { padding-left:20px; padding-right:20px; } #app .step-title { font-size:23px; } }
+body { color:var(--t1); }
+#app .sd-delivery-choice { border:0; margin:24px 0 0; padding:0; min-width:0; }
+#app .sd-option { text-align:left; color:var(--sd-ink); min-height:66px; }
+#app .sd-option[aria-pressed=true] { border-color:var(--sd-brand)!important; background:var(--sd-selected)!important; }
+#app .delivery-radio { width:16px; height:16px; border:1px solid var(--sd-sub); border-radius:50%; flex:0 0 auto; }
+#app .sd-option[aria-pressed=true] .delivery-radio { border:4px solid var(--sd-brand); }
+#app .intake-notice { margin:24px 24px 0; font-size:12px; color:var(--sd-sub); }
+#app .bottom .btn-back { display:none; }
+#app .scard-head { justify-content:space-between; }
+#app #hospitalBlocks>div:only-child .scard-head { display:none; }
+#app .sd-step-label { min-height:40px; }
+#app .sd-main .sd-fee-amount { margin:4px 0 6px; }
+
+
+    
