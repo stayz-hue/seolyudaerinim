@@ -407,3 +407,38 @@ body { color:var(--t1); }
 
 
     
+
+/* The closed landing page follows the stable visible viewport; open guidance
+   grows naturally, and short/landscape screens keep their normal page scroll. */
+#app { --sd-home-header-height:calc(65px + env(safe-area-inset-top, 0px)); }
+#app .sd-header { min-height:var(--sd-home-header-height); padding-top:calc(18px + env(safe-area-inset-top, 0px)); }
+#app #screen0 .sd-main { display:flex; flex-direction:column; gap:24px; width:100%; }
+#app .sd-home-guide { margin-top:auto; border-top:1px solid var(--sd-line); flex-shrink:0; }
+#app .sd-guide-toggle { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:48px; padding:12px 0; font-size:13px; font-weight:550; color:var(--sd-sub); list-style:none; cursor:pointer; }
+#app .sd-guide-toggle::-webkit-details-marker { display:none; }
+#app .sd-guide-toggle svg { width:17px; height:17px; flex-shrink:0; }
+#app .sd-home-guide[open]>.sd-guide-toggle svg { transform:rotate(180deg); }
+#app .sd-guide-toggle:focus-visible { outline:2px solid var(--sd-brand); outline-offset:3px; border-radius:4px; }
+#app .sd-guide-content { padding-bottom:8px; }
+#app .sd-guide-content .sd-section:first-child { padding-top:12px; }
+@media (max-width:767px) {
+  #app.sd-home { min-height:100svh; }
+  #app #screen0 .sd-main { min-height:calc(100svh - var(--sd-home-header-height)); padding-top:clamp(20px, 4svh, 36px); padding-bottom:calc(12px + env(safe-area-inset-bottom, 0px)); }
+  #app #screen0 .sd-hero { flex-shrink:0; }
+}
+@media (max-width:767px) and (max-height:700px) {
+  #app #screen0 .sd-main { padding-top:16px; gap:12px; }
+  #app #screen0 .sd-scope-note { margin-bottom:12px !important; }
+  #app #screen0 .sd-fee { margin-top:16px; }
+}
+@media (max-width:767px) and (max-height:620px) {
+  #app #screen0 .sd-main { padding-top:12px; }
+  #app #screen0 .sd-fee { padding-top:12px; padding-bottom:12px; }
+  #app #screen0 .sd-hero-actions { margin-top:12px; }
+}
+
+#app.sd-home ~ #legalFooter { display:none; }
+#app .sd-legal-toggle { background:none; border:0; padding:20px 0 12px; font:inherit; font-size:12px; color:var(--sd-sub); cursor:pointer; }
+@media (max-width:767px) and (max-height:620px) {
+  #app #screen0 .sd-main { padding-bottom:calc(8px + env(safe-area-inset-bottom, 0px)); }
+}

@@ -694,7 +694,7 @@ canvas#signaturePad1{
 <script defer src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 </head>
 <body>
-<div class="shell sd-app" id="app">
+<div class="shell sd-app sd-home" id="app">
 <header class="sd-header"><div class="sd-brand"><i data-lucide="mail" aria-hidden="true"></i>서류대리님</div><span class="sd-header-note">의무기록 발급 대행</span></header>
 
   <!-- ========================
@@ -721,6 +721,9 @@ canvas#signaturePad1{
 
           </div>
         </section>
+        <details class="sd-home-guide" ontoggle="if (!this.open) setLegalInformation(false)">
+          <summary class="sd-guide-toggle">이용 안내<i data-lucide="chevron-down" aria-hidden="true"></i></summary>
+          <div class="sd-guide-content">
         <section class="sd-section">
           <h2>이렇게 진행돼요</h2>
           <ol class="sd-flow">
@@ -737,8 +740,10 @@ canvas#signaturePad1{
             <details><summary class="cursor-interaction">서류는 어떻게 받나요?<i data-lucide="chevron-down" aria-hidden="true"></i></summary><p>이메일 파일 수령은 무료예요. 종이 원본은 빠른 등기로 보내드리며, 20,000원이 추가돼요.</p></details>
           </div>
         </section>
+            <button id="homeLegalToggle" class="sd-legal-toggle" type="button" aria-controls="legalSection" aria-expanded="false" onclick="toggleLegalInformation()">사업자 정보 · 개인정보처리방침</button>
+          </div>
+        </details>
       </main>
-      <footer class="sd-footer">서류대리님</footer>
     </div>
 
   <!-- ========================
@@ -1091,9 +1096,20 @@ function togglePeriod(i) {
   document.getElementById('periodAll_' + i).hidden = custom;
   if (custom) input.focus();
 }
+function setLegalInformation(open) {
+  document.getElementById('legalSection').style.display = open ? 'block' : 'none';
+  for (const id of ['homeLegalToggle', 'footerLegalToggle']) {
+    document.getElementById(id)?.setAttribute?.('aria-expanded', String(open));
+  }
+}
+function toggleLegalInformation() {
+  setLegalInformation(document.getElementById('legalSection').style.display === 'none');
+}
 function goToStep(n) {
   if (n === 5 || n === 6) n = 2;
   currentStep = n;
+  setLegalInformation(false);
+  document.getElementById('app').classList.toggle('sd-home', n === 0);
   document.getElementById('screen0').style.display   = n === 0 ? 'flex' : 'none';
   document.getElementById('formArea').style.display  = n > 0  ? 'flex' : 'none';
   document.getElementById('formArea').style.flexDirection = 'column';
@@ -2553,8 +2569,8 @@ function confirmWarning() {
 </script>
 
 <!-- 푸터 토글 버튼 -->
-<div style="text-align:center;padding:20px 22px 28px;background:var(--page);">
-  <button onclick="document.getElementById('legalSection').style.display = document.getElementById('legalSection').style.display === 'none' ? 'block' : 'none';" style="background:none;border:none;font-family:inherit;font-size:13px;color:var(--t3);cursor:pointer;letter-spacing:-.01em;padding:6px 10px;">
+<div id="legalFooter" style="text-align:center;padding:20px 22px 28px;background:var(--page);">
+  <button id="footerLegalToggle" type="button" aria-controls="legalSection" aria-expanded="false" onclick="toggleLegalInformation()" style="background:none;border:none;font-family:inherit;font-size:13px;color:var(--t3);cursor:pointer;letter-spacing:-.01em;padding:6px 10px;">
     사업자 정보 · 개인정보처리방침 ▾
   </button>
 </div>
