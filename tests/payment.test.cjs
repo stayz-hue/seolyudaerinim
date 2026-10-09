@@ -63,7 +63,7 @@ test('account copying works with a supported clipboard', async () => {
   vm.runInContext('copyAccount()', p.context);
   await new Promise(setImmediate);
   assert.deepEqual(copied, ['00000000000000']);
-  assert.equal(p.elements['.copy-btn'].textContent, '복사 완료 ✓');
+  assert.equal(p.elements['.copy-btn'].textContent, '복사했어요 ✓');
   assert.equal(p.prompts.length, 0);
 });
 
@@ -83,6 +83,6 @@ test('both clipboard permission rejection and synchronous failure offer manual c
     vm.runInContext('copyAccount()', p.context);
     await new Promise(setImmediate);
     assert.equal(p.prompts.length, 1);
-    assert.notEqual(p.elements['.copy-btn'].textContent, '복사 완료 ✓');
+    assert.notEqual(p.elements['.copy-btn'].textContent, '복사했어요 ✓');
   }
 });

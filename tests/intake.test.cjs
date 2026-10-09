@@ -186,7 +186,7 @@ for(const readMode of ['error','abort','throw']) {
   test('file read '+readMode+' restores the form without sending',()=>{
     const f=fixture({readMode});f.seedForm();f.run('submitForm(true)');assertRecovered(f);
     assert.equal(f.requests.length,0);assert.equal(f.run('submissionUncertain'),false);
-    assert.ok(f.alerts.at(-1).includes('전송하지 않았어'));
+    assert.ok(f.alerts.at(-1).includes('전송하지 않았어요'));
   });
 }
 
@@ -491,7 +491,7 @@ test('failed recognition falls back to manual without network submission',async(
  const f=fixture();f.seedForm();
  f.context.window.SeoryuIdOCR={recognize:()=>({promise:Promise.reject(new Error('offline')),cancel(){}})};
  f.run('extractIdInfo(()=>{})');await tick();
- assert.match(f.elements.get('ocrStatus').textContent,/자동으로 읽지 못했어/);assert.equal(f.requests.length,0);assert.equal(f.run('idRecognitionBusy'),false);
+ assert.match(f.elements.get('ocrStatus').textContent,/이름을 읽지 못했어요/);assert.equal(f.requests.length,0);assert.equal(f.run('idRecognitionBusy'),false);
 });
 test('new photo clears old identity, review and signature',()=>{
  const f=fixture();f.seedForm();f.run('signaturePad.clear=()=>{window.cleared=true}');
