@@ -408,12 +408,21 @@ body { color:var(--t1); }
 
     
 
-/* The closed landing page follows the stable visible viewport; open guidance
-   grows naturally, and short/landscape screens keep their normal page scroll. */
+/* Share spare viewport space around the message and conversion groups, while
+   keeping the price and its action close enough to read as one decision. */
 #app { --sd-home-header-height:calc(65px + env(safe-area-inset-top, 0px)); }
 #app .sd-header { min-height:var(--sd-home-header-height); padding-top:calc(18px + env(safe-area-inset-top, 0px)); }
-#app #screen0 .sd-main { display:flex; flex-direction:column; gap:24px; width:100%; }
-#app .sd-home-guide { margin-top:auto; border-top:1px solid var(--sd-line); flex-shrink:0; }
+#app #screen0 .sd-main { --sd-home-top:clamp(20px, 4svh, 36px); --sd-home-bottom:calc(12px + env(safe-area-inset-bottom, 0px)); --sd-home-gap:24px; display:flex; flex-direction:column; gap:var(--sd-home-gap); width:100%; }
+#app .sd-home-guide { margin-top:0; border-top:1px solid var(--sd-line); flex-shrink:0; }
+#app #screen0 .sd-hero { display:flex; flex-direction:column; justify-content:center; }
+#app #screen0 .sd-hero-message,
+#app #screen0 .sd-hero-conversion { flex-shrink:0; }
+#app #screen0 .sd-hero-conversion { padding-top:clamp(24px, 4svh, 48px); }
+#app #screen0 .sd-home-scope { display:flex; align-items:center; flex-wrap:wrap; gap:4px 10px; margin-bottom:24px; }
+#app #screen0 .sd-eyebrow { margin:0; }
+#app #screen0 .sd-scope-note { margin:0 !important; }
+#app #screen0 .sd-fee { margin-top:0; padding:16px; }
+#app #screen0 .sd-envelope { width:56px; height:72px; }
 #app .sd-guide-toggle { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:48px; padding:12px 0; font-size:13px; font-weight:550; color:var(--sd-sub); list-style:none; cursor:pointer; }
 #app .sd-guide-toggle::-webkit-details-marker { display:none; }
 #app .sd-guide-toggle svg { width:17px; height:17px; flex-shrink:0; }
@@ -423,22 +432,21 @@ body { color:var(--t1); }
 #app .sd-guide-content .sd-section:first-child { padding-top:12px; }
 @media (max-width:767px) {
   #app.sd-home { min-height:100svh; }
-  #app #screen0 .sd-main { min-height:calc(100svh - var(--sd-home-header-height)); padding-top:clamp(20px, 4svh, 36px); padding-bottom:calc(12px + env(safe-area-inset-bottom, 0px)); }
-  #app #screen0 .sd-hero { flex-shrink:0; }
+  #app #screen0 .sd-main { min-height:calc(100svh - var(--sd-home-header-height)); padding-top:var(--sd-home-top); padding-bottom:var(--sd-home-bottom); }
+  #app #screen0 .sd-hero { flex:0 0 auto; min-height:max(0px, calc(100svh - var(--sd-home-header-height) - var(--sd-home-top) - var(--sd-home-bottom) - var(--sd-home-gap) - 49px)); }
 }
 @media (max-width:767px) and (max-height:700px) {
-  #app #screen0 .sd-main { padding-top:16px; gap:12px; }
-  #app #screen0 .sd-scope-note { margin-bottom:12px !important; }
-  #app #screen0 .sd-fee { margin-top:16px; }
+  #app #screen0 .sd-main { --sd-home-top:16px; --sd-home-gap:12px; }
+  #app #screen0 .sd-home-scope { margin-bottom:20px; }
+  #app #screen0 .sd-hero-conversion { padding-top:24px; }
 }
 @media (max-width:767px) and (max-height:620px) {
-  #app #screen0 .sd-main { padding-top:12px; }
+  #app #screen0 .sd-main { --sd-home-top:12px; --sd-home-bottom:calc(8px + env(safe-area-inset-bottom, 0px)); }
+  #app #screen0 .sd-home-scope { margin-bottom:16px; }
+  #app #screen0 .sd-hero-conversion { padding-top:16px; }
   #app #screen0 .sd-fee { padding-top:12px; padding-bottom:12px; }
   #app #screen0 .sd-hero-actions { margin-top:12px; }
 }
 
 #app.sd-home ~ #legalFooter { display:none; }
 #app .sd-legal-toggle { background:none; border:0; padding:20px 0 12px; font:inherit; font-size:12px; color:var(--sd-sub); cursor:pointer; }
-@media (max-width:767px) and (max-height:620px) {
-  #app #screen0 .sd-main { padding-bottom:calc(8px + env(safe-area-inset-bottom, 0px)); }
-}

@@ -703,10 +703,15 @@ canvas#signaturePad1{
 <div id="screen0" class="welcome-screen">
       <main class="sd-main">
         <section class="sd-hero">
-          <div class="sd-eyebrow"><i data-lucide="map-pin" aria-hidden="true"></i>서울·경기 병원</div>
-          <p class="sd-scope-note">정신과 진료기록 제외</p>
+          <div class="sd-hero-message">
+            <div class="sd-home-scope">
+              <div class="sd-eyebrow"><i data-lucide="map-pin" aria-hidden="true"></i>서울·경기 병원</div>
+              <p class="sd-scope-note">정신과 진료기록 제외</p>
+            </div>
           <h1>병원 서류,<br><span>대신 받아드려요.</span></h1>
           <p class="sd-hero-copy">병원 방문은 맡기고,<br>서류만 받아보세요.</p>
+          </div>
+          <div class="sd-hero-conversion">
           <div class="sd-fee">
             <div>
               <div class="sd-fee-label">병원 1곳 대행료</div>
@@ -719,6 +724,7 @@ canvas#signaturePad1{
             <button type="button" class="sd-primary cursor-interaction" onclick="goToStep(4)">신청하기<i data-lucide="arrow-right" aria-hidden="true"></i></button>
             <a class="sd-secondary" href="https://pf.kakao.com/_XxjhEX/chat" target="_blank" rel="noopener noreferrer"><i data-lucide="message-circle" aria-hidden="true"></i>카카오톡 문의</a>
 
+          </div>
           </div>
         </section>
         <details class="sd-home-guide" ontoggle="if (!this.open) setLegalInformation(false)">
