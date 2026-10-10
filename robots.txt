@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /payment.html
+Disallow: /.netlify/
+Disallow: /netlify/
+
+Sitemap: https://grand-raindrop-d7f7de.netlify.app/sitemap.xml

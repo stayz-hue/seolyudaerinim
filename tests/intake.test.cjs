@@ -6,7 +6,9 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(match => match[1]);
+const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
+  .filter(match => !/type=["']application\/ld\+json["']/i.test(match[1]))
+  .map(match => match[2]);
 const tick = () => new Promise(resolve => setImmediate(resolve));
 const successResponse = (request, overrides = {}) => {
   const {orderId} = JSON.parse(request.body);
