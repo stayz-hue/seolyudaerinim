@@ -452,4 +452,4 @@ body { color:var(--t1); }
 #app .sd-legal-toggle { background:none; border:0; padding:20px 0 12px; font:inherit; font-size:12px; color:var(--sd-sub); cursor:pointer; }
 
 /* Keep processing time beside the existing fee details, before intake. */
-#app #screen0 .sd-processing-time { margin:6px 0 0; font-size:12px; line-height:1.5; font-weight:400; color:var(--sd-sub); }
+#app #screen0 .sd-processing-time { margin-top:3px; }
