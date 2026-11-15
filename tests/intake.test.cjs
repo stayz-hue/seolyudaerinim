@@ -201,6 +201,22 @@ test('returning to the signature step preserves the existing pad',()=>{
   const f=fixture();f.seedForm();const before=f.run('signaturePad');f.run('initSig()');assert.equal(f.run('signaturePad'),before);
 });
 
+test('leaving before delayed signature setup does not create a zero-size pad',()=>{
+  const f=fixture();
+  const canvas=f.elements.get('signaturePad1');
+  let visible=true,created=0;
+  canvas.getBoundingClientRect=()=>visible?{width:320,height:116}:{width:0,height:0};
+  f.context.SignaturePad=class { constructor() { created++; } };
+  f.run('goToStep(2)');
+  const firstSetup=[...f.timers.values()].find(timer=>timer.delay===200);
+  visible=false;f.run('goToStep(4)');firstSetup.callback();
+  assert.equal(created,0);assert.equal(f.run('signaturePad'),null);
+  visible=true;f.run('goToStep(2)');
+  const nextSetup=[...f.timers.values()].filter(timer=>timer.delay===200).at(-1);
+  nextSetup.callback();
+  assert.equal(created,1);assert.equal(canvas.width,320);assert.equal(canvas.height,116);
+});
+
 test('a broken replacement image clears acceptance and cannot pass validation',()=>{
   const f=fixture({readMode:'manual'});f.seedForm();const input=f.input(f.file());f.context.uploadInput=input;
   f.run('handleUpload(uploadInput)');assert.equal(f.run('idCardFileObj'),null);assert.equal(f.run('validate(5)'),false);
@@ -249,6 +265,38 @@ test('manual hospital address is retained without a map lookup and survives remo
   assert.equal(f.run('hospitalCoords[1].address'),'서울특별시 테스트로 3');
   assert.equal(f.elements.get('hospAddr_2').value,'서울특별시 테스트로 3');
   assert.equal(f.requests.length,0);
+});
+
+test('hospital search service failures show retryable failure and are not cached as missing hospitals',async()=>{
+  for(const response of [
+    {ok:false,json:async()=>({ok:true,places:[]})},
+    {ok:true,json:async()=>({ok:false,error:'service unavailable'})},
+    {ok:true,json:async()=>({ok:true,places:null})}
+  ]) {
+    let failed=true;
+    const f=fixture({fetch:async()=>failed?response:{ok:true,json:async()=>({ok:true,places:[]})}});
+    f.seedForm();f.run("searchHospital('테스트 병원',1)");await tick();
+    const drop=f.elements.get('hospDrop_1');
+    assert.match(drop.innerHTML,/검색 실패/);assert.ok(!drop.innerHTML.includes('검색 결과 없음'));
+    assert.ok(drop.innerHTML.includes('manualInput(1)'));
+    failed=false;f.run("searchHospital('테스트 병원',1)");await tick();
+    assert.match(drop.innerHTML,/검색 결과 없음/);assert.equal(f.requests.length,2);
+    f.run("searchHospital('테스트 병원',1)");await tick();assert.equal(f.requests.length,2);
+  }
+});
+
+test('hung hospital lookup stops after 20 seconds and supports direct input or a fresh retry',async()=>{
+  let hung=true;
+  const f=fixture({fetch:(_url,request)=>hung
+    ?new Promise((_resolve,reject)=>request.signal.addEventListener('abort',()=>reject(new Error('timeout'))))
+    :Promise.resolve({ok:true,json:async()=>({ok:true,places:[]})})});
+  f.seedForm();f.run("searchHospital('테스트 병원',1)");await tick();
+  [...f.timers.values()].find(timer=>timer.delay===20000).callback();await tick();
+  assert.match(f.elements.get('hospDrop_1').innerHTML,/검색 실패/);
+  assert.ok(f.elements.get('hospDrop_1').innerHTML.includes('manualInput(1)'));
+  assert.equal(f.run('hospitalSearchPending.size'),0);assert.equal(f.timers.size,0);
+  hung=false;f.run("searchHospital('테스트 병원',1)");await tick();
+  assert.equal(f.requests.length,2);assert.match(f.elements.get('hospDrop_1').innerHTML,/검색 결과 없음/);
 });
 
 test('retired bundle pricing and route are absent; per-hospital urgent and postal fees remain',()=>{
@@ -488,6 +536,33 @@ test('cancelled recognition cannot overwrite manual input',async()=>{
  resolve({name:'오래된값',birth:'20000101',address:'오래된주소'});await tick();
  assert.equal(cancelled,true);assert.equal(f.elements.get('patientName').value,'홍가람');
  assert.equal(f.run('idRecognitionBusy'),false);
+});
+
+test('manual name entry can cancel slow OCR without bypassing photo, name or signature validation',async()=>{
+ const f=fixture();f.seedForm();let resolve,cancelled=0;
+ f.context.window.SeoryuIdOCR={recognize:()=>({promise:new Promise(r=>resolve=r),cancel(){cancelled++;}})};
+ f.set('patientName','');f.set('patientBirth','');f.set('patientAddress','');
+ const photo=f.run('idCardFileObj'),signature=f.run('signaturePad');
+ f.run('extractIdInfo(()=>{})');
+ assert.equal(f.elements.get('manualIdentityEntry').hidden,false);
+ assert.equal(f.elements.get('patientName').disabled,true);
+ f.run('enterIdentityNameManually()');
+ assert.equal(cancelled,1);assert.equal(f.run('idRecognitionBusy'),false);
+ assert.equal(f.elements.get('patientName').disabled,false);
+ assert.equal(f.elements.get('identityNameField').hidden,false);
+ assert.equal(f.elements.get('patientName').focused,true);
+ assert.equal(f.elements.get('manualIdentityEntry').hidden,true);
+ assert.equal(f.run('validate(2)'),false);
+ f.set('patientName','직접입력');
+ resolve({name:'늦은인식',birth:'19990101',address:'늦은주소',nameStatus:'agreement'});await tick();
+ assert.equal(f.elements.get('patientName').value,'직접입력');
+ assert.equal(f.elements.get('patientBirth').value,'');assert.equal(f.elements.get('patientAddress').value,'');
+ assert.equal(f.run('idCardFileObj'),photo);assert.equal(f.run('signaturePad'),signature);
+ f.run('signaturePad={isEmpty:()=>true}');assert.equal(f.run('validate(2)'),false);
+ f.context.savedSignature=signature;f.run('signaturePad=savedSignature;idCardFileObj=null');assert.equal(f.run('validate(2)'),false);
+ f.context.savedPhoto=photo;f.run('idCardFileObj=savedPhoto;submitForm()');await tick();
+ assert.equal(f.requests.length,1);assert.equal(f.requests[0].payload.identityReview.source,'manual_reviewed');
+ assert.equal(f.requests[0].payload.patientName,'직접입력');
 });
 test('failed recognition falls back to manual without network submission',async()=>{
  const f=fixture();f.seedForm();

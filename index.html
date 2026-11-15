@@ -885,7 +885,8 @@ canvas#signaturePad1{
         </div>
 
         <p id="ocrStatus" role="status" aria-live="polite" class="compact-status"></p>
-        <div id="identityResult" class="sd-identity" hidden><div class="sd-identity-copy"><strong id="identityDisplay"></strong><span>자동 인식</span></div><button type="button" class="sd-text-action" onclick="editIdentityName()">수정</button></div>
+        <button type="button" id="manualIdentityEntry" class="sd-text-action" onclick="enterIdentityNameManually()" hidden>이름 직접 입력</button>
+        <div id="identityResult" class="sd-identity" hidden><div class="sd-identity-copy"><strong id="identityDisplay"></strong><span>신분증 이름</span></div><button type="button" class="sd-text-action" onclick="editIdentityName()">수정</button></div>
         <div class="field" id="identityNameField" hidden>
           <label class="field-label" for="patientName">신분증 이름 <span class="req">*</span></label>
           <input type="text" id="patientName" maxlength="40" autocomplete="off" spellcheck="false" placeholder="신분증에 적힌 이름" oninput="resetIdentityReview();syncIdentityDisplay()" aria-describedby="identityNameHint">
@@ -952,9 +953,6 @@ canvas#signaturePad1{
           <span class="consent-text">위 대리인 정보로 진행 동의</span>
         </div>
         <input type="hidden" id="agentName" value="배승휴">
-        <input type="hidden" id="agentBirth" value="1990-09-23">
-        <input type="hidden" id="agentPhone" value="010-9536-2940">
-        <input type="hidden" id="agentAddress" value="경기도 남양주시 다산순환로 20, 다산현대프리미어캠퍼스 C동 209호">
         <input type="hidden" id="agentRelation" value="대리인">
       </div>
       <div class="bottom">
@@ -1092,16 +1090,22 @@ function fetchHospitalResults(query) {
   var cached = hospitalSearchCache.get(query);
   if (cached && Date.now() - cached.time < 300000) return Promise.resolve(cached.result);
   if (hospitalSearchPending.has(query)) return hospitalSearchPending.get(query);
-  var request = fetch('/.netlify/functions/search?q=' + encodeURIComponent(query))
-    .then(function(r) { return r.json(); })
+  const controller = new AbortController();
+  const timeout = setTimeout(function() { controller.abort(); }, 20000);
+  var request = Promise.resolve().then(function() {
+      return fetch('/.netlify/functions/search?q=' + encodeURIComponent(query), { signal: controller.signal });
+    })
+    .then(function(r) {
+      if (!r || !r.ok) throw new Error('Hospital search unavailable');
+      return r.json();
+    })
     .then(function(res) {
-      if (res.ok && Array.isArray(res.places)) {
-        if (hospitalSearchCache.size >= 50) hospitalSearchCache.delete(hospitalSearchCache.keys().next().value);
-        hospitalSearchCache.set(query, { time: Date.now(), result: res });
-      }
+      if (!res || res.ok !== true || !Array.isArray(res.places)) throw new Error('Hospital search unavailable');
+      if (hospitalSearchCache.size >= 50) hospitalSearchCache.delete(hospitalSearchCache.keys().next().value);
+      hospitalSearchCache.set(query, { time: Date.now(), result: res });
       return res;
     })
-    .finally(function() { hospitalSearchPending.delete(query); });
+    .finally(function() { clearTimeout(timeout); hospitalSearchPending.delete(query); });
   hospitalSearchPending.set(query, request);
   return request;
 }
@@ -2046,7 +2050,20 @@ function cancelIdRecognition() {
   const job = activeIdRecognition;
   activeIdRecognition = null;
   idRecognitionBusy = false;
+  document.getElementById('patientName').disabled = false;
+  document.getElementById('manualIdentityEntry').hidden = true;
   if (job) job.cancel();
+}
+function enterIdentityNameManually() {
+  if (!idCardFileObj || idCardLoading || submissionBusy || submissionComplete) return;
+  cancelIdRecognition();
+  resetIdentityReview();
+  identityOcrName = '';
+  identityOcrStatus = 'missing';
+  document.getElementById('identityNameField').hidden = false;
+  document.getElementById('ocrStatus').textContent = '신분증 사진에 적힌 이름을 입력해 주세요.';
+  syncIdentityDisplay();
+  document.getElementById('patientName').focus();
 }
 function extractIdInfo(done) {
   done = typeof done === 'function' ? done : function() {};
@@ -2082,6 +2099,7 @@ function extractIdInfo(done) {
   activeIdRecognition = job;
   idRecognitionBusy = true;
   input.disabled = true;
+  document.getElementById('manualIdentityEntry').hidden = false;
   if (status) status.textContent = '신분증을 읽고 있어요. 연락처를 입력해 주세요.';
   job.promise.then(function(result) {
     if (selection !== idCardSelection || activeIdRecognition !== job) return;
@@ -2099,7 +2117,7 @@ function extractIdInfo(done) {
   }).catch(function() {
     if (selection === idCardSelection && activeIdRecognition === job && status) { field.hidden=false; status.textContent = '이름을 읽지 못했어요. 사진을 보고 입력해 주세요.'; }
   }).finally(function() {
-    if (activeIdRecognition === job) { activeIdRecognition = null; idRecognitionBusy = false; input.disabled = false; }
+    if (activeIdRecognition === job) { activeIdRecognition = null; idRecognitionBusy = false; input.disabled = false; document.getElementById('manualIdentityEntry').hidden = true; }
     done();
   });
 }
@@ -2112,6 +2130,9 @@ function initSig() {
   if (!canvas || signaturePad) return;
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
+  // The delayed setup can run after the customer has returned to hospital details.
+  // Wait for the next visible visit instead of retaining an unusable empty pad.
+  if (rect.width <= 0 || rect.height <= 0) return;
   canvas.width  = rect.width * dpr;
   canvas.height = rect.height * dpr;
   const ctx = canvas.getContext('2d');

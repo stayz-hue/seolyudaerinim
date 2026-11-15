@@ -1,0 +1,74 @@
+{
+  "audit_date_kst": "2026-11-15",
+  "target": "https://grand-raindrop-d7f7de.netlify.app/.netlify/functions/search",
+  "request_method": "GET",
+  "scope": "Read-only public hospital search; no order, payment, message or customer data changes.",
+  "timestamp_note": "Per-request wall-clock timestamps were not retained; measured durations below are recorded only where available.",
+  "observations": [
+    {
+      "query": "삼성병원",
+      "http_status": 200,
+      "duration_seconds": 15.73,
+      "ok": true,
+      "result_count": 1
+    },
+    {
+      "query": "삼성서울병원",
+      "http_status": 503,
+      "duration_seconds": null
+    },
+    {
+      "query": "서울대병원",
+      "http_status": 503,
+      "duration_seconds": null
+    },
+    {
+      "query": "서울아산병원",
+      "http_status": 200,
+      "duration_seconds": 11.37,
+      "ok": true,
+      "result_count": 1
+    },
+    {
+      "query": "없는병원점검테스트",
+      "http_status": 503,
+      "duration_seconds": null
+    }
+  ],
+  "conclusion": "Intermittent HTTP 503 observed. Provider failure, configuration failure, timeout and cache behavior were not distinguished by this run.",
+  "local_verification": {
+    "command": "node --test tests/search.test.cjs tests/payment.test.cjs",
+    "passed": 12,
+    "failed": 0
+  },
+  "source_changes": "None in search.js or payment.html. HTTP/provider error presentation in index.html was referred to the frontend audit.",
+  "follow_up_observations": [
+    {
+      "query": "서울대병원",
+      "http_status": 200,
+      "duration_seconds": 14.73,
+      "cache_status": "Netlify Durable; fwd=vary-miss; stored",
+      "ok": true
+    },
+    {
+      "query": "삼성서울병원",
+      "http_status": 503,
+      "duration_seconds": 14.31,
+      "cache_status": "Netlify Durable; fwd=bypass",
+      "response": {
+        "ok": false,
+        "error": "병원 검색에 실패했습니다"
+      }
+    },
+    {
+      "query": "없음점검",
+      "http_status": 503,
+      "duration_seconds": 14.58,
+      "cache_status": "Netlify Durable; fwd=bypass",
+      "response": {
+        "ok": false,
+        "error": "병원 검색에 실패했습니다"
+      }
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "audit_date": "2026-11-15",
+  "timezone": "Asia/Seoul",
+  "checked_at": "2026-11-15T19:50:22+09:00",
+  "scope": "Read-only inspection of the current standalone Windows SeoryuBot installation and one authenticated document-queue query.",
+  "installed_source_files": [
+    {
+      "name": "seoryu_bot.py",
+      "sha256": "e8b21218f221421f395cc42892f198b73a41da22f45517f4d5e4b71d5020ab52",
+      "size_bytes": 7317,
+      "modified_at": "2026-09-14T15:37:29+09:00"
+    },
+    {
+      "name": "seoryu_engine.py",
+      "sha256": "c899bf753ca444b980ee088a3a7e7d94cc3c56678e9a6f0b8c8d37ced8d711d8",
+      "size_bytes": 37593,
+      "modified_at": "2026-09-22T16:23:34+09:00"
+    },
+    {
+      "name": "seoryu_runtime.py",
+      "sha256": "a5056cbe22e44e18560fb469fc8762a32d02ed26ae9c2dddb44021aad6b7be49",
+      "size_bytes": 6210,
+      "modified_at": "2026-09-14T15:37:29+09:00"
+    }
+  ],
+  "source_hash_limit": "Hashes identify installed files on disk; running-process memory was not inspected.",
+  "process": {
+    "present": true,
+    "executable": "pythonw.exe",
+    "status_state": "running",
+    "status_updated_at": "2026-11-15T19:50:11+09:00",
+    "last_cycle": {"sent": 0, "acked": 0, "retry": 0, "uncertain": 0},
+    "poll_interval_seconds": 10
+  },
+  "configuration_checks": {
+    "gas_url_matches_current_web_source": true,
+    "document_queue_credential_present": true,
+    "telegram_credential_present": true,
+    "telegram_destination_present": true,
+    "secret_values_retained_in_report": false
+  },
+  "authenticated_queue_probe": {
+    "operation": "docjobs GET only",
+    "http_status": 200,
+    "content_type": "application/json",
+    "explicit_ok": true,
+    "jobs_is_array": true,
+    "job_count": 0,
+    "elapsed_seconds": 2.0,
+    "server_payload_retained": false,
+    "acknowledgment_or_queue_mutation_performed": false
+  },
+  "local_delivery_journal": {
+    "read_only": true,
+    "row_count": 1,
+    "states": {"acked": 1},
+    "retry_or_uncertain_rows": 0,
+    "customer_delivery_success_inferred": false
+  },
+  "log_observations": {
+    "line_count": 6006,
+    "levels": {"INFO": 17, "WARNING": 5989},
+    "warning_exception_counts": {
+      "HTTPError": 5413,
+      "TimeoutError": 444,
+      "URLError": 27,
+      "ConnectionResetError": 8,
+      "RuntimeError": 96,
+      "RemoteDisconnected": 1
+    },
+    "last_warning_at": "2026-11-15T14:03:41+09:00",
+    "today_warnings": {"hour_14_RuntimeError": 4},
+    "recent_timeout_counts": {"2026-11-12": 88, "2026-11-13": 97, "2026-11-14": 2},
+    "trend": "Most HTTPError warnings occurred from September 14 through October 26. Recent November HTTPError counts were usually zero to two per day. A successful current authenticated queue probe and fresh zero-work cycle do not indicate an ongoing outage.",
+    "diagnostic_limit": "Existing logs record exception classes but omit HTTP status codes and server rejection reasons. Historical root causes cannot be determined from these logs.",
+    "warning_count_is_not_customer_failure_count": true
+  },
+  "current_pc_code_review": {
+    "delivery_journal_and_single_instance_lock_present": true,
+    "uncertain_delivery_automatically_resent": false,
+    "empty_birth_allowed": true,
+    "nonempty_birth_requires_6_or_8_digits": true,
+    "empty_address_allowed": true,
+    "missing_birth_or_address_flagged_for_operator_review": true,
+    "old_attached_gas_findings_excluded": true
+  },
+  "limitations": {
+    "current_gas_source_obtained": false,
+    "gas_source_search": "A bounded filename search in Documents found no current Intake.gs candidate; this was not an exhaustive device search.",
+    "new_customer_application_created": false,
+    "actual_deposit_processed": false,
+    "document_generated_for_customer": false,
+    "telegram_or_email_sent": false,
+    "customer_delivery_end_to_end_verified": false,
+    "sms_payment_transport_verified": false
+  },
+  "changes": {
+    "pc_source_or_configuration_changed": false,
+    "worker_stopped_or_restarted": false,
+    "operational_queue_or_journal_changed": false,
+    "unrequested_diagnostic_patch_applied": false
+  },
+  "conclusion": "Current worker and authenticated empty-queue retrieval are healthy. No current PC defect was established that justified changing or restarting the worker. Historical connectivity failures remain unexplained, and real application/payment/delivery behavior was not exercised."
+}
