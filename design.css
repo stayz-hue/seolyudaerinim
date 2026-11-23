@@ -39,7 +39,7 @@
     #app .sd-back { display: inline-flex; align-items: center; gap: 5px; min-height: 44px; border: 0; background: transparent; color: var(--sd-sub); padding: 0 4px 0 0; font-size: 14px; }
     #app .sd-back svg { width: 17px; height: 17px; }
     #app .sd-step-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--sd-sub); font-size: 12px; }
-    #app .sd-step-label strong { color: var(--sd-brand); font-weight: 650; }
+    #app .sd-step-label strong { color: var(--sd-brand); font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
     #app .sd-input { width: 100%; min-width: 0; min-height: 49px; border: 1px solid var(--sd-line); border-radius: 10px; padding: 12px 14px; color: var(--sd-ink); background: var(--sd-bg); font-size: 16px; }
     #app .sd-input::placeholder { color: var(--sd-sub); opacity: .85; }
     #app .sd-help { margin-top: 8px !important; color: var(--sd-sub); font-size: 12px; line-height: 1.6; }
@@ -63,21 +63,11 @@
 
     #app .sd-hospital-unit + .sd-hospital-unit { border-top: 1px solid var(--sd-line); margin-top: 22px; padding-top: 17px; }
     #app .sd-text-action { min-height: 44px; padding: 8px 0 8px 8px; border: 0; background: transparent; color: var(--sd-sub); font-size: 12px; }
-    #app .sd-period-check { display: flex; align-items: center; gap: 7px; min-height: 44px; }
-    #app .sd-period-check input { accent-color: var(--sd-brand); margin: 0; width: 16px; height: 16px; }
-    #app .sd-add-hospital { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; min-height: 48px; margin-top: 16px; padding: 11px 14px; border: 1px dashed var(--sd-line); border-radius: 10px; background: transparent; color: var(--sd-brand); font-size: 14px; font-weight: 600; }
-    #app .sd-add-hospital span { display: inline-flex; align-items: center; gap: 6px; }
-    #app .sd-add-hospital svg { width: 17px; height: 17px; }
-    #app .sd-add-hospital small { font-size: 12px; font-weight: 500; color: var(--sd-sub); white-space: nowrap; }
     #app .sd-delivery-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
     #app .sd-delivery-grid .sd-option { padding: 13px 11px; gap: 8px; min-height: 74px; }
     #app .sd-delivery-grid .sd-option input { flex: 0 0 auto; }
     #app .sd-delivery-grid .sd-option-copy strong { font-size: 13px; }
     #app .sd-delivery-grid .sd-option-copy small { font-size: 12px; }
-    #app .sd-identity { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 0 0; }
-    #app .sd-identity-copy { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
-    #app .sd-identity-copy strong { font-size: 15px; font-weight: 650; }
-    #app .sd-identity-copy span { font-size: 12px; color: var(--sd-sub); }
 
     #app .sd-header { min-height: 64px; padding-top: 18px; padding-bottom: 18px; }
     #app .sd-header-note { font-size: 11px; }
@@ -86,38 +76,19 @@
     #app .sd-step-label .sd-back svg { width: 15px; height: 15px; }
     #app .sd-hospital-unit { padding: 16px; border-radius: 14px; background: var(--sd-soft); }
     #app .sd-hospital-unit + .sd-hospital-unit { margin-top: 12px; border: 0; padding-top: 12px; }
-    #app .sd-add-hospital { min-height: 48px; border: 0; padding: 4px 2px; margin-top: 4px; font-size: 13px; font-weight: 500; }
-    #app .sd-period-field { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 49px; padding: 0 12px 0 14px; border: 1px solid var(--sd-line); border-radius: 10px; background: var(--sd-bg); }
-    #app .sd-period-field .sd-period-check { flex: 0 0 auto; gap: 6px; font-size: 12px; color: var(--sd-brand); }
-    #app .sd-period-field .sd-period-check input { width: 14px; height: 14px; }
     #app .sd-delivery-grid .sd-option { min-height: 64px; padding: 11px 12px; }
     #app .sd-delivery-grid .sd-option input { width: 16px; height: 16px; }
-    #app .sd-identity { padding: 12px 16px; background: var(--sd-soft); border-radius: 12px; }
-    #app .sd-identity-copy strong { font-size: 16px; font-weight: 600; }
 
     #app .sd-header { padding-top: 18px; padding-bottom: 18px; }
     #app .sd-brand { font-size: 17px; font-weight: 700; gap: 8px; }
     #app .sd-brand svg { width: 20px; height: 20px; }
     #app .sd-step-label { min-height: 40px; }
-    #app .sd-step-label .sd-back { min-height: 40px; }
     #app .sd-hospital-unit { padding: 18px 16px; }
-    #app .sd-add-hospital { margin-top: 6px; min-height: 48px; padding: 6px 0; }
-    #app .sd-add-hospital small { font-weight: 400; }
     #app .sd-delivery-grid { gap: 10px; }
     #app .sd-delivery-grid .sd-option { min-height: 66px; border-radius: 10px; padding: 12px; }
     #app .sd-delivery-grid .sd-option-copy strong { font-size: 14px; font-weight: 600; }
     #app .sd-delivery-grid .sd-option-copy small { margin-top: 1px; }
     #app .sd-primary { font-size: 16px; font-weight: 600; border-radius: 10px; }
-    #app .sd-identity { grid-column: 1; grid-row: 1; padding: 0; border-radius: 0; background: transparent; gap: 4px; }
-    #app .sd-identity-copy { gap: 2px; align-items: flex-start; flex-direction: column; }
-    #app .sd-identity-copy strong { font-size: 16px; }
-    #app .sd-identity-copy span { font-size: 11px; }
-    #app .sd-identity .sd-text-action { padding-left: 4px; padding-right: 4px; min-height: 44px; }
-
-    #app .sd-depositor-field { display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:49px; padding:0 12px 0 14px; border:1px solid var(--sd-line); border-radius:10px; background:var(--sd-bg); }
-    #app .sd-depositor-field .sd-period-check { flex:0 0 auto; gap:6px; font-size:12px; color:var(--sd-brand); }
-    #app .sd-depositor-field .sd-period-check input,
-    #app .sd-period-field .sd-period-check input { width:14px; height:14px; }
 
     #app .sd-main { padding:24px 24px 24px; }
     #app .sd-eyebrow { font-size:12px; font-weight:500; gap:6px; margin-bottom:4px; }
@@ -145,12 +116,10 @@
   
 .sd-icon { fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 
-/* Production adapters retain the existing intake, OCR and search handlers. */
 body { background:#f4ede0; }
 #app { max-width:420px; min-height:100dvh; margin:0 auto; border-radius:0; padding:0; color-scheme:light; overflow:clip; }
-#app .welcome-screen { display:block; }
+#app .welcome-screen { display:flex; }
 #app .sd-secondary { text-decoration:none; }
-#app .form-screen { flex:none; }
 #app .fhdr { padding:4px 24px 0; border:0; background:var(--sd-bg); }
 #app .progress { gap:6px; margin:0 0 6px; padding-top:0; }
 #app .progress-step { height:3px; border:0; background:var(--sd-line); }
@@ -158,15 +127,15 @@ body { background:#f4ede0; }
 #app .step-meta { display:block; margin:0; }
 #app .step-title { font-size:25px; line-height:1.35; font-weight:700; padding:14px 0 10px; }
 #app .fscroll { padding:0 24px 12px; overflow:visible; flex:none; }
-#app .bottom { position:static; flex-direction:column; padding:14px 24px max(20px,calc(12px + env(safe-area-inset-bottom,0px))); border:0; border-top:1px solid var(--sd-line); background:var(--sd-bg); gap:10px; }
+#app .bottom { position:static; flex-direction:column; margin-top:auto; padding:14px 24px max(20px,calc(12px + env(safe-area-inset-bottom,0px))); border:0; border-top:1px solid var(--sd-line); background:var(--sd-bg); gap:10px; }
 #app .btn-next { min-height:56px; border-radius:10px; font-size:16px; font-weight:600; box-shadow:none; background:var(--sd-action); color:var(--sd-on-action); }
 #app .field { margin:0 0 14px; }
 #app .field-label { font-size:13px; font-weight:600; margin-bottom:8px; color:var(--sd-ink); letter-spacing:inherit; }
 #app .field-label .req { display:inline; color:var(--danger); font-size:12px; }
 #app .field-error { flex:0 0 100%; color:var(--danger); font-size:13px; line-height:1.5; margin:6px 0 0; word-break:keep-all; }
-#app .sd-period-field:has(.field-error), #app .sd-depositor-field:has(.field-error) { flex-wrap:wrap; padding-bottom:8px; }
-#app [aria-invalid=true] { outline:1px solid var(--danger); outline-offset:0; }
-#app input:not([type=checkbox]):not([type=file]) { min-width:0; width:100%; min-height:49px; padding:12px 14px; font-size:16px; border:1px solid var(--sd-line); border-radius:10px; background:var(--sd-bg); color:var(--sd-ink); box-shadow:none; }
+#app input:not([type=checkbox]):not([type=file]) { min-width:0; width:100%; min-height:49px; padding:12px 14px; font-size:17px; border:1px solid var(--sd-line); border-radius:10px; background:var(--sd-bg); color:var(--sd-ink); box-shadow:none; outline:none; transition:none; }
+#app input:not([type=checkbox]):not([type=file]):focus { border-color:var(--sd-brand); }
+#app input:not([type=checkbox]):not([type=file])[aria-invalid=true], #app .upload-area[aria-invalid=true], #app #signaturePad1[aria-invalid=true] { border-color:var(--danger); }
 #app .scard { border:0; box-shadow:none; padding:14px 12px; margin:0 0 10px; background:var(--sd-soft); border-radius:12px; overflow:visible; }
 #app .scard-head { padding:0 0 12px; background:none; border:0; font-size:12px; color:var(--sd-sub); }
 #app .scard-num { display:none; }
@@ -178,26 +147,80 @@ body { background:#f4ede0; }
 #app .hosp-item-name { font-size:14px; font-weight:600; }
 #app .hosp-item-addr,#app .hosp-item-tel { font-size:12px; color:var(--sd-sub); }
 #app .hosp-selected-badge { display:block; margin:8px 0 0; padding:0 14px; font-size:12px; font-weight:400; color:var(--sd-sub); border:0; border-radius:0; background:none; }
-#app .sd-add-hospital { border:1px dashed var(--sd-line); background:none; padding:8px 12px; margin:0 0 14px; font-size:14px; font-weight:600; cursor:pointer; }
-#app .sd-period-field input[type=text] { flex:1; width:0; padding:12px 0; border:0; background:transparent; min-height:47px; }
-#app #depositorCustom { flex:1; min-width:0; }
-#app #depositorDefault { font-size:16px; }
-#app #depositorName { padding:12px 0; border:0; min-height:47px; }
-#app .sd-depositor-field .sd-period-check { font-size:12px; color:var(--sd-brand); flex:0 0 auto; }
-#app .sd-period-check input { flex:0 0 auto; width:14px; height:14px; }
+#app .sd-add-hospital,
+#app .upload-area {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  width:100%;
+  min-height:52px;
+  padding:12px 16px;
+  border:1px solid var(--sd-brand);
+  border-radius:10px;
+  background:var(--sd-selected);
+  color:var(--sd-ink);
+  font-size:17px;
+  font-weight:600;
+  cursor:pointer;
+}
+#app .sd-add-hospital { justify-content:space-between; margin:4px 0 24px; }
+#app .sd-add-hospital span { display:inline-flex; align-items:center; gap:10px; }
+#app .sd-add-hospital span::before, #app .upload-area::before {
+  content:"";
+  width:16px;
+  height:16px;
+  flex:none;
+  color:var(--sd-brand);
+  background:linear-gradient(currentColor,currentColor) center / 100% 2px no-repeat,
+             linear-gradient(currentColor,currentColor) center / 2px 100% no-repeat;
+}
+#app .sd-add-hospital small { color:var(--sd-sub); font-size:14px; font-weight:400; white-space:nowrap; }
+#app .sd-add-hospital:disabled { opacity:.65; cursor:default; }
+#app .sd-field-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+#app .sd-field-heading .field-label { margin:0; }
+#app .sd-period-check { display:inline-flex; align-items:center; gap:8px; min-height:44px; color:var(--sd-sub); font-size:15px; cursor:pointer; }
+#app .sd-period-check input { width:17px; height:17px; flex:none; margin:0; accent-color:var(--sd-brand); }
+#app .sd-period-group > span { color:var(--sd-sub); font-size:16px; }
+#app .sd-payer-dialog {
+  position:fixed;
+  inset:auto 0 0;
+  width:min(100%,420px);
+  max-width:100%;
+  max-height:calc(100dvh - max(12px,env(safe-area-inset-top,0px)));
+  margin:0 auto;
+  border:1px solid var(--sd-line);
+  border-bottom:0;
+  border-radius:18px 18px 0 0;
+  padding:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  background:var(--sd-bg);
+  color:var(--sd-ink);
+}
+#app .sd-payer-dialog::backdrop { background:rgb(28 20 9 / 45%); }
+html:has(.sd-payer-dialog[open]) { overflow:hidden; }
+#app .sd-dialog-body { padding:16px clamp(16px,5vw,24px) max(20px,calc(12px + env(safe-area-inset-bottom,0px))); }
+#app .sd-dialog-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+#app .sd-dialog-heading h2 { font:400 23px/1.35 var(--sd-font-title); color:var(--sd-ink); word-break:keep-all; }
+#app .sd-dialog-close { flex:none; min-width:44px; min-height:44px; padding:4px; border:0; border-radius:6px; background:none; color:var(--sd-sub); font-size:15px; cursor:pointer; }
+#app .sd-dialog-body > .sd-field-note { margin:6px 0 16px; font-size:15px; word-break:keep-all; }
+#app .sd-dialog-actions { display:grid; gap:8px; }
+#app .sd-payer-dialog .sd-secondary { min-height:50px; border:1px solid var(--sd-brand); border-radius:10px; color:var(--sd-ink); font-size:16px; }
+#app #depositorCustom > .sd-back { margin-bottom:8px; }
+@media (min-width:600px) {
+  #app .sd-payer-dialog { inset:0; margin:auto; max-height:calc(100dvh - 32px); border:1px solid var(--sd-line); border-radius:16px; }
+}
+#app .sd-delivery-choice ~ .field { margin:14px 0 0; }
 #app [hidden] { display:none!important; }
 #app .fee-preview { background:none; border:0; padding:0; margin:0; border-radius:0; }
 #app .fp-total { border:0; padding:0; margin:0; align-items:baseline; gap:8px; }
 #app .sd-field-note { margin-top:4px; color:var(--sd-sub); font-size:13px; line-height:1.5; }
 #app .fp-total-label { color:var(--sd-sub); font-size:14px; font-weight:400; }
 #app .fp-total-val { color:var(--sd-ink); font-size:24px; font-weight:700; }
-#app .upload-area { margin:0 0 16px; padding:15px 14px; min-height:85px; background:var(--sd-soft); border:1px dashed var(--sd-line); border-radius:10px; }
-#app .upload-title { font-size:14px; font-weight:500; }
-#app .upload-sub:empty,#app #identityNameHint { display:none; }
-#app .upload-area.has-file { min-height:44px; border:0; padding:4px 0; background:none; text-align:right; margin:0; }
-#app #identityResult { margin:4px 0 14px; padding:10px 14px; border:1px solid var(--sd-line); border-radius:10px; background:var(--sd-soft); }
-#app .compact-status:empty { display:none; }
-#app .compact-status { font-size:12px; margin-bottom:16px; }
+#app .upload-area { justify-content:center; margin:0; transition:none; }
+#app .upload-title { margin:0; color:inherit; font:inherit; }
+#app .upload-sub { margin-top:6px; color:var(--sd-sub); font-size:14px; overflow-wrap:anywhere; }
+#app .upload-sub:empty { display:none; }
 #app .sig-wrap { border:0; border-radius:0; overflow:visible; background:none; margin-top:14px; }
 #app .sig-bar { background:none; padding:0 0 8px; border:0; }
 #app .sig-hint { color:var(--sd-ink); font-size:13px; font-weight:600; }
@@ -219,7 +242,10 @@ body { background:#f4ede0; }
 #app .receipt-meta { font-size:13px; color:var(--sd-sub); overflow-wrap:anywhere; }
 #app .receipt-meta:not(:empty) { margin-top:5px; }
 #app .kakao-contact { display:flex; align-items:center; justify-content:center; min-height:44px; margin-top:10px; padding:8px; background:transparent; border:1px solid var(--sd-line); border-radius:10px; font-size:14px; font-weight:500; color:var(--sd-sub); }
-@media (min-width:768px) { #app { margin:24px auto; border-radius:24px; min-height:0; } }
+@media (min-width:768px) {
+  #app { margin:24px auto; border-radius:24px; min-height:0; }
+  #app.sd-home { min-height:min(calc(100svh - 48px), 800px); margin-block:max(24px, calc((100svh - 800px) / 2)); }
+}
 @media (max-width:370px) { #app .fhdr,#app .fscroll,#app .bottom { padding-left:20px; padding-right:20px; } #app .step-title { font-size:23px; } }
 body { color:var(--t1); }
 #app .sd-delivery-choice { border:0; margin:4px 0 0; padding:0; min-width:0; }
@@ -233,9 +259,8 @@ body { color:var(--t1); }
 #app .sd-step-label { min-height:40px; }
 #app .sd-main .sd-fee-amount { margin:4px 0 6px; }
 
-/* Keep the conversion area compact at any viewport height; guide and policy are optional. */
 #app .sd-header { min-height:calc(60px + env(safe-area-inset-top,0px)); padding-top:calc(14px + env(safe-area-inset-top,0px)); padding-bottom:14px; }
-#app #screen0 .sd-main { display:flex; flex-direction:column; gap:10px; width:100%; padding-top:22px; padding-bottom:max(12px,env(safe-area-inset-bottom,0px)); }
+#app #screen0 .sd-main { display:flex; flex-direction:column; gap:10px; width:100%; margin-block:auto; padding-top:24px; padding-bottom:max(24px,env(safe-area-inset-bottom,0px)); }
 #app .sd-home-guide { margin-top:0; border-top:1px solid var(--sd-line); flex-shrink:0; }
 #app #screen0 .sd-hero { display:flex; flex-direction:column; gap:18px; }
 #app #screen0 .sd-home-scope { display:flex; align-items:center; flex-wrap:wrap; gap:4px 10px; margin-bottom:12px; }
@@ -267,24 +292,20 @@ button, input, textarea, select { font-family:inherit; }
 #app .step-title { font-size:26px; }
 #app .success-h { font-size:29px; }
 #app .sd-header-note, #app .sd-scope-note, #app .sd-flow-num { font-size:12px; }
-#app .sd-eyebrow, #app .sd-fee-label, #app .sd-fee-note, #app .sd-flow-copy, #app .sd-legal-toggle, #app .sd-step-label, #app .sd-step-label .sd-back, #app .compact-status, #app .receipt-label, #app .intake-notice, #app .sig-clear { font-size:13px; }
+#app .sd-eyebrow, #app .sd-fee-label, #app .sd-fee-note, #app .sd-flow-copy, #app .sd-legal-toggle, #app .sd-step-label, #app .sd-step-label .sd-back, #app .receipt-label, #app .intake-notice, #app .sig-clear { font-size:13px; }
 #app .success-p, #app .fp-total-label { font-size:15px; }
 #app .sd-fee-amount { font-size:29px; }
 #app .sd-fee-amount small, #app .sd-primary, #app .btn-next { font-size:17px; }
 #app .sd-flow-title, #app .sd-guide-toggle, #app .field-label, #app .sig-hint { font-size:14px; }
-#app .sd-hero-actions .sd-secondary, #app .hosp-item-addr, #app .hosp-item-tel, #app .hosp-selected-badge, #app .sd-period-check, #app .sd-depositor-field .sd-period-check, #app .scard-head, #app .sd-help, #app .sd-add-hospital small { font-size:13px; }
+#app .sd-hero-actions .sd-secondary, #app .hosp-item-addr, #app .hosp-item-tel, #app .hosp-selected-badge, #app .scard-head, #app .sd-help { font-size:13px; }
 #app .hosp-item-name, #app .sd-option-copy strong { font-size:15px; }
 #app .sd-option-copy small { font-size:13px; }
 #app .sd-delivery-grid .sd-option-copy strong { font-size:15px; }
 #app .sd-delivery-grid .sd-option-copy small { font-size:13px; }
-#app input:not([type=checkbox]):not([type=file]) { font-size:17px; }
-#app #depositorDefault { font-size:17px; }
-#app .sd-add-hospital:disabled { opacity:.65; cursor:default; }
 #app .fp-total-val { font-size:25px; }
-#app .upload-title { font-size:15px; }
 #app .upload-area, #app .hosp-item { overflow-wrap:anywhere; }
 #app .hosp-item { cursor:pointer; }
-#app :is(button, a, input, [role=button], summary):focus-visible { outline:2px solid var(--sd-brand); outline-offset:3px; }
+#app :is(button, a, input[type=checkbox], [role=button], summary):focus-visible { outline:2px solid var(--sd-brand); outline-offset:3px; }
 #app .hosp-dropdown .hosp-item:focus-visible { outline-offset:-2px; }
 #successAccount { overflow-wrap:anywhere; }
 #checkModalSheet, #warningModalSheet { max-height:calc(100dvh - env(safe-area-inset-top, 0px)); overflow-y:auto; }
