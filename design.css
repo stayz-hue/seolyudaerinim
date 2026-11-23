@@ -39,7 +39,7 @@
     #app .sd-back { display: inline-flex; align-items: center; gap: 5px; min-height: 44px; border: 0; background: transparent; color: var(--sd-sub); padding: 0 4px 0 0; font-size: 14px; }
     #app .sd-back svg { width: 17px; height: 17px; }
     #app .sd-step-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--sd-sub); font-size: 12px; }
-    #app .sd-step-label strong { color: var(--sd-brand); font-weight: 650; }
+    #app .sd-step-label strong { color: var(--sd-brand); font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
     #app .sd-input { width: 100%; min-width: 0; min-height: 49px; border: 1px solid var(--sd-line); border-radius: 10px; padding: 12px 14px; color: var(--sd-ink); background: var(--sd-bg); font-size: 16px; }
     #app .sd-input::placeholder { color: var(--sd-sub); opacity: .85; }
     #app .sd-help { margin-top: 8px !important; color: var(--sd-sub); font-size: 12px; line-height: 1.6; }
@@ -83,7 +83,6 @@
     #app .sd-brand { font-size: 17px; font-weight: 700; gap: 8px; }
     #app .sd-brand svg { width: 20px; height: 20px; }
     #app .sd-step-label { min-height: 40px; }
-    #app .sd-step-label .sd-back { min-height: 40px; }
     #app .sd-hospital-unit { padding: 18px 16px; }
     #app .sd-delivery-grid { gap: 10px; }
     #app .sd-delivery-grid .sd-option { min-height: 66px; border-radius: 10px; padding: 12px; }
@@ -121,7 +120,6 @@ body { background:#f4ede0; }
 #app { max-width:420px; min-height:100dvh; margin:0 auto; border-radius:0; padding:0; color-scheme:light; overflow:clip; }
 #app .welcome-screen { display:flex; }
 #app .sd-secondary { text-decoration:none; }
-#app .form-screen { flex:none; }
 #app .fhdr { padding:4px 24px 0; border:0; background:var(--sd-bg); }
 #app .progress { gap:6px; margin:0 0 6px; padding-top:0; }
 #app .progress-step { height:3px; border:0; background:var(--sd-line); }
@@ -129,7 +127,7 @@ body { background:#f4ede0; }
 #app .step-meta { display:block; margin:0; }
 #app .step-title { font-size:25px; line-height:1.35; font-weight:700; padding:14px 0 10px; }
 #app .fscroll { padding:0 24px 12px; overflow:visible; flex:none; }
-#app .bottom { position:static; flex-direction:column; padding:14px 24px max(20px,calc(12px + env(safe-area-inset-bottom,0px))); border:0; border-top:1px solid var(--sd-line); background:var(--sd-bg); gap:10px; }
+#app .bottom { position:static; flex-direction:column; margin-top:auto; padding:14px 24px max(20px,calc(12px + env(safe-area-inset-bottom,0px))); border:0; border-top:1px solid var(--sd-line); background:var(--sd-bg); gap:10px; }
 #app .btn-next { min-height:56px; border-radius:10px; font-size:16px; font-weight:600; box-shadow:none; background:var(--sd-action); color:var(--sd-on-action); }
 #app .field { margin:0 0 14px; }
 #app .field-label { font-size:13px; font-weight:600; margin-bottom:8px; color:var(--sd-ink); letter-spacing:inherit; }
@@ -183,8 +181,35 @@ body { background:#f4ede0; }
 #app .sd-period-check { display:inline-flex; align-items:center; gap:8px; min-height:44px; color:var(--sd-sub); font-size:15px; cursor:pointer; }
 #app .sd-period-check input { width:17px; height:17px; flex:none; margin:0; accent-color:var(--sd-brand); }
 #app .sd-period-group > span { color:var(--sd-sub); font-size:16px; }
-#app .sd-payer-options { margin:16px 0; }
-#app #depositorCustom > .field { margin:8px 0 12px; }
+#app .sd-payer-dialog {
+  position:fixed;
+  inset:auto 0 0;
+  width:min(100%,420px);
+  max-width:100%;
+  max-height:calc(100dvh - max(12px,env(safe-area-inset-top,0px)));
+  margin:0 auto;
+  border:1px solid var(--sd-line);
+  border-bottom:0;
+  border-radius:18px 18px 0 0;
+  padding:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  background:var(--sd-bg);
+  color:var(--sd-ink);
+}
+#app .sd-payer-dialog::backdrop { background:rgb(28 20 9 / 45%); }
+html:has(.sd-payer-dialog[open]) { overflow:hidden; }
+#app .sd-dialog-body { padding:16px clamp(16px,5vw,24px) max(20px,calc(12px + env(safe-area-inset-bottom,0px))); }
+#app .sd-dialog-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+#app .sd-dialog-heading h2 { font:400 23px/1.35 var(--sd-font-title); color:var(--sd-ink); word-break:keep-all; }
+#app .sd-dialog-close { flex:none; min-width:44px; min-height:44px; padding:4px; border:0; border-radius:6px; background:none; color:var(--sd-sub); font-size:15px; cursor:pointer; }
+#app .sd-dialog-body > .sd-field-note { margin:6px 0 16px; font-size:15px; word-break:keep-all; }
+#app .sd-dialog-actions { display:grid; gap:8px; }
+#app .sd-payer-dialog .sd-secondary { min-height:50px; border:1px solid var(--sd-brand); border-radius:10px; color:var(--sd-ink); font-size:16px; }
+#app #depositorCustom > .sd-back { margin-bottom:8px; }
+@media (min-width:600px) {
+  #app .sd-payer-dialog { inset:0; margin:auto; max-height:calc(100dvh - 32px); border:1px solid var(--sd-line); border-radius:16px; }
+}
 #app .sd-delivery-choice ~ .field { margin:14px 0 0; }
 #app [hidden] { display:none!important; }
 #app .fee-preview { background:none; border:0; padding:0; margin:0; border-radius:0; }
