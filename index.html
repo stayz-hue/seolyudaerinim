@@ -932,7 +932,7 @@ canvas#signaturePad1{
     <input type="hidden" id="agentName" value="배승휴">
 
     <dialog id="payerDialog" aria-labelledby="payerTitle">
-      <form method="dialog" onsubmit="event.preventDefault();confirmPayer()">
+      <form method="dialog" onsubmit="event.preventDefault();window.confirmPayer()">
         <h2 id="payerTitle">누구 이름으로 입금하시나요?</h2>
         <fieldset class="sd-payer-choices" aria-labelledby="payerTitle">
           <label class="sd-payer-choice">
@@ -950,7 +950,7 @@ canvas#signaturePad1{
         </div>
         <div class="sd-payer-actions">
           <button type="button" id="cancelPayer" class="sd-secondary" onclick="closePayerDialog()">돌아가기</button>
-          <button type="submit" id="confirmPayer" class="btn-next submit">신청 확정</button>
+          <button type="submit" id="confirmPayerButton" class="btn-next submit">신청 확정</button>
         </div>
       </form>
     </dialog>
