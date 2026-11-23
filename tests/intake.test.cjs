@@ -86,7 +86,7 @@ function fixture(options = {}) {
     addEventListener(name, callback) { listeners.set(name, callback); }, body: new Element('body')
   };
   const context = vm.createContext({
-    document, window:{scrollTo() {}, devicePixelRatio:1}, navigator:options.navigator || {},
+    document, window:{scrollTo() {}, devicePixelRatio:1, location:{hostname:options.hostname || 'grand-raindrop-d7f7de.netlify.app'}}, navigator:options.navigator || {},
     crypto:webcrypto, console, URLSearchParams, AbortController,
     alert: message => alerts.push(message),
     confirm: message => { confirms.push(message); return options.confirm !== false; },
@@ -149,6 +149,17 @@ function assertRecovered(f) {
   assert.equal(f.run('submissionBusy'), false);
   assert.ok(f.buttons.every(button => !button.disabled));
 }
+
+test('the shared Netlify preview never transmits a photo or creates a real order', async () => {
+  for (const alternate of [false, true]) {
+    const f=fixture({hostname:'deploy-preview-8--grand-raindrop-d7f7de.netlify.app'});
+    f.seedForm(); f.set('depositorName','예시입금'); f.set('receiptPhone','010-0000-0001');
+    f.submit(alternate); await tick();
+    assert.equal(f.requests.length,0);
+    assert.equal(f.elements.get('payerDialog').open,false);
+    assert.match(f.alerts.at(-1),/미리보기/);
+  }
+});
 
 test('all inline scripts parse; explicit success displays a stable order number and blocks later submissions', async () => {
   scripts.forEach(script => new vm.Script(script));

@@ -1672,6 +1672,12 @@ function submitForm(differentDepositor) {
   if (!validateHospitals() || !validateDelivery() || !validateApplicant()) return;
   if (differentDepositor && !validatePayer()) return;
 
+  if (/^deploy-preview-\d+--grand-raindrop-d7f7de\.netlify\.app$/.test(window.location.hostname)) {
+    closePayerDialog();
+    alert('미리보기가 끝났어요. 실제 신청은 운영 사이트에서 접수해 주세요.');
+    return;
+  }
+
   const orderId = submissionOrderId || ('SRY' + crypto.randomUUID());
   submissionOrderId = orderId;
   const hospitals = Array.from({length:hospitalCount}, (_, index) => {
