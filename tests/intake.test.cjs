@@ -115,7 +115,7 @@ function fixture(options = {}) {
     set('hospital_1', '테스트 병원'); set('treatPeriod_1', '2025'); set('reason_1', '보험사 제출'); set('docEtc_1', '진료기록');
 
     elements.get('screen2').classList.add('active');
-    run("idCardFileObj = {name:'test.jpg',type:'image/jpeg',size:100}; signaturePad={isEmpty:()=>false,toDataURL:()=> 'data:image/png;base64,c2ln'}; hospitalCoords=[{name:'테스트 병원',address:'병원 주소',lat:1,lng:2}]");
+    run("idCardFileObj = {name:'test.jpg',type:'image/jpeg',size:100}; hasAttachedPhoto=true; signaturePad={empty:false,isEmpty(){return this.empty},clear(){this.empty=true},toDataURL:()=> 'data:image/png;base64,c2ln'}; hospitalCoords=[{name:'테스트 병원',address:'병원 주소',lat:1,lng:2}]");
   }
   return {context, run, set, elements, htmlWrites, alerts, confirms, requests, readers, images, blobs, timers, buttons, prompts,
     seedForm, setReadMode(value) { readMode = value; },
@@ -604,10 +604,41 @@ test('missing ID photo blocks submission without requiring an applicant name',()
   assert.equal(f.elements.get('uploadArea').getAttribute('aria-invalid'),'true');
 });
 
-test('replacing an ID photo clears the old signature',()=>{
-  const f=fixture();f.seedForm();f.run('signaturePad.clear=()=>{window.cleared=true}');
-  f.run('handleUpload({files:[{name:"new.jpg",type:"image/jpeg",size:100}]})');
-  assert.equal(f.context.window.cleared,true);
+test('the first accepted photo keeps an existing signature even after an unreadable first attempt',()=>{
+  const f=fixture({readMode:'manual'});f.seedForm();
+  f.run('idCardFileObj=null;hasAttachedPhoto=false');
+  f.context.upload=f.input(f.file());
+  f.run('handleUpload(upload)');f.readers[0].onerror();
+  f.run('handleUpload(upload)');f.readers[1].onload({target:{result:'data:image/jpeg;base64,/9j/valid'}});
+  f.loadImage();
+  assert.equal(f.run('signaturePad.isEmpty()'),false);
+  assert.equal(f.run('validateApplicant()'),true);
+  assert.equal(f.elements.get('uploadSub').textContent,'사진을 첨부했어요.');
+});
+
+test('an accepted replacement clears only a previous signature and prompts for a new one',()=>{
+  for (const signed of [true,false]) {
+    const f=fixture({readMode:'manual'});f.seedForm();f.context.upload=f.input(f.file());
+    if (!signed) f.run('signaturePad.clear()');
+    f.run('handleUpload(upload)');f.readers[0].onerror();
+    assert.equal(f.run('idCardFileObj'),null);
+    assert.equal(f.run('validatePhoto()'),false);
+    f.run('handleUpload(upload)');f.readers[1].onload({target:{result:'data:image/jpeg;base64,/9j/valid'}});
+    f.loadImage();
+    assert.equal(f.run('signaturePad.isEmpty()'),true);
+    assert.equal(f.run('validateApplicant()'),false);
+    assert.equal(f.elements.get('uploadSub').textContent.includes('다시 서명'),signed);
+  }
+});
+
+test('completion of a superseded attachment cannot clear a signature made for the new attachment',()=>{
+  const f=fixture({readMode:'manual'});f.seedForm();f.context.upload=f.input(f.file());
+  f.run('handleUpload(upload)');f.readers[0].onload({target:{result:'data:image/jpeg;base64,/9j/old'}});
+  f.loadImage(3600,2400);
+  f.run('handleUpload(upload)');f.readers[1].onload({target:{result:'data:image/jpeg;base64,/9j/new'}});
+  f.loadImage();
+  f.run('signaturePad.empty=false');f.blobs[0]({size:100});
+  assert.equal(f.run('validateApplicant()'),true);
 });
 
 test('valid signed application submits directly without another confirmation',async()=>{

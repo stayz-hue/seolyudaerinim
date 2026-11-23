@@ -931,6 +931,7 @@ canvas#signaturePad1{
 let hospitalCount = 1;
 let signaturePad  = null;
 let idCardFileObj = null;
+let hasAttachedPhoto = false;
 let idCardSelection = 0;
 let idCardLoading = false;
 let submissionBusy = false;
@@ -1469,7 +1470,6 @@ function handleUpload(input) {
   if (submissionBusy || submissionComplete) return;
   clearFieldError('uploadArea');
   const selection = ++idCardSelection;
-  if (signaturePad && typeof signaturePad.clear === 'function') signaturePad.clear();
   const file = input.files[0];
   // 같은 사진을 다시 선택해도 파일 선택 이벤트가 발생하게 한다.
   input.value = '';
@@ -1495,11 +1495,14 @@ function handleUpload(input) {
   function accept(accepted) {
     if (selection !== idCardSelection) return;
     clearFieldError('uploadArea');
+    const needsNewSignature = hasAttachedPhoto && signaturePad && !signaturePad.isEmpty();
+    if (needsNewSignature) signaturePad.clear();
     idCardFileObj = accepted;
+    hasAttachedPhoto = true;
     idCardLoading = false;
     if (area) area.classList.add('has-file');
     uploadTitle.textContent = '신분증 사진 변경';
-    uploadSub.textContent = '사진을 첨부했어요.';
+    uploadSub.textContent = needsNewSignature ? '사진을 변경했어요. 다시 서명해 주세요.' : '사진을 첨부했어요.';
   }
   if ((file.type && !file.type.startsWith('image/')) || !file.size) { fail(); return; }
   const reader = new FileReader();
@@ -1565,7 +1568,10 @@ function initSig() {
   // The delayed setup can run after the customer has returned to hospital details.
   // Wait for the next visible visit instead of retaining an unusable empty pad.
   if (rect.width <= 0 || rect.height <= 0) return;
-  canvas.addEventListener('pointerdown', () => clearFieldError(canvas.id));
+  canvas.addEventListener('pointerdown', () => {
+    clearFieldError(canvas.id);
+    if (idCardFileObj) document.getElementById('uploadSub').textContent = '사진을 첨부했어요.';
+  });
   canvas.width  = rect.width * dpr;
   canvas.height = rect.height * dpr;
   const ctx = canvas.getContext('2d');
