@@ -21,6 +21,6 @@ test('Baemin font faces refer to local WOFF2 assets and have licensed distributi
 
 test('intake and payment pages use the same versioned typography stylesheet', () => {
   for (const filename of ['index.html', 'payment.html']) {
-    assert.match(read(filename), /href="\/design\.css\?v=20261123-baemin"/);
+    assert.match(read(filename), /href="\/design\.css\?v=photo-intake-v4"/);
   }
 });
