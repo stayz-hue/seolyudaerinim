@@ -95,6 +95,19 @@ test('malformed entries do not hide valid hospital records in the same provider 
   assert.deepEqual(JSON.parse(res.body).places.map(place => place.name), ['검증병원']);
 });
 
+test('a spaced Bundang hospital alias goes directly to the intended campus', async () => {
+  process.env.HIRA_API_KEY = 'test-key';
+  const names = [];
+  global.fetch = async url => {
+    const name = new URL(url).searchParams.get('yadmNm');
+    names.push(name);
+    return { ok: true, json: async () => hira(name === '분당서울대학교병원' ? { yadmNm: name, addr: '경기도 성남시' } : []) };
+  };
+  const result = JSON.parse((await run('분당 서울대 병원')).body);
+  assert.deepEqual(names, ['분당서울대학교병원']);
+  assert.equal(result.places[0].name, '분당서울대학교병원');
+});
+
 test('malformed provider bodies and unusable nonempty results are failures, not cached empty results', async () => {
   process.env.HIRA_API_KEY = 'test-key';
   for (const data of [{response:{header:{resultCode:'00'}}}, {response:{header:{resultCode:'00'},body:{totalCount:2,items:''}}}, hira([null,{}])]) {
