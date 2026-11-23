@@ -11,7 +11,7 @@ const source = html.match(/<script>([\s\S]*?)<\/script>/)[1];
 function page(query, clipboard) {
   const elements = Object.fromEntries([
     'payScreen', 'errorScreen', 'dispName', 'dispOrderId', 'dispAmount',
-    'dispAmount2', 'accountNum', '.copy-btn'
+    'accountNum', '.copy-btn'
   ].map(id => [id, { textContent: '', style: {} }]));
   elements.accountNum.textContent = '000-000000-00-000';
   const prompts = [];
@@ -34,8 +34,7 @@ test('a valid legacy order link keeps name, order number and amount', () => {
   assert.equal(p.elements.dispName.textContent, '시험고객');
   assert.equal(p.elements.dispOrderId.textContent, 'SEOLYUDAERI_20260713_수동');
   assert.equal(p.elements.dispAmount.textContent, '24,500원');
-  assert.equal(p.elements.dispAmount2.textContent, '24,500원');
-  assert.notEqual(p.elements.payScreen.style.display, 'none');
+  assert.equal(p.elements.payScreen.style.display, 'block');
 });
 
 test('malformed, fractional, missing and unsafe amounts show no payment instructions', () => {
@@ -53,6 +52,11 @@ test('missing or whitespace-only order numbers are rejected', () => {
     assert.equal(p.elements.payScreen.style.display, 'none');
     assert.equal(p.elements.errorScreen.style.display, 'block');
   }
+});
+
+test('whitespace-only customer name is displayed as the default customer label', () => {
+  const p = page('?order_id=synthetic-order&amount=25000&name=%20%20');
+  assert.equal(p.elements.dispName.textContent, '고객');
 });
 
 test('account copying works with a supported clipboard', async () => {

@@ -83,3 +83,31 @@ test('common short names resolve without calling an AI service', async () => {
   assert.ok(calls[0].includes(encodeURIComponent('서울대학교병원')));
   delete process.env.ANTHROPIC_API_KEY;
 });
+
+test('malformed entries do not hide valid hospital records in the same provider result', async () => {
+  process.env.HIRA_API_KEY = 'test-key';
+  global.fetch = async () => ({ ok: true, json: async () => hira([
+    null, 'unreadable', {}, {yadmNm:{},addr:'서울특별시 중구'}, {yadmNm:'불완전병원',addr:[]},
+    {yadmNm:'검증병원',addr:'서울특별시 중구',XPos:127,YPos:37}
+  ]) });
+  const res = await run('검증병원');
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(JSON.parse(res.body).places.map(place => place.name), ['검증병원']);
+});
+
+test('malformed provider bodies and unusable nonempty results are failures, not cached empty results', async () => {
+  process.env.HIRA_API_KEY = 'test-key';
+  for (const data of [{response:{header:{resultCode:'00'}}}, {response:{header:{resultCode:'00'},body:{totalCount:2,items:''}}}, hira([null,{}])]) {
+    global.fetch = async () => ({ok:true, json:async () => data});
+    const res = await run('검증병원');
+    assert.equal(res.statusCode, 503);
+    assert.equal(JSON.parse(res.body).ok, false);
+    assert.equal(res.headers['Cache-Control'], 'no-store');
+  }
+});
+
+test('unexpected query type takes the normal invalid-input path without a provider call', async () => {
+  global.fetch = async () => {throw new Error('unexpected provider call');};
+  const res = await run(['검증병원']);
+  assert.deepEqual(JSON.parse(res.body), {ok:false,error:'검색어 2자 이상'});
+});

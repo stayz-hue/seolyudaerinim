@@ -6,74 +6,63 @@
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=20261115-photo">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=20261115-photo">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="referrer" content="no-referrer">
   <title>서류대리님 - 실비 결제</title>
+  <link rel="stylesheet" href="/design.css?v=20261123-baemin">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif; background: #f5f5f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
-    .card { background: #fff; border-radius: 16px; padding: 32px 28px; max-width: 420px; width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-    .logo { font-size: 13px; color: #888; margin-bottom: 24px; }
-    h1 { font-size: 20px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
-    .desc { font-size: 14px; color: #666; margin-bottom: 28px; line-height: 1.6; }
-    .info-box { background: #f8f9fa; border-radius: 10px; padding: 18px; margin-bottom: 24px; }
-    .info-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: #444; padding: 5px 0; }
-    .info-row .label { color: #888; }
-    .info-row.total { border-top: 1px solid #e0e0e0; margin-top: 10px; padding-top: 14px; font-weight: 700; font-size: 17px; color: #1a1a1a; }
-    .info-row.total .amount { color: #2563eb; }
-    .bank-box { background: #EEF2FF; border: 1.5px solid #C7D2FE; border-radius: 12px; padding: 22px; margin-bottom: 20px; text-align: center; }
-    .bank-label { font-size: 11px; color: #6366F1; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 14px; }
-    .bank-name { font-size: 15px; font-weight: 600; color: #1a1a1a; margin-bottom: 6px; }
-    .bank-account { font-size: 24px; font-weight: 800; color: #1a1a1a; letter-spacing: .03em; margin-bottom: 4px; }
-    .bank-holder { font-size: 13px; color: #666; margin-bottom: 16px; }
-    .bank-amount { font-size: 18px; font-weight: 800; color: #1e1b4b; }
-    .copy-btn { width: 100%; background: #2563eb; color: #fff; border: none; border-radius: 10px; padding: 16px; font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 12px; }
-    .copy-btn:active { background: #1d4ed8; }
-    .notice { font-size: 12px; color: #aaa; text-align: center; margin-top: 12px; line-height: 1.6; }
-    .error-screen { display: none; text-align: center; padding: 20px 0; }
-    .result-icon { font-size: 56px; margin-bottom: 16px; }
-    .result-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
-    .result-msg { font-size: 14px; color: #666; line-height: 1.6; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f4ede2; color: #291e14; font-family: var(--sd-font-body, sans-serif); display: grid; place-items: center; min-height: 100vh; min-height: 100dvh; padding: 16px; }
+    main { background: #fdfaf5; border: 1px solid #e5dacc; border-radius: 18px; width: min(100%, 420px); padding: clamp(20px, 6vw, 30px); }
+    .brand, h1, .amount { font-family: var(--sd-font-title, sans-serif); font-weight: 400; }
+    .brand { color: #795533; font-size: 18px; margin: 0 0 24px; }
+    h1 { font-size: 23px; margin: 0 0 4px; }
+    .amount { font-size: 36px; margin: 0 0 18px; overflow-wrap: anywhere; }
+    dl { margin: 0 0 20px; }
+    .row { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; }
+    dt, .note { color: #655344; }
+    dt { flex-shrink: 0; }
+    dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
+    .bank { background: #f2e9db; border-radius: 12px; padding: 16px; margin-bottom: 10px; }
+    .bank strong { display: block; font-size: clamp(21px, 6vw, 26px); margin-top: 5px; overflow-wrap: anywhere; }
+    .copy-btn { width: 100%; min-height: 48px; font: inherit; color: #fffaf3; background: #775431; border: 0; border-radius: 10px; cursor: pointer; }
+    .note { font-size: 14px; line-height: 1.55; margin: 14px 0 0; }
+    footer { margin-top: 14px; }
+    a { display: inline-flex; align-items: center; min-height: 40px; color: #684a2e; }
+    :is(button, a):focus-visible { outline: 2px solid #704c26; outline-offset: 3px; }
   </style>
 </head>
 <body>
-<div class="card">
-
-  <div id="payScreen">
-    <div class="logo">서류대리님</div>
-    <h1>서류 발행비 안내</h1>
-    <p class="desc">문자로 안내받은 주문번호와 금액을 확인한 뒤<br>아래 계좌로 입금해 주세요.</p>
-
-    <div class="info-box">
-      <div class="info-row"><span class="label">고객명</span><span id="dispName">-</span></div>
-      <div class="info-row"><span class="label">주문번호</span><span id="dispOrderId" style="font-size:12px;color:#888;">-</span></div>
-      <div class="info-row total"><span class="label">입금 금액</span><span class="amount" id="dispAmount">-</span></div>
+<main>
+  <p class="brand">서류대리님</p>
+  <section id="payScreen" style="display:none">
+    <h1>병원 서류 발급비</h1>
+    <p class="amount" id="dispAmount"></p>
+    <dl>
+      <div class="row"><dt>고객명</dt><dd id="dispName"></dd></div>
+      <div class="row"><dt>주문번호</dt><dd id="dispOrderId"></dd></div>
+    </dl>
+    <div class="bank">
+      <span>IBK기업은행 · 배승휴(서류대리님)</span>
+      <strong id="accountNum">523-082856-04-011</strong>
     </div>
-
-    <div class="bank-box">
-      <div class="bank-label">입금 계좌</div>
-      <div class="bank-name">IBK기업은행</div>
-      <div class="bank-account" id="accountNum">523-082856-04-011</div>
-      <div class="bank-holder">예금주: 배승휴(서류대리님)</div>
-      <div class="bank-amount" id="dispAmount2">-</div>
-    </div>
-
-    <button class="copy-btn" onclick="copyAccount()">계좌번호 복사</button>
-
-    <p class="notice">안내받은 금액이에요. 입금 여부는 표시되지 않아요.<br>서류는 신청할 때 정한 수령 방법으로 보내드려요.<br>문의·긴급 연락: <a href="http://pf.kakao.com/_XxjhEX" style="color:#6366F1;">카카오톡 서류대리님</a></p>
-  </div>
-
-  <div class="error-screen" id="errorScreen">
-    <div class="result-icon">⚠️</div>
-    <div class="result-title">잘못된 링크예요</div>
-    <div class="result-msg">링크를 다시 요청해 주세요.</div>
-  </div>
-</div>
+    <button type="button" class="copy-btn" aria-live="polite" onclick="copyAccount()">계좌번호 복사</button>
+    <p class="note">문자로 받은 주문번호와 금액을 확인한 뒤 입금해 주세요. 입금 상태는 이 화면에 표시되지 않아요.</p>
+  </section>
+  <section id="errorScreen" style="display:none">
+    <h1>입금 안내 링크를 확인해 주세요</h1>
+    <p class="note">문자로 받은 링크를 다시 열거나 카카오톡으로 새 링크를 요청해 주세요.</p>
+  </section>
+  <noscript>입금 안내를 보려면 자바스크립트를 켜 주세요.</noscript>
+  <footer><a href="https://pf.kakao.com/_XxjhEX">카카오톡 문의</a></footer>
+</main>
 
 <script>
 var params  = new URLSearchParams(window.location.search);
 var orderId = (params.get('order_id') || '').trim();
 var rawAmount = (params.get('amount') || '').trim();
 var amount  = /^\d+$/.test(rawAmount) ? Number(rawAmount) : NaN;
-var name    = params.get('name') || '고객';
+var name    = (params.get('name') || '').trim() || '고객';
+var copyLabelTimer;
 
 if (!orderId || !Number.isSafeInteger(amount) || amount < 100) {
   document.getElementById('payScreen').style.display = 'none';
@@ -82,7 +71,7 @@ if (!orderId || !Number.isSafeInteger(amount) || amount < 100) {
   document.getElementById('dispName').textContent = name;
   document.getElementById('dispOrderId').textContent = orderId;
   document.getElementById('dispAmount').textContent = amount.toLocaleString('ko-KR') + '원';
-  document.getElementById('dispAmount2').textContent = amount.toLocaleString('ko-KR') + '원';
+  document.getElementById('payScreen').style.display = 'block';
 }
 
 function copyAccount() {
@@ -96,9 +85,9 @@ function copyAccount() {
     return navigator.clipboard.writeText(acc);
   }).then(function() {
     var btn = document.querySelector('.copy-btn');
+    if (copyLabelTimer != null && typeof clearTimeout === 'function') clearTimeout(copyLabelTimer);
     btn.textContent = '복사했어요 ✓';
-    btn.style.background = '#16a34a';
-    setTimeout(function() { btn.textContent = '계좌번호 복사'; btn.style.background = '#2563eb'; }, 2000);
+    copyLabelTimer = setTimeout(function() { btn.textContent = '계좌번호 복사'; }, 2000);
   }).catch(fallback);
 }
 </script>

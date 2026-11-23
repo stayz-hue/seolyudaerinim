@@ -6,12 +6,14 @@ exports.handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Content-Type': 'application/json; charset=utf-8',
     'Cache-Control': 'no-store'
   };
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers, body: '' };
   if (event.httpMethod !== 'GET') return resp(headers, { ok: false, error: '허용되지 않은 요청' }, 405);
-  const query = (event.queryStringParameters?.q || '').trim();
+  const rawQuery = event.queryStringParameters?.q;
+  const query = typeof rawQuery === 'string' ? rawQuery.trim() : '';
   if (query.length < 2) return resp(headers, { ok: false, error: '검색어 2자 이상' });
   if (query.length > 80) return resp(headers, { ok: false, error: '검색어가 너무 깁니다' });
   if (!process.env.HIRA_API_KEY) return resp(headers, { ok: false, error: '병원 검색 설정을 확인해 주세요' }, 503);
@@ -63,9 +65,13 @@ async function searchHIRA(query) {
   if (data?.response?.header?.resultCode !== '00') {
     throw new Error('HIRA resultCode ' + String(data?.response?.header?.resultCode || 'unknown'));
   }
-  const items = data?.response?.body?.items?.item;
+  const body = data.response.body;
+  if (!body || typeof body !== 'object') throw new Error('HIRA response body missing');
+  const items = body.items?.item;
   const list = Array.isArray(items) ? items : items ? [items] : [];
+  if (Number(body.totalCount) > 0 && !list.length) throw new Error('HIRA hospital records missing');
   const places = list.map(toPlace).filter(Boolean);
+  if (list.length && !places.length) throw new Error('HIRA hospital records invalid');
   const key = query.replace(/\s+/g, '');
   const rank = name => {
     const value = name.replace(/\s+/g, '');
@@ -75,10 +81,11 @@ async function searchHIRA(query) {
 }
 
 function toPlace(item) {
+  if (!item || typeof item !== 'object') return null;
   const lat = Number(item.YPos);
   const lng = Number(item.XPos);
-  const name = String(item.yadmNm || '').trim();
-  const address = String(item.addr || '').trim();
+  const name = typeof item.yadmNm === 'string' && item.yadmNm.trim();
+  const address = typeof item.addr === 'string' && item.addr.trim();
   if (!name || !address) return null;
   const validCoords = item.YPos != null && item.YPos !== '' && item.XPos != null && item.XPos !== ''
     && Number.isFinite(lat) && Number.isFinite(lng)

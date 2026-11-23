@@ -62,6 +62,16 @@ test('regions, issuers, placeholders, and license categories are never name cand
   assert.equal(parser.parse('홍길동\n아무 문서').name, '', 'bare text without an ID title/label is not an identity');
 });
 
+test('keeps a region-prefixed explicitly labeled name and excludes sex/nationality labels', () => {
+  const person = parser.parse('운전면허증\n성 명:\n강원석\n성별 남\n국적 대한민국\n주소: 경기도 검증로 12');
+  assert.equal(person.name, '강원석');
+  assert.equal(person.address, '경기도 검증로 12');
+  assert.equal(parser.parse('운전면허증\n성명: 박연우\n성별 남\n국적 대한민국').name, '박연우');
+  for (const place of ['강원','강원도 원주시','강원특별자치도','서울 마포구']) {
+    assert.equal(parser.parse('성명: ' + place).name, '', place);
+  }
+});
+
 test('multiple different name candidates clear identity suggestions', () => {
   const result = parser.parse('주민등록증\n홍길동\n김철수\n880305-1******\n서울특별시 강남구 테스트로 10');
   assert.equal(result.nameStatus, 'conflict');
@@ -375,4 +385,34 @@ test('large phone photos are bounded before every OCR pass',async()=>{
 test('merged masking marks do not erase an exactly read date and century',()=>{
  for(const suffix of ['1*','1****','1**~'])assert.equal(parser.parse('900101-'+suffix).birth,'19900101');
  for(const value of ['900101-*******','900101-1234','9001071-1******','9O0101-1*'])assert.equal(parser.parse(value).birth,'',value);
+});
+
+test('malformed trailing digits are not silently truncated into a valid birthday', () => {
+  for (const value of ['생년월일: 1990. 1. 123','900101-1234567 8','900101-1****** 8']) {
+    assert.equal(parser.parse(value).birth,'',value);
+  }
+});
+
+test('spaced address labels are recognized and separate identity labels are not appended', () => {
+  const result = parser.parse('주민등록증\n홍길동\n주 소: 경기도 구리시 검증로 1\n101 동 202 호\n생 년 월 일: 1990. 1. 1');
+  assert.equal(result.address,'경기도 구리시 검증로 1 101동 202호');
+  assert.equal(result.birth,'19900101');
+  assert.equal(parser.parse('운전면허증\n홍길동\n900101-1******\n서울특별시 검증로 1\n대한민국').address,'서울특별시 검증로 1');
+});
+
+test('cancellation frees an active rotated canvas before the worker promise settles', async () => {
+  const late = deferred();
+  const {api,state} = mockRuntime(['','',() => late.promise]);
+  const job = api.recognize({});
+  await tick();
+  assert.equal(state.calls.length,3);
+  assert.ok(state.canvases[0].width > 0);
+  job.cancel();
+  await assert.rejects(job.promise,/cancelled/);
+  assert.equal(state.canvases[0].width,0);
+  assert.equal(state.canvases[0].height,0);
+  assert.equal(state.terminated,1);
+  late.resolve({data:{text:identity('홍길동')}});
+  await tick();
+  assert.equal(state.terminated,1);
 });

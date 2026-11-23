@@ -9,6 +9,7 @@
   const TITLE = /주\s*민\s*등\s*록\s*증|운\s*전\s*면\s*허\s*증/;
   const REGION = /^(?:서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충청|충북|충남|전라|전북|전남|경상|경북|경남|제주)/;
   const LABEL = /^성\s*명(?:\s*[:：]\s*|\s+|$)/;
+  const CARD_FIELD = /^(?:생년월일|주민등록번호|주민번호|운전면허번호|국적|성별)/;
   const PLACEHOLDERS = new Set(['성명','이름','주소','신청인','신청인이름','신분증이름','성명확인필요','확인필요','미확인','인식실패','신분증','주민등록증','운전면허증','대한민국']);
 
   function normalizeName(value) {
@@ -29,16 +30,22 @@
     return found.length === 1 ? found[0] : '';
   }
   function addressLine(value) {
-    return String(value || '').replace(/^주소[ \t]*[:：]?[ \t]*/, '')
+    return String(value || '').replace(/^주[ \t]*소[ \t]*[:：]?[ \t]*/, '')
       .replace(/^서\s*울\s*특\s*별\s*시/, '서울특별시')
       .replace(/^경\s*기\s*도/, '경기도')
       .replace(/(\d)[ \t]+(동|호)(?=[ \t]|$)/g, '$1$2');
   }
-  function isAddressOrIssuer(value) {
+  function isAddressOrIssuer(value, labeled) {
     const compact = normalizeName(value);
-    return REGION.test(compact) || /주소|거주지|발급|청장|경찰청|구청|시장|군수|시청|공화국|면허|등록|적성검사|갱신|주민번호|생년월일|신청인|본인|도로명|일반|보통|대형|소형|원동기|장기등기증/.test(compact);
+    const region = compact.match(REGION);
+    if (region) {
+      // An explicit name label can disambiguate 강원석 from a province or address.
+      const suffix = compact.slice(region[0].length);
+      if (!labeled || !suffix || /^(?:특별|광역|[남북]?도|시)|[시군구읍면동리로길]$/.test(suffix)) return true;
+    }
+    return CARD_FIELD.test(compact) || /주소|거주지|발급|청장|경찰청|구청|시장|군수|시청|공화국|면허|등록|적성검사|갱신|주민번호|생년월일|신청인|본인|도로명|일반|보통|대형|소형|원동기|장기등기증/.test(compact);
   }
-  function nameOnLine(value) {
+  function nameOnLine(value, labeled = false) {
     // Only ONE line: \s in a capture used to join the following address/issuer.
     // A parenthesized Hanja/romanization suffix is allowed; other trailing text
     // is not silently discarded, and digits are never interpreted as Hangul.
@@ -46,7 +53,7 @@
     const match = candidate.match(/^([가-힣](?:[ \t]*[가-힣]){1,9})(?:[ \t]*\([^()]*\))?[ \t]*$/);
     if (!match) return '';
     const name = normalizeName(match[1]);
-    return isValidName(name) && !isAddressOrIssuer(name) ? name : '';
+    return isValidName(name) && !isAddressOrIssuer(name, labeled) ? name : '';
   }
   function parse(text) {
     const lines = String(text || '').normalize('NFKC').split(/\r\n?|\n/).map(s => s.replace(/[ \t]+/g, ' ').trim()).filter(Boolean);
@@ -58,9 +65,9 @@
     // OCR may merge a run of masking marks into fewer marks. The six date
     // digits and the century digit must still be read exactly; truncated
     // numeric suffixes and a masked century are never used to guess a date.
-    const rrnPattern = /(?:^|[^\d])(\d{2})(\d{2})(\d{2})[ \t]*[-–][ \t]*([1-4])(?:(?:[\d*●•xX#¥][ \t]*){6}|(?:[*●•xX#¥~][ \t]*){1,6})(?![\d*●•xX#¥~])/g;
+    const rrnPattern = /(?:^|[^\d])(\d{2})(\d{2})(\d{2})[ \t]*[-–][ \t]*([1-4])(?:(?:[\d*●•xX#¥][ \t]*){6}|(?:[*●•xX#¥~][ \t]*){1,6})(?![ \t]*[\d*●•xX#¥~])/g;
     for (const rrn of joined.matchAll(rrnPattern)) births.push(date((+rrn[4] <= 2 ? '19' : '20') + rrn[1], rrn[2], rrn[3]));
-    const labeledDates = /생[ \t]*년[ \t]*월[ \t]*일[ \t]*[:：]?[ \t]*((?:19|20)\d{2})[.년/ -]+(\d{1,2})[.월/ -]+(\d{1,2})/g;
+    const labeledDates = /생[ \t]*년[ \t]*월[ \t]*일[ \t]*[:：]?[ \t]*((?:19|20)\d{2})[.년/ -]+(\d{1,2})[.월/ -]+(\d{1,2})(?!\d)/g;
     for (const value of joined.matchAll(labeledDates)) births.push(date(value[1], value[2], value[3]));
     birth = consensus(births);
 
@@ -68,7 +75,7 @@
     for (let i = 0; i < lines.length; i++) {
       if (!LABEL.test(lines[i])) continue;
       const rest = lines[i].replace(LABEL, '').trim();
-      const name = nameOnLine(rest || lines[i + 1]);
+      const name = nameOnLine(rest || lines[i + 1], true);
       if (name) named.push({name, source:'label'});
     }
     for (let i = 0; i < lines.length; i++) {
@@ -84,12 +91,13 @@
     const name = candidates.length === 1 ? candidates[0] : '';
     const nameStatus = candidates.length > 1 ? 'conflict' : name ? 'single' : 'missing';
 
-    const start = lines.findIndex(line => REGION.test(normalizeName(addressLine(line))) && !/(?:청장|시장|구청장|군수|경찰청)$/.test(normalizeName(line)));
+    const start = lines.findIndex(line => normalizeName(line) !== name && REGION.test(normalizeName(addressLine(line))) && !/(?:청장|시장|구청장|군수|경찰청)$/.test(normalizeName(line)));
     if (start >= 0) {
       const pieces = [];
       for (let i = start; i < Math.min(lines.length, start + 4); i++) {
         const line = lines[i];
-        if (/(?:청장|시장|구청장|군수|경찰청)$/.test(normalizeName(line)) || /^\d{4}[.년/ -]/.test(line) || /^\d{6}[ \t]*[-–]/.test(line) || /발급|적성검사|갱신|면허번호/.test(line) || TITLE.test(line) || LABEL.test(line)) break;
+        const compact = normalizeName(line);
+        if (/(?:청장|시장|구청장|군수|경찰청)$/.test(compact) || /^\d{4}[.년/ -]/.test(line) || /^\d{6}[ \t]*[-–]/.test(line) || /발급|적성검사|갱신|면허번호/.test(compact) || TITLE.test(line) || LABEL.test(line) || CARD_FIELD.test(compact) || compact === '대한민국') break;
         if (i > start && REGION.test(normalizeName(addressLine(line)))) break;
         pieces.push(addressLine(line));
       }
@@ -128,7 +136,7 @@
     return library;
   }
   function recognize(file, onProgress) {
-    let worker, terminatedWorker, bitmap, cancelDecode, stopped = false, finished = false, timer, rejectStop;
+    let worker, terminatedWorker, bitmap, activeCanvas, cancelDecode, stopped = false, finished = false, timer, rejectStop;
     const stopPromise = new Promise((_, reject) => { rejectStop = reject; });
     const terminate = () => {
       if (!worker || terminatedWorker === worker) return;
@@ -142,11 +150,19 @@
       bitmap = null;
       try { value.close(); } catch (_) {}
     };
+    const releaseCanvas = () => {
+      if (!activeCanvas) return;
+      const canvas = activeCanvas;
+      activeCanvas = null;
+      canvas.width = 0;
+      canvas.height = 0;
+    };
     const stop = reason => {
       if (finished || stopped) return;
       stopped = true;
       if (cancelDecode) cancelDecode();
       terminate();
+      releaseCanvas();
       closeBitmap();
       rejectStop(new Error(reason));
     };
@@ -192,6 +208,7 @@
           if (angle && !bitmap) break;
           if (bitmap && (angle || scale < 1)) {
             canvas = root.document.createElement('canvas');
+            activeCanvas = canvas;
             canvas.width = Math.max(1, Math.round((angle % 180 ? bitmap.height : bitmap.width) * scale));
             canvas.height = Math.max(1, Math.round((angle % 180 ? bitmap.width : bitmap.height) * scale));
             const ctx = canvas.getContext('2d');
@@ -215,7 +232,7 @@
           // Check every orientation: a plausible name from sideways text must
           // not prevent us from reading the upright card or exposing a conflict.
         } finally {
-          if (canvas) { canvas.width = 0; canvas.height = 0; }
+          if (canvas && activeCanvas === canvas) releaseCanvas();
         }
       }
       const candidates = unique(observations.flatMap(item => item.parsed.candidates));
@@ -239,6 +256,7 @@
       finished = true;
       clearTimeout(timer);
       terminate();
+      releaseCanvas();
       closeBitmap();
     });
     timer = setTimeout(() => stop('ocr_timeout'), 180000);

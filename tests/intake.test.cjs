@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const {webcrypto} = require('node:crypto');
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
@@ -53,11 +54,16 @@ function fixture(options = {}) {
     remove() { this.unregister(); if (this.parent) this.parent.children = this.parent.children.filter(child => child !== this); }
     addEventListener() {}
     setAttribute(name,value) { this[name]=String(value); }
+    getAttribute(name) { return this[name] ?? null; }
+    removeAttribute(name) { delete this[name]; }
+    closest(selector) { return this.classList.contains(selector.slice(1)) ? this : this.parent?.closest(selector) || null; }
+    after(node) { if (this.parent) this.parent.appendChild(node); }
     focus() { this.focused = true; }
+    scrollIntoView(options) { this.scrollPosition = options.block; }
     contains(child) { return child === this || this.children.some(item => item.contains(child)); }
     getBoundingClientRect() { return {width:320, height:200}; }
-    getContext() { return {drawImage() {}, scale() {}}; }
-    toBlob(callback) { blobs.push(callback); }
+    getContext() { return {drawImage() {}, fillRect() {}, scale() {}}; }
+    toBlob(callback, type) { blobs.push(blob => callback(blob && {type, ...blob})); }
   }
   for (const match of html.matchAll(/<([\w-]+)\b([^>]*\bid="([^"]+)"[^>]*)>/g)) {
     const node = new Element(match[1]); node.id = match[3];
@@ -66,15 +72,16 @@ function fixture(options = {}) {
     node.required = /\brequired\b/.test(match[2]);
   }
   const buttons = [new Element('button'), new Element('button')];
+  const listeners = new Map();
   const document = {
     getElementById: id => elements.get(id) || null,
     createElement: tag => new Element(tag),
     querySelectorAll: selector => selector === '.btn-next.submit' ? buttons : [],
-    addEventListener() {}, body: new Element('body')
+    addEventListener(name, callback) { listeners.set(name, callback); }, body: new Element('body')
   };
   const context = vm.createContext({
     document, window:{scrollTo() {}, devicePixelRatio:1}, navigator:options.navigator || {},
-    console, URLSearchParams, AbortController,
+    crypto:webcrypto, console, URLSearchParams, AbortController,
     alert: message => alerts.push(message),
     confirm: message => { confirms.push(message); return options.confirm !== false; },
     prompt: (...args) => prompts.push(args),
@@ -91,7 +98,7 @@ function fixture(options = {}) {
         if (readMode === 'success') this.onload({target:{result:'data:image/jpeg;base64,dGVzdA=='}});
       }
     },
-    Image: class { constructor() { images.push(this); } set src(value) { this.source = value; } },
+    Image: class { constructor() { images.push(this); } },
     SignaturePad: class { constructor() { throw new Error('Existing signature must not be replaced'); } },
     fetch: (url, request) => {
       requests.push({url, request, payload: request?.body ? JSON.parse(request.body) : undefined});
@@ -109,10 +116,11 @@ function fixture(options = {}) {
     set('hospital_1', '테스트 병원'); set('treatPeriod_1', '2025'); set('reason_1', '보험사 제출'); set('docEtc_1', '진료기록');
 
     elements.get('screen2').classList.add('active');
-    run("idCardFileObj = {name:'test.jpg',type:'image/jpeg',size:100}; signaturePad={isEmpty:()=>false,toDataURL:()=> 'data:image/png;base64,c2ln'}; currentStep=2; hospitalCoords=[{name:'테스트 병원',address:'병원 주소',lat:1,lng:2}]; identityReviewedName='홍가람';identityReviewedSelection=idCardSelection");
+    run("idCardFileObj = {name:'test.jpg',type:'image/jpeg',size:100}; signaturePad={isEmpty:()=>false,toDataURL:()=> 'data:image/png;base64,c2ln'}; hospitalCoords=[{name:'테스트 병원',address:'병원 주소',lat:1,lng:2}]");
   }
   return {context, run, set, elements, htmlWrites, alerts, confirms, requests, readers, images, blobs, timers, buttons, prompts,
     seedForm, setReadMode(value) { readMode = value; },
+    type(id, value) { set(id, value); listeners.get('input')({target:elements.get(id)}); },
     file(name = 'test.jpg') { return {name, type:'image/jpeg', size:100}; },
     input(file) { return {files:[file], value:'selected'}; },
     loadImage(width=100,height=100,index=images.length-1) { const img = images[index]; img.naturalWidth=width;img.naturalHeight=height;img.onload(); }
@@ -219,41 +227,48 @@ test('leaving before delayed signature setup does not create a zero-size pad',()
 
 test('a broken replacement image clears acceptance and cannot pass validation',()=>{
   const f=fixture({readMode:'manual'});f.seedForm();const input=f.input(f.file());f.context.uploadInput=input;
-  f.run('handleUpload(uploadInput)');assert.equal(f.run('idCardFileObj'),null);assert.equal(f.run('validate(5)'),false);
+  f.run('handleUpload(uploadInput)');assert.equal(f.run('idCardFileObj'),null);assert.equal(f.run('validatePhoto()'),false);
   f.readers[0].onload({target:{result:'data:image/jpeg;base64,broken'}});f.images[0].onerror();
-  assert.equal(f.run('validate(5)'),false);assert.equal(f.run('idCardLoading'),false);assert.equal(input.value,'');
+  const error=f.elements.get('field-error'),area=f.elements.get('uploadArea');
+  assert.match(error.textContent,/사진을 읽지 못했어요/);
+  assert.equal(area.getAttribute('aria-invalid'),'true');
+  assert.equal(area.focused,true);assert.equal(area.getAttribute('aria-describedby'),error.id);
+  assert.equal(f.elements.get('uploadSub').textContent,'');assert.equal(f.alerts.length,0);
+  assert.equal(f.run('validatePhoto()'),false);assert.equal(f.run('idCardLoading'),false);assert.equal(input.value,'');
+  f.run('handleUpload(uploadInput)');
+  assert.equal(f.elements.has('field-error'),false);assert.equal(area.getAttribute('aria-invalid'),null);
 });
 
 test('late resize for old selection cannot replace the latest uploaded file',()=>{
   const f=fixture({readMode:'manual'});f.context.first=f.input(f.file('first.jpg'));f.context.second=f.input(f.file('second.jpg'));
   f.run('handleUpload(first)');f.readers[0].onload({target:{result:'first'}});f.loadImage(2400,1800);
   assert.equal(f.run('idCardLoading'),true);
-  f.run('handleUpload(second)');f.readers[1].onload({target:{result:'second'}});f.loadImage();
-  f.blobs[0]({size:80});assert.equal(f.run('idCardFileObj.name'),'second.jpg');assert.equal(f.run('validate(5)'),true);
+  f.run('handleUpload(second)');f.readers[1].onload({target:{result:'data:image/jpeg;base64,/9j/fixture'}});f.loadImage();
+  f.blobs[0]({size:80});assert.equal(f.run('idCardFileObj.name'),'second.jpg');assert.equal(f.run('validatePhoto()'),true);
 });
 
 test('late decode failure for old selection cannot clear a newer valid image',()=>{
   const f=fixture({readMode:'manual'});f.context.first=f.input(f.file('first.jpg'));f.context.second=f.input(f.file('second.jpg'));
   f.run('handleUpload(first)');f.readers[0].onload({target:{result:'first'}});
-  f.run('handleUpload(second)');f.readers[1].onload({target:{result:'second'}});f.loadImage();f.images[0].onerror();
+  f.run('handleUpload(second)');f.readers[1].onload({target:{result:'data:image/jpeg;base64,/9j/fixture'}});f.loadImage();f.images[0].onerror();
   assert.equal(f.run('idCardFileObj.name'),'second.jpg');assert.equal(f.alerts.length,0);
 });
 
 test('resize failure leaves no accepted file',()=>{
   const f=fixture();f.context.input=f.input(f.file());f.run('handleUpload(input)');f.loadImage(2400,1800);f.blobs[0](null);
-  assert.equal(f.run('idCardFileObj'),null);assert.equal(f.run('validate(5)'),false);
+  assert.equal(f.run('idCardFileObj'),null);assert.equal(f.run('validatePhoto()'),false);
 });
 
-test('removing a middle hospital preserves later fields, coordinates and urgency; one hospital remains minimum',()=>{
+test('removing a middle hospital preserves later fields and coordinates; one hospital remains minimum',()=>{
   const f=fixture();f.seedForm();f.run('addHospital();addHospital()');
   for(let i=1;i<=3;i++)for(const prefix of ['hospital_','treatPeriod_','reason_','docEtc_','hospAddr_'])f.set(prefix+i,prefix+i);
-  f.run("hospitalCoords=[{name:'one'},{name:'two'},{name:'three',manual:true}];urgentFlags=[false,true,true]");
+  f.run("hospitalCoords=[{name:'one'},{name:'two'},{name:'three',manual:true}]");
   f.elements.get('hospBadge_3').textContent='세번째 주소';f.elements.get('hospManualAddr_3').style.display='block';
   assert.ok(f.run('hospitalBlockHTML(2)').includes('removeHospital(2)'));
   f.run('removeHospital(2)');
   assert.equal(f.run('hospitalCount'),2);
   for(const prefix of ['hospital_','treatPeriod_','reason_','docEtc_','hospAddr_'])assert.equal(f.elements.get(prefix+'2').value,prefix+'3');
-  assert.equal(f.run('hospitalCoords[1].name'),'three');assert.equal(f.run('urgentFlags[1]'),true);
+  assert.equal(f.run('hospitalCoords[1].name'),'three');
   assert.equal(f.elements.get('hospBadge_2').textContent,'세번째 주소');assert.equal(f.elements.get('hospManualAddr_2').style.display,'block');
   f.run('removeHospital(2);removeHospital(1)');assert.equal(f.run('hospitalCount'),1);assert.equal(f.elements.get('hospital_1').value,'hospital_1');
 });
@@ -277,10 +292,10 @@ test('hospital search service failures show retryable failure and are not cached
     const f=fixture({fetch:async()=>failed?response:{ok:true,json:async()=>({ok:true,places:[]})}});
     f.seedForm();f.run("searchHospital('테스트 병원',1)");await tick();
     const drop=f.elements.get('hospDrop_1');
-    assert.match(drop.innerHTML,/검색 실패/);assert.ok(!drop.innerHTML.includes('검색 결과 없음'));
-    assert.ok(drop.innerHTML.includes('manualInput(1)'));
+    assert.match(drop.textContent,/검색 실패/);assert.ok(!drop.textContent.includes('검색 결과 없음'));
+    assert.equal(drop.children.at(-1).tagName,'BUTTON');
     failed=false;f.run("searchHospital('테스트 병원',1)");await tick();
-    assert.match(drop.innerHTML,/검색 결과 없음/);assert.equal(f.requests.length,2);
+    assert.match(drop.textContent,/검색 결과 없음/);assert.equal(f.requests.length,2);
     f.run("searchHospital('테스트 병원',1)");await tick();assert.equal(f.requests.length,2);
   }
 });
@@ -292,26 +307,23 @@ test('hung hospital lookup stops after 20 seconds and supports direct input or a
     :Promise.resolve({ok:true,json:async()=>({ok:true,places:[]})})});
   f.seedForm();f.run("searchHospital('테스트 병원',1)");await tick();
   [...f.timers.values()].find(timer=>timer.delay===20000).callback();await tick();
-  assert.match(f.elements.get('hospDrop_1').innerHTML,/검색 실패/);
-  assert.ok(f.elements.get('hospDrop_1').innerHTML.includes('manualInput(1)'));
+  assert.match(f.elements.get('hospDrop_1').textContent,/검색 실패/);
+  assert.match(f.elements.get('hospDrop_1').children.at(-1).textContent,/직접 입력/);
   assert.equal(f.run('hospitalSearchPending.size'),0);assert.equal(f.timers.size,0);
   hung=false;f.run("searchHospital('테스트 병원',1)");await tick();
-  assert.equal(f.requests.length,2);assert.match(f.elements.get('hospDrop_1').innerHTML,/검색 결과 없음/);
+  assert.equal(f.requests.length,2);assert.match(f.elements.get('hospDrop_1').textContent,/검색 결과 없음/);
 });
 
-test('retired bundle pricing and route are absent; per-hospital urgent and postal fees remain',()=>{
+test('multiple hospitals cost 25000 each with one optional postal fee; all urgency flags stay off',async()=>{
   const f=fixture();f.seedForm();f.run('addHospital()');
   f.set('hospital_2','두 번째 병원');f.set('treatPeriod_2','2026');f.set('docEtc_2','진료기록');
-  f.run("hospitalCoords[1]={name:'두 번째 병원',address:'서울특별시 테스트로 2',lat:37,lng:127};urgentFlags=[true,true]");
-  assert.equal(f.run('calcFee().total'),90000); // 병원 2곳 50,000 + 특급 2곳 40,000
-  f.run('nextStep(4)');
-  assert.equal(f.requests.length,0);
-  assert.equal(f.elements.has('routeLoadingOverlay'),false);
-  assert.ok(!f.htmlWrites.some(value=>value.includes('묶음 특급')));
-  f.run('addHospital();urgentFlags=[true,true,true]');
-  assert.equal(f.run('calcFee().total'),135000);
+  f.run("hospitalCoords[1]={name:'두 번째 병원',address:'서울특별시 테스트로 2',lat:37,lng:127}");
+  assert.equal(f.run('calcFee().total'),50000);
   f.run("setDelivery('post')");
-  assert.equal(f.run('calcFee().total'),155000);
+  assert.equal(f.run('calcFee().total'),70000);
+  assert.equal(f.elements.get('feeTotal').textContent,'70,000원');
+  f.set('postAddress','등기 주소');f.run('nextStep(4);nextStep(2)');await tick();
+  assert.deepEqual(f.requests[0].payload.urgentFlags,[false,false]);
 });
 
 test('official search result without coordinates and direct-entry address remain valid in submission',async()=>{
@@ -319,27 +331,64 @@ test('official search result without coordinates and direct-entry address remain
   f.run("selectHospital(1,{place_name:'주소만 있는 병원',y:null,x:null,address_name:'서울특별시 테스트로 1'})");
   assert.equal(f.run('hospitalCoords[0].lat'),null);
   assert.equal(f.run('hospitalCoords[0].address'),'서울특별시 테스트로 1');
-  assert.equal(f.run('validate(4)'),true);
+  assert.equal(f.run('validateHospitals()'),true);
   f.set('hospital_1','수기 병원');f.run('manualInput(1)');f.set('hospAddr_1','경기도 테스트로 2');
   f.run('updateManualHospitalAddress(1)');
-  assert.equal(f.run('validate(4)'),true);
+  assert.equal(f.run('validateHospitals()'),true);
   assert.equal(f.run('hospitalCoords[0].address'),'경기도 테스트로 2');
   f.run('submitForm(true)');await tick();
   assert.equal(f.requests[0].payload.hospitalCoords[0].address,'경기도 테스트로 2');
   assert.equal(Object.hasOwn(f.requests[0].payload,'bundleResult'),false);
 });
 
-test('confirmation renders customer-entered HTML as plain text',()=>{
-  const f=fixture();f.seedForm();const attack='<img src=x onerror="alert(1)">';
-  for(const prefix of ['hospital_','treatPeriod_','reason_','docEtc_'])f.set(prefix+'1',attack);
-  f.context.attack=attack;f.run('hospitalCoords[0].address=attack;fillConfirm()');
-  assert.ok(f.elements.get('cf-hospitals').textContent.includes(attack));
-  assert.ok(!f.htmlWrites.some(value=>value.includes(attack)));
+test('hospital result labels and addresses render external text literally',async()=>{
+  const label='<b>테스트 병원</b>';
+  const f=fixture({fetch:async()=>({ok:true,json:async()=>({ok:true,places:[{name:label,address:label}]})})});
+  f.seedForm();f.run("searchHospital('테스트 병원',1)");await tick();
+  const [name,address]=f.elements.get('hospDrop_1').children[0].children;
+  assert.equal(name.textContent,label);assert.equal(address.textContent,label);
+  assert.ok(!f.htmlWrites.some(value=>value.includes(label)));
 });
 
 test('account copy offers a manual fallback when clipboard is unavailable',()=>{
   const f=fixture();f.elements.get('successAccount').textContent='123-456';f.run('copyIntakeAccount()');
   assert.equal(f.prompts[0][1],'123456');
+});
+
+test('invalid fields get one adjacent message and focus, and editing restores their existing hint',()=>{
+  const f=fixture();f.seedForm();
+  const field=f.elements.get('docEtc_1');
+  const group=f.context.document.createElement('div');group.className='field';
+  f.elements.get('screen4').appendChild(group);group.appendChild(field);
+  field.setAttribute('aria-describedby','document-example');
+  f.type('docEtc_1','');
+  assert.equal(f.elements.has('field-error'),false);
+  f.run('submitForm()');
+  assert.equal(f.elements.get('screen4').classList.contains('active'),true);
+  assert.equal(f.elements.get('screen2').classList.contains('active'),false);
+  const error=f.elements.get('field-error');
+  assert.equal(error.parent,group);assert.match(error.textContent,/서류/);
+  assert.equal(field.focused,true);assert.equal(field.getAttribute('aria-invalid'),'true');
+  assert.equal(field.getAttribute('aria-describedby'),'document-example field-error');
+  f.run('nextStep(4)');
+  assert.equal(group.children.filter(node=>node.id==='field-error').length,1);
+  f.type('docEtc_1','진료기록');
+  assert.equal(f.elements.has('field-error'),false);
+  assert.equal(field.getAttribute('aria-invalid'),null);
+  assert.equal(field.getAttribute('aria-describedby'),'document-example');
+  assert.equal(f.requests.length,0);assert.equal(f.alerts.length,0);
+});
+
+test('independent applications started in the same millisecond receive different compatible order IDs',async()=>{
+  const ids=[];
+  for(let i=0;i<2;i++){
+    const f=fixture();f.seedForm();f.run('Date.now=()=>1740000000000;submitForm()');
+    await tick();
+    const id=f.requests[0].payload.orderId;
+    assert.match(id,/^SRY[A-Za-z0-9_-]{6,76}$/);
+    ids.push(id);
+  }
+  assert.notEqual(ids[0],ids[1]);
 });
 
 test('email delivery is the default; contact phone reuses current patient phone without replacing patient data',async()=>{
@@ -366,7 +415,7 @@ test('one telephone field populates both legacy backend fields',async()=>{
 test('invalid or absent email blocks both step validation and direct submission without losing entered data',()=>{
   for(const email of ['', 'missing-at.example.com','name@host','a@example.com,b@example.com','a@example.com; b@example.com','a@example.com\r\nBcc:x@example.com']) {
     const f=fixture();f.seedForm();f.set('email',email);
-    assert.equal(f.run('validate(2)'),false,email);f.run('submitForm(true)');
+    assert.equal(f.run('validateApplicant()'),false,email);f.run('submitForm(true)');
     assert.equal(f.requests.length,0,email);assert.equal(f.run('submissionBusy'),false,email);
     assert.equal(f.elements.get('email').value,email);assert.equal(f.run('signaturePad.toDataURL()'),'data:image/png;base64,c2ln');
   }
@@ -375,7 +424,7 @@ test('invalid or absent email blocks both step validation and direct submission 
 test('SMS contact validation rejects empty, landline, short and letter-containing numbers',()=>{
   for(const phone of ['', '02-123-4567','010-1234','abc01012345678']) {
     const f=fixture();f.seedForm();f.set('patientPhone',phone);
-    assert.equal(f.run('validate(2)'),false,phone);f.run('submitForm(true)');assert.equal(f.requests.length,0,phone);
+    assert.equal(f.run('validateApplicant()'),false,phone);f.run('submitForm(true)');assert.equal(f.requests.length,0,phone);
     assert.equal(f.elements.get('patientPhone').value,phone);
   }
 });
@@ -383,7 +432,7 @@ test('SMS contact validation rejects empty, landline, short and letter-containin
 for (const email of ['a..b@example.com', 'a@-host.com', 'a@b..com']) {
   test('email validation matches delivery rejection for ' + email,()=>{
     const f=fixture();f.seedForm();f.set('email',email);
-    assert.equal(f.run('validate(2)'),false);
+    assert.equal(f.run('validateApplicant()'),false);
     f.run('submitForm(true)');assert.equal(f.requests.length,0);
     assert.equal(f.elements.get('email').value,email);
     assert.equal(f.run('signaturePad.toDataURL()'),'data:image/png;base64,c2ln');
@@ -394,10 +443,10 @@ test('physical originals and CDs retain postal delivery, address and 20000 surch
   const f=fixture({fetch:(_url,request)=>Promise.resolve(successResponse(request,{baseAmount:45000}))});f.seedForm();
   f.set('email','');f.run("setDelivery('post')");
   assert.equal(f.elements.get('email').required,false);
-  assert.equal(f.run('validate(2)'),true);assert.equal(f.run('validate(4)'),false);
+  assert.equal(f.run('validateApplicant()'),true);assert.equal(f.run('validateHospitals()'),false);
   f.run('submitForm(true)');assert.equal(f.requests.length,0);
   f.set('postAddress','테스트시 테스트로 1, 원본 수령인');f.set('docEtc_1','영상CD, 진료기록 원본');
-  assert.equal(f.run('validate(4)'),true);assert.equal(f.run('calcFee().addPost'),20000);
+  assert.equal(f.run('validateHospitals()'),true);assert.equal(f.run('calcFee().addPost'),20000);
   assert.equal(f.run('calcFee().total'),45000);
   f.run('submitForm(true)');await tick();
   const payload=f.requests[0].payload;
@@ -410,16 +459,24 @@ test('physical originals and CDs retain postal delivery, address and 20000 surch
 test('switching back from post to email restores required email and does not discard postal address',()=>{
   const f=fixture();f.seedForm();f.set('postAddress','보존할 등기 주소');f.set('email','');
   f.run("setDelivery('post');setDelivery('email')");
-  assert.equal(f.elements.get('email').required,true);assert.equal(f.run('validate(2)'),false);
+  assert.equal(f.elements.get('email').required,true);assert.equal(f.run('validateApplicant()'),false);
   assert.equal(f.run('calcFee().addPost'),0);assert.equal(f.elements.get('postAddress').value,'보존할 등기 주소');
 });
 
-test('signature step and confirmation show email and contact as plain text without adding a new step',()=>{
-  const f=fixture();f.seedForm();const attack='<img src=x onerror="alert(1)">';
-  f.set('patientPhone',attack);f.set('email',attack);
-  f.run('goToStep(6);fillConfirm()');
-  for(const id of ['cf-contact','cf-email'])assert.equal(f.elements.get(id).textContent,attack);
-  assert.ok(!f.htmlWrites.some(value=>value.includes(attack)));
+test('the two active screens retain application details when moving back and forth',()=>{
+  const f=fixture();f.seedForm();
+  f.run('goToStep(0);toggleLegalInformation()');
+  assert.equal(f.elements.get('legalSection').scrollPosition,'start');
+  assert.equal(f.elements.get('homeLegalToggle').getAttribute('aria-expanded'),'true');
+  const screens=[...f.elements.values()].filter(el=>el.classList.contains('form-screen'));
+  assert.deepEqual(screens.map(el=>el.id).sort(),['screen2','screen4']);
+  f.run('goToStep(4);nextStep(4)');
+  assert.equal(f.elements.get('screen2').classList.contains('active'),true);
+  assert.equal(f.elements.get('screen4').classList.contains('active'),false);
+  f.run('goToStep(4)');
+  assert.equal(f.elements.get('screen4').classList.contains('active'),true);
+  assert.equal(f.elements.get('patientPhone').value,'010-0000-0000');
+  assert.equal(f.elements.get('email').value,'test@example.com');
 });
 
 test('success uses the server order and fee, and duplicate already-paid states never show deposit instructions',async()=>{
@@ -513,7 +570,7 @@ test('two-step flow fixes insurance purpose even if hidden fields change',async(
 });
 test('missing identity blocks intake before network submission',async()=>{
  const f=fixture();f.seedForm();['patientName','patientBirth','patientAddress'].forEach(id=>f.set(id,''));
- f.run('submitForm(true)');await tick();assert.equal(f.requests.length,0);assert.match(f.alerts.at(-1),/신분증/);
+ f.run('submitForm(true)');await tick();assert.equal(f.requests.length,0);assert.match(f.elements.get('field-error').textContent,/신분증/);
 });
 test('OCR fills fields but preserves typing during recognition',async()=>{
  const f=fixture();f.seedForm();let resolve;
@@ -552,14 +609,14 @@ test('manual name entry can cancel slow OCR without bypassing photo, name or sig
  assert.equal(f.elements.get('identityNameField').hidden,false);
  assert.equal(f.elements.get('patientName').focused,true);
  assert.equal(f.elements.get('manualIdentityEntry').hidden,true);
- assert.equal(f.run('validate(2)'),false);
+ assert.equal(f.run('validateApplicant()'),false);
  f.set('patientName','직접입력');
  resolve({name:'늦은인식',birth:'19990101',address:'늦은주소',nameStatus:'agreement'});await tick();
  assert.equal(f.elements.get('patientName').value,'직접입력');
  assert.equal(f.elements.get('patientBirth').value,'');assert.equal(f.elements.get('patientAddress').value,'');
  assert.equal(f.run('idCardFileObj'),photo);assert.equal(f.run('signaturePad'),signature);
- f.run('signaturePad={isEmpty:()=>true}');assert.equal(f.run('validate(2)'),false);
- f.context.savedSignature=signature;f.run('signaturePad=savedSignature;idCardFileObj=null');assert.equal(f.run('validate(2)'),false);
+ f.run('signaturePad={isEmpty:()=>true}');assert.equal(f.run('validateApplicant()'),false);
+ f.context.savedSignature=signature;f.run('signaturePad=savedSignature;idCardFileObj=null');assert.equal(f.run('validateApplicant()'),false);
  f.context.savedPhoto=photo;f.run('idCardFileObj=savedPhoto;submitForm()');await tick();
  assert.equal(f.requests.length,1);assert.equal(f.requests[0].payload.identityReview.source,'manual_reviewed');
  assert.equal(f.requests[0].payload.patientName,'직접입력');
@@ -581,12 +638,48 @@ test('valid signed application submits directly without another confirmation',as
  const f=fixture();f.seedForm();f.run('submitForm()');
  await tick();assert.equal(f.requests.length,1);assert.equal(f.alerts.length,0);
 });
-test('closing warning sends nothing and diagnosis text resets on reuse',()=>{
- const f=fixture();f.seedForm();f.run('openWarningModal(()=>{});closeWarningModal();confirmWarning()');
- for(const timer of [...f.timers.values()])if(timer.delay===100)timer.callback();
- assert.equal(f.requests.length,0);
- f.run('openWarningModal(()=>{})');assert.match(f.elements.get('warningModalTitle').textContent,/진단서/);
- assert.equal(f.elements.get('warningModalDetail').style.display,'none');
+test('a pending photo read retains one snapshot of hospitals, notes, addresses and identity review',async()=>{
+  const f=fixture({readMode:'manual'});f.seedForm();f.run('addHospital()');
+  f.set('hospital_2','두 번째 병원');f.set('treatPeriod_2','2024');f.set('docEtc_2','영상 CD');
+  f.run("hospitalCoords[1]={name:'두 번째 병원',address:'테스트길 2',lat:null,lng:null};identityOcrName='홍가람';identityOcrStatus='agreement';submitForm()");
+  f.set('hospital_2','바뀐 병원');f.set('docEtc_2','바뀐 서류');
+  f.run("hospitalCoords[1].address='바뀐 주소';identityOcrName='';identityOcrStatus='missing'");
+  f.readers.at(-1).onload({target:{result:'data:image/jpeg;base64,dGVzdA=='}});
+  await tick();
+  const payload=f.requests[0].payload;
+  assert.equal(payload.hospitals[1].name,'두 번째 병원');
+  assert.equal(payload.hospitalCoords[1].address,'테스트길 2');
+  assert.equal(payload.extraNote,'[추가 병원 정보]\n2번째: 두 번째 병원 / 2024 / 영상 CD');
+  assert.equal(payload.identityReview.source,'ocr_reviewed');
+  assert.equal(payload.identityReview.ocrStatus,'agreement');
+});
+
+test('ten hospitals keep all requested documents when the legacy summary exceeds 3000 characters',async()=>{
+  const f=fixture();f.seedForm();
+  const documents='서류'.repeat(250);
+  for(let i=2;i<=10;i++){
+    f.run('addHospital()');
+    f.set('hospital_'+i,'테스트 병원 '+i);f.set('treatPeriod_'+i,'전체 기간');f.set('docEtc_'+i,documents);
+    f.run('hospitalCoords['+(i-1)+']={name:"테스트 병원",address:"테스트 주소",lat:null,lng:null}');
+  }
+  f.run('submitForm()');await tick();
+  const {hospitals,extraNote}=f.requests[0].payload;
+  assert.equal(hospitals.length,10);
+  assert.ok(hospitals.slice(1).every(hospital=>hospital.documents[0]===documents));
+  assert.ok(extraNote.length<=3000);assert.match(extraNote,/9곳/);
+});
+test('manual hospital entry is available during lookup and survives a late provider response',async()=>{
+  let resolveLookup;
+  const f=fixture({fetch:()=>new Promise(resolve=>{resolveLookup=resolve})});
+  f.seedForm();f.run("searchHospital('테스트 병원',1)");await tick();
+  const drop=f.elements.get('hospDrop_1'),manual=drop.children.at(-1);
+  assert.equal(manual.tagName,'BUTTON');assert.match(manual.textContent,/직접 입력/);
+  manual.onclick();f.set('hospAddr_1','직접 입력한 주소');f.run('updateManualHospitalAddress(1)');
+  resolveLookup({ok:true,json:async()=>({ok:true,places:[{name:'기타 병원',address:'다른 주소'}]})});
+  await tick();
+  assert.equal(drop.classList.contains('show'),false);
+  assert.ok(!drop.textContent.includes('기타 병원'));
+  assert.equal(f.run('hospitalCoords[0].address'),'직접 입력한 주소');
 });
 
 test('OCR reads the original upload while the request keeps the smaller copy',async()=>{
@@ -597,4 +690,84 @@ test('OCR reads the original upload while the request keeps the smaller copy',as
  assert.equal(seen,original);assert.equal(f.run('idCardOcrFileObj'),original);
  assert.equal(f.run('idCardFileObj.name'),'id_resized.jpg');assert.equal(f.run('idRecognitionBusy'),false);
  assert.equal(f.elements.get('patientName').value,'홍가람');
+});
+
+test('uploads keep decodable small JPEG and PNG; unsupported encodings and oversized files convert without upscaling',()=>{
+  const jpeg='data:image/jpeg;base64,/9j/fixture';
+  const png='data:image/png;base64,iVBORw0KGgofixture';
+  for(const [type,size,source,convert] of [
+    ['image/jpeg',100,jpeg,false],
+    ['image/png',100,png,false],
+    ['image/webp',100,'data:image/webp;base64,UklGRg==',true],
+    ['image/png',4*1024*1024+1,png,true],
+    ['image/jpeg',100,'data:image/jpeg;base64,iVBORw0KGgo',true]
+  ]){
+    const f=fixture({readMode:'manual'});
+    const original={name:'photo',type,size};
+    const create=f.context.document.createElement;
+    let canvas;
+    f.context.document.createElement=tag=>{
+      const el=create(tag);if(tag==='canvas')canvas=el;return el;
+    };
+    f.context.uploadInput=f.input(original);f.run('handleUpload(uploadInput)');
+    f.readers[0].onload({target:{result:source}});f.loadImage(800,600);
+    if(convert){
+      assert.equal(canvas.width,800);assert.equal(canvas.height,600);
+      f.blobs[0]({size:200});
+      assert.equal(f.run('idCardFileObj.type'),'image/jpeg');
+    }else{
+      assert.equal(canvas,undefined);assert.equal(f.run('idCardFileObj'),original);
+    }
+    assert.equal(f.run('idCardOcrFileObj'),original);
+  }
+});
+
+test('changing a hospital name closes the previous results and invalidates its manual address',()=>{
+ const f=fixture();f.seedForm();
+ f.run('manualInput(1)');f.set('hospAddr_1','서울특별시 테스트로 7');f.run('updateManualHospitalAddress(1)');
+ f.elements.get('hospDrop_1').classList.add('show');
+ f.set('hospital_1','두 번째 병원');f.run('onHospInput(1)');
+ assert.equal(f.elements.get('hospDrop_1').classList.contains('show'),false);
+ assert.equal(f.elements.get('hospManualAddr_1').style.display,'none');
+ assert.equal(f.elements.get('hospAddr_1').value,'');
+ assert.equal(f.run('hospitalCoords[0]'),null);
+});
+
+test('a delayed lookup for an old query cannot replace the current hospital results',async()=>{
+ let pending;
+ const f=fixture({fetch:()=>new Promise(resolve=>{pending=resolve})});f.seedForm();
+ f.run("searchHospital('테스트 병원',1)");await tick();
+ f.set('hospital_1','다른 병원');f.run('onHospInput(1)');
+ pending({ok:true,json:()=>Promise.resolve({ok:true,places:[{name:'테스트 병원',address:'서울특별시 테스트로 1'}]})});
+ await tick();
+ assert.equal(f.elements.get('hospDrop_1').classList.contains('show'),false);
+ assert.equal(f.run('hospitalCoords[0]'),null);
+});
+
+test('a missing signature library is explained without permitting an unsigned submission',()=>{
+ const f=fixture();f.seedForm();f.context.SignaturePad=undefined;
+ f.run('signaturePad=null;initSig()');
+ assert.match(f.elements.get('signatureHint').textContent,/서명 기능을 불러오지 못했어요/);
+ assert.equal(f.run('validateApplicant()'),false);
+ assert.equal(f.requests.length,0);
+});
+
+test('the hospital limit is visible and the add button is restored after removal',()=>{
+ const f=fixture();f.seedForm();f.run('for(let i=2;i<=10;i++) addHospital()');
+ assert.equal(f.elements.get('addHospitalButton').disabled,true);
+ assert.equal(f.elements.get('addHospitalPrice').textContent,'최대 10곳');
+ f.run('removeHospital(10)');
+ assert.equal(f.elements.get('addHospitalButton').disabled,false);
+ assert.equal(f.elements.get('addHospitalPrice').textContent,'+25,000원');
+});
+
+test('the account-copy label resets normally even after two successful clicks',async()=>{
+ const f=fixture({navigator:{clipboard:{writeText:()=>Promise.resolve()}}});
+ const button=f.elements.get('addHospitalButton');button.textContent='계좌번호 복사';f.context.copyButton=button;
+ f.run('copyIntakeAccount(copyButton)');await tick();
+ f.run('copyIntakeAccount(copyButton)');await tick();
+ assert.equal(button.textContent,'복사했어요 ✓');
+ const active=[...f.timers.values()].filter(timer=>timer.delay===2000);
+ assert.equal(active.length,1);active[0].callback();
+ assert.equal(button.textContent,'계좌번호 복사');
 });
