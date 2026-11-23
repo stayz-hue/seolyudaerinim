@@ -166,7 +166,7 @@ body { background:#f4ede0; }
 #app .field-error { flex:0 0 100%; color:var(--danger); font-size:13px; line-height:1.5; margin:6px 0 0; word-break:keep-all; }
 #app .sd-period-field:has(.field-error), #app .sd-depositor-field:has(.field-error) { flex-wrap:wrap; padding-bottom:8px; }
 #app [aria-invalid=true] { outline:1px solid var(--danger); outline-offset:0; }
-#app input:not([type=checkbox]):not([type=file]) { min-width:0; width:100%; min-height:49px; padding:12px 14px; font-size:16px; border:1px solid var(--sd-line); border-radius:10px; background:var(--sd-bg); color:var(--sd-ink); box-shadow:none; }
+#app input:not([type=checkbox]):not([type=radio]):not([type=file]) { min-width:0; width:100%; min-height:49px; padding:12px 14px; font-size:16px; border:1px solid var(--sd-line); border-radius:10px; background:var(--sd-bg); color:var(--sd-ink); box-shadow:none; }
 #app .scard { border:0; box-shadow:none; padding:14px 12px; margin:0 0 10px; background:var(--sd-soft); border-radius:12px; overflow:visible; }
 #app .scard-head { padding:0 0 12px; background:none; border:0; font-size:12px; color:var(--sd-sub); }
 #app .scard-num { display:none; }
@@ -180,9 +180,6 @@ body { background:#f4ede0; }
 #app .hosp-selected-badge { display:block; margin:8px 0 0; padding:0 14px; font-size:12px; font-weight:400; color:var(--sd-sub); border:0; border-radius:0; background:none; }
 #app .sd-add-hospital { border:1px dashed var(--sd-line); background:none; padding:8px 12px; margin:0 0 14px; font-size:14px; font-weight:600; cursor:pointer; }
 #app .sd-period-field input[type=text] { flex:1; width:0; padding:12px 0; border:0; background:transparent; min-height:47px; }
-#app #depositorCustom { flex:1; min-width:0; }
-#app #depositorDefault { font-size:16px; }
-#app #depositorName { padding:12px 0; border:0; min-height:47px; }
 #app .sd-depositor-field .sd-period-check { font-size:12px; color:var(--sd-brand); flex:0 0 auto; }
 #app .sd-period-check input { flex:0 0 auto; width:14px; height:14px; }
 #app [hidden] { display:none!important; }
@@ -277,7 +274,7 @@ button, input, textarea, select { font-family:inherit; }
 #app .sd-option-copy small { font-size:13px; }
 #app .sd-delivery-grid .sd-option-copy strong { font-size:15px; }
 #app .sd-delivery-grid .sd-option-copy small { font-size:13px; }
-#app input:not([type=checkbox]):not([type=file]) { font-size:17px; }
+#app input:not([type=checkbox]):not([type=radio]):not([type=file]) { font-size:17px; }
 #app #depositorDefault { font-size:17px; }
 #app .sd-add-hospital:disabled { opacity:.65; cursor:default; }
 #app .fp-total-val { font-size:25px; }
@@ -297,3 +294,33 @@ button, input, textarea, select { font-family:inherit; }
 @media (prefers-reduced-motion:reduce) {
   #app *, #checkModalSheet, #warningModalSheet { animation-duration:0.01ms!important; transition-duration:0.01ms!important; }
 }
+
+
+#app #payerDialog {
+  position:fixed;
+  inset:0;
+  margin:auto;
+  width:min(384px,calc(100% - 32px));
+  max-height:calc(100dvh - 32px);
+  overflow:auto;
+  overscroll-behavior:contain;
+  padding:24px;
+  border:1px solid var(--sd-line);
+  border-radius:16px;
+  background:var(--sd-bg);
+  color:var(--sd-ink);
+  box-shadow:0 20px 56px #372e2733;
+}
+#app #payerDialog::backdrop { background:rgba(35,29,24,.52); }
+#app #payerTitle { font-size:23px; line-height:1.35; margin:0 0 16px; }
+#app .sd-payer-choices { display:grid; gap:8px; margin:0; padding:0; border:0; }
+#app .sd-payer-choice {
+  display:flex; align-items:center; gap:12px; min-height:50px; padding:10px 14px;
+  border:1px solid var(--sd-line); border-radius:10px; font-size:16px; cursor:pointer;
+}
+#app .sd-payer-choice:has(input:checked) { border-color:var(--sd-brand); background:var(--sd-selected); }
+#app .sd-payer-choice input { width:18px; height:18px; margin:0; flex:none; accent-color:var(--sd-brand); }
+#app #depositorDefault { display:block; font-size:15px; line-height:1.4; overflow-wrap:anywhere; }
+#app #depositorCustom { margin:14px 0 0; }
+#app .sd-payer-actions { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.5fr); gap:8px; margin-top:20px; }
+#app .sd-payer-actions button { min-height:48px; width:100%; margin:0; cursor:pointer; }

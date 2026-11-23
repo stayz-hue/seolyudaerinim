@@ -714,7 +714,7 @@ canvas#signaturePad1{
 </style>
 <script src="id-ocr.js?v=20261123-audit" defer></script>
 <style>
-#screen2 .fscroll,#screen4 .fscroll{padding-top:12px}
+#screen2 .fscroll,#screen3 .fscroll,#screen4 .fscroll{padding-top:12px}
 #screen2 .field{margin-bottom:16px}
 #screen2 .upload-area{padding:18px;margin-bottom:8px}
 #screen2 .upload-title{font-size:17px}
@@ -732,7 +732,7 @@ canvas#signaturePad1{
 #screen2 .field-label{font-size:15px}
 #screen4 .ur-title{font-size:17px}
 </style>
-<link rel="stylesheet" href="/design.css?v=20261123-baemin">
+<link rel="stylesheet" href="/design.css?v=20261124-three-steps">
 </head>
 <body>
 <!-- Lucide 0.468.0, ISC. See vendor/lucide-LICENSE.txt. -->
@@ -832,15 +832,63 @@ canvas#signaturePad1{
       <a class="kakao-contact" href="https://pf.kakao.com/_XxjhEX/chat" target="_blank" rel="noopener noreferrer">카카오톡 문의</a>
     </div>
 
-    <!-- ────────────────────────
-         STEP 2 — 환자 정보
-         ──────────────────────── -->
-    <div class="form-screen" id="screen2">
+    <section class="form-screen" id="screen4" aria-labelledby="stepTitle4">
       <div class="fhdr">
-        <div class="sd-step-label"><button type="button" class="sd-back" onclick="goToStep(4)">← 병원 정보</button><strong>2 / 2</strong></div><div class="progress" id="progressBar2" aria-hidden="true"></div>
-        <div class="step-meta">
-          <h1 class="step-title">연락처와 서명</h1>
+        <div class="sd-step-label"><button type="button" class="sd-back" onclick="goToStep(0)">← 처음으로</button><strong>1 / 3</strong></div>
+        <div class="progress" id="progressBar4" aria-hidden="true"></div>
+        <h1 class="step-title" id="stepTitle4" tabindex="-1">병원과 발급 서류</h1>
+      </div>
+      <div class="fscroll">
+        <div id="hospitalBlocks"></div>
+        <button type="button" id="addHospitalButton" class="sd-add-hospital" onclick="addHospital()"><span>＋ 병원 추가</span><small id="addHospitalPrice">+25,000원</small></button>
+      </div>
+      <div class="bottom">
+        <div class="fee-preview" aria-live="polite">
+          <div class="fp-total"><span class="fp-total-label">병원 대행료</span><span class="fp-total-val" id="hospitalFeeTotal">25,000원</span></div>
+          <p class="sd-field-note">서류 발행비 별도</p>
         </div>
+        <button type="button" class="btn-next" onclick="nextStep(4)">다음 · 수령 방법</button>
+      </div>
+    </section>
+
+    <section class="form-screen" id="screen3" aria-labelledby="stepTitle3">
+      <div class="fhdr">
+        <div class="sd-step-label"><button type="button" class="sd-back" onclick="goToStep(4)">← 병원 정보</button><strong>2 / 3</strong></div>
+        <div class="progress" id="progressBar3" aria-hidden="true"></div>
+        <h1 class="step-title" id="stepTitle3" tabindex="-1">수령 방법과 연락처</h1>
+      </div>
+      <div class="fscroll">
+        <fieldset class="sd-delivery-choice"><legend class="field-label">수령 방법</legend><div class="sd-delivery-grid">
+          <button type="button" class="sd-option" id="delivery_email" aria-pressed="true" onclick="setDelivery('email')"><span class="delivery-radio"></span><span class="sd-option-copy"><strong>이메일</strong><small>무료</small></span></button>
+          <button type="button" class="sd-option" id="delivery_post" aria-pressed="false" onclick="setDelivery('post')"><span class="delivery-radio"></span><span class="sd-option-copy"><strong>빠른 등기</strong><small>+20,000원</small></span></button>
+        </div><div id="postAddrBox" style="display:none;margin-top:12px"><label class="field-label" for="postAddress">받을 주소</label><input id="postAddress" maxlength="500" placeholder="등기 받을 주소" autocomplete="street-address"></div></fieldset>
+        <div class="field">
+          <label class="field-label" for="patientPhone">연락받을 휴대폰 번호 <span class="req">*</span></label>
+          <input type="tel" id="patientPhone" maxlength="30" autocomplete="tel" required placeholder="010-0000-0000">
+        </div>
+        <div class="field">
+          <label class="field-label" for="email">서류 받을 이메일 <span class="req" id="emailRequired">*</span></label>
+          <input type="email" id="email" autocomplete="email" autocapitalize="none" spellcheck="false" maxlength="254" required placeholder="name@example.com">
+          <div id="emailHint" hidden style="font-size:13px;color:var(--t3);margin-top:7px;line-height:1.6;">서류를 받을 이메일이에요. 주소를 확인해 주세요.</div>
+        </div>
+      </div>
+      <div class="bottom">
+        <div class="fee-preview" aria-live="polite">
+          <div class="fp-rows" id="feeRows" hidden></div>
+          <div class="fp-total">
+            <span class="fp-total-label">대행료·배송비 합계</span>
+            <span class="fp-total-val" id="feeTotal">25,000원</span>
+          </div><p class="sd-field-note">서류 발행비 별도</p>
+        </div>
+        <button type="button" class="btn-next" onclick="nextStep(3)">다음 · 신분증과 서명</button>
+      </div>
+    </section>
+
+    <section class="form-screen" id="screen2" aria-labelledby="stepTitle2">
+      <div class="fhdr">
+        <div class="sd-step-label"><button type="button" class="sd-back" onclick="goToStep(3)">← 수령 방법</button><strong>3 / 3</strong></div>
+        <div class="progress" id="progressBar2" aria-hidden="true"></div>
+        <h1 class="step-title" id="stepTitle2" tabindex="-1">신분증 첨부와 서명</h1>
       </div>
       <div class="fscroll">
         <!-- 업로드 전 -->
@@ -859,18 +907,8 @@ canvas#signaturePad1{
           <div id="identityNameHint" style="font-size:13px;color:var(--t3);margin-top:7px;line-height:1.6;"></div>
           <button type="button" onclick="retryIdRecognition()" style="margin-top:8px;border:0;background:none;color:var(--amber);font:inherit;text-decoration:underline;">사진에서 다시 읽기</button>
         </div>
-        <div class="field"><label class="field-label" for="depositorName">입금자명</label><div class="sd-depositor-field"><span id="depositorDefault">신분증 이름</span><div id="depositorCustom" hidden><input id="depositorName" maxlength="40" class="sd-input" placeholder="입금자 이름" oninput="depositorEdited=true"></div><label class="sd-period-check"><input id="diffDepositor" type="checkbox" onchange="toggleDepositor()"><span>입금자가 달라요</span></label></div></div>
         <input type="hidden" id="patientBirth">
         <input type="hidden" id="patientAddress">
-          <div class="field">
-            <label class="field-label" for="patientPhone">휴대폰 번호 <span class="req">*</span></label>
-            <input type="tel" id="patientPhone" maxlength="30" autocomplete="tel" placeholder="010-0000-0000">
-          </div>
-        <div class="field">
-          <label class="field-label" for="email">서류 받을 이메일 <span class="req" id="emailRequired">*</span></label>
-          <input type="email" id="email" autocomplete="email" autocapitalize="none" spellcheck="false" maxlength="254" required placeholder="name@example.com">
-          <div id="emailHint" hidden style="font-size:13px;color:var(--t3);margin-top:7px;line-height:1.6;">서류를 받을 이메일이에요. 주소를 확인해 주세요.</div>
-        </div>
 
         <div class="sig-wrap">
           <div class="sig-bar">
@@ -880,8 +918,6 @@ canvas#signaturePad1{
           <canvas id="signaturePad1" aria-label="위임장 및 동의서 서명" tabindex="-1" style="display:block;width:100%;height:116px;background:var(--base);cursor:crosshair;touch-action:none;"></canvas>
           <p class="sd-field-note">빈 칸에 서명해 주세요.</p>
         </div>
-
-
       </div>
       <div class="bottom">
         <div class="fee-preview">
@@ -889,41 +925,35 @@ canvas#signaturePad1{
           <p class="sd-field-note">서류 발행비 별도</p>
         </div>
         <p class="intake-notice">입금 확인 후 진행 · 단순 변심 환불 불가</p>
-        <button type="button" class="btn-next submit" onclick="nextStep(2)">신청하고 입금 안내 받기</button>
+        <button type="button" id="openPayer" class="btn-next submit" aria-haspopup="dialog" aria-controls="payerDialog" onclick="nextStep(2)">신청하기</button>
       </div>
-    </div>
+    </section>
 
     <input type="hidden" id="agentName" value="배승휴">
 
-    <!-- ────────────────────────
-         STEP 4 — 병원 정보
-         ──────────────────────── -->
-    <div class="form-screen" id="screen4">
-      <div class="fhdr">
-        <div class="sd-step-label"><button type="button" class="sd-back" onclick="goToStep(0)">← 처음으로</button><strong>1 / 2</strong></div><div class="progress" id="progressBar4" aria-hidden="true"></div>
-        <div class="step-meta">
-          <h1 class="step-title">병원과 발급 서류</h1>
+    <dialog id="payerDialog" aria-labelledby="payerTitle">
+      <form method="dialog" onsubmit="event.preventDefault();confirmPayer()">
+        <h2 id="payerTitle">누구 이름으로 입금하시나요?</h2>
+        <fieldset class="sd-payer-choices" aria-labelledby="payerTitle">
+          <label class="sd-payer-choice">
+            <input type="radio" name="payerMode" id="sameDepositor" required onchange="toggleDepositor()">
+            <span>신분증 명의로 입금 <strong id="depositorDefault"></strong></span>
+          </label>
+          <label class="sd-payer-choice">
+            <input type="radio" name="payerMode" id="diffDepositor" required aria-controls="depositorCustom" onchange="toggleDepositor()">
+            <span>다른 이름으로 입금</span>
+          </label>
+        </fieldset>
+        <div class="field" id="depositorCustom" hidden>
+          <label class="field-label" for="depositorName">입금자 이름</label>
+          <input type="text" id="depositorName" maxlength="40" autocomplete="off" placeholder="통장에 표시될 이름">
         </div>
-      </div>
-      <div class="fscroll">
-        <div id="hospitalBlocks"></div>
-        <button type="button" id="addHospitalButton" class="sd-add-hospital" onclick="addHospital()"><span>＋ 병원 추가</span><small id="addHospitalPrice">+25,000원</small></button>
-        <fieldset class="sd-delivery-choice"><legend class="field-label">서류 수령</legend><div class="sd-delivery-grid">
-          <button type="button" class="sd-option" id="delivery_email" aria-pressed="true" onclick="setDelivery('email')"><span class="delivery-radio"></span><span class="sd-option-copy"><strong>이메일</strong><small>무료</small></span></button>
-          <button type="button" class="sd-option" id="delivery_post" aria-pressed="false" onclick="setDelivery('post')"><span class="delivery-radio"></span><span class="sd-option-copy"><strong>빠른 등기</strong><small>+20,000원</small></span></button>
-        </div><div id="postAddrBox" style="display:none;margin-top:12px"><label class="field-label" for="postAddress">받을 주소</label><input id="postAddress" maxlength="500" placeholder="등기 받을 주소" autocomplete="street-address"></div></fieldset>
-      </div>
-      <div class="bottom">
-        <div class="fee-preview" aria-live="polite">
-          <div class="fp-rows" id="feeRows" hidden></div>
-          <div class="fp-total">
-            <span class="fp-total-label">대행료·배송비 합계</span>
-            <span class="fp-total-val" id="feeTotal">25,000원</span>
-          </div><p class="sd-field-note">서류 발행비 별도</p>
+        <div class="sd-payer-actions">
+          <button type="button" id="cancelPayer" class="sd-secondary" onclick="closePayerDialog()">돌아가기</button>
+          <button type="submit" id="confirmPayer" class="btn-next submit">신청 확정</button>
         </div>
-        <button type="button" class="btn-next" onclick="nextStep(4)">다음: 연락처와 서명</button>
-      </div>
-    </div>
+      </form>
+    </dialog>
 
   </div><!-- /formArea -->
 
@@ -939,6 +969,7 @@ let idCardFileObj = null;
 let idCardOcrFileObj = null;
 let idCardSelection = 0;
 let idCardLoading = false;
+let hasAttachedPhoto = false;
 let submissionBusy = false;
 let submissionComplete = false;
 let submissionOrderId = '';
@@ -985,14 +1016,13 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbwcOjgmyqA4D7PP1AzYp05s
 /* ================================================
    NAVIGATION
    ================================================ */
-let depositorEdited = false;
+const intakeSteps = [4, 3, 2];
 const periodDrafts = {};
 function syncIdentityDisplay() {
   const name = v('patientName');
   document.getElementById('identityDisplay').textContent = name;
   document.getElementById('identityResult').hidden = !name;
-  document.getElementById('depositorDefault').textContent = name || '신분증 이름';
-  if (!depositorEdited) document.getElementById('depositorName').value = name;
+  document.getElementById('depositorDefault').textContent = name;
 }
 function editIdentityName() {
   const field = document.getElementById('identityNameField');
@@ -1003,9 +1033,37 @@ function toggleDepositor() {
   clearFieldError('depositorName');
   const different = document.getElementById('diffDepositor').checked;
   document.getElementById('depositorCustom').hidden = !different;
-  document.getElementById('depositorDefault').hidden = different;
-  syncIdentityDisplay();
+  document.getElementById('depositorName').required = different;
+  clearFieldError('sameDepositor');
   if (different) document.getElementById('depositorName').focus();
+}
+function openPayerDialog() {
+  const dialog = document.getElementById('payerDialog');
+  if (dialog.open || submissionBusy || submissionComplete) return;
+  if (!validateHospitals() || !validateContactFields() || !validateApplicant()) return;
+  clearFieldError();
+  syncIdentityDisplay();
+  dialog.showModal();
+}
+function closePayerDialog() {
+  clearFieldError();
+  document.getElementById('payerDialog').close();
+  document.getElementById('openPayer').focus();
+}
+function validateDepositor() {
+  return !document.getElementById('diffDepositor').checked || validIdentityName(v('depositorName')) ||
+    fieldError('depositorName', '입금자 이름을 확인해 주세요.');
+}
+function confirmPayer() {
+  const dialog = document.getElementById('payerDialog');
+  if (!dialog.open || submissionBusy || submissionComplete) return;
+  if (!document.getElementById('sameDepositor').checked && !document.getElementById('diffDepositor').checked) {
+    fieldError('sameDepositor', '입금 명의를 선택해 주세요.');
+    return;
+  }
+  if (!validateDepositor()) return;
+  closePayerDialog();
+  submitForm();
 }
 function togglePeriod(i) {
   clearFieldError('treatPeriod_' + i);
@@ -1038,7 +1096,7 @@ function goToStep(n) {
   document.getElementById('formArea').style.flexDirection = 'column';
   document.getElementById('formArea').style.flex = '1';
 
-  for (const step of [4, 2]) {
+  for (const step of intakeSteps) {
     document.getElementById('screen' + step).classList.toggle('active', step === n);
   }
   if (n !== 0) updateProgress(n);
@@ -1053,13 +1111,15 @@ function goToStep(n) {
     setTimeout(initSig, 200);
   }
 
+  if (n > 0) document.getElementById('stepTitle' + n).focus({preventScroll:true});
   window.scrollTo(0, 0);
 }
 
 function nextStep(from) {
   try {
-    if (from === 4 && validateHospitals()) goToStep(2);
-    if (from === 2) submitForm();
+    if (from === 4 && validateHospitals()) goToStep(3);
+    if (from === 3 && validateContactFields()) goToStep(2);
+    if (from === 2) openPayerDialog();
   } catch (e) {
     alert('오류가 발생했어요. 입력 내용을 확인하거나 새로고침해 주세요.\n오류: ' + (e && e.message ? e.message : e));
     console.error('[nextStep error]', e);
@@ -1067,9 +1127,8 @@ function nextStep(from) {
 }
 
 function updateProgress(current) {
-  const ORDER = [4, 2];
-  const pos = ORDER.indexOf(current) + 1;
-  const total = ORDER.length;
+  const pos = intakeSteps.indexOf(current) + 1;
+  const total = intakeSteps.length;
   const allBars = document.querySelectorAll('.progress');
   allBars.forEach(pb => {
     pb.innerHTML = '';
@@ -1122,10 +1181,6 @@ function validatePhoto() {
 }
 function validateApplicant() {
   if (!validatePhoto() || !validateIdentityName()) return false;
-  if (document.getElementById('diffDepositor').checked && !validIdentityName(v('depositorName'))) {
-    return fieldError('depositorName', '입금자 이름을 입력해 주세요.');
-  }
-  if (!validateContactFields()) return false;
   if (!signaturePad && typeof SignaturePad === 'undefined') return fieldError('signaturePad1', '서명 기능을 불러오지 못했어요. 페이지를 다시 열어 주세요.');
   if (!signaturePad || signaturePad.isEmpty()) return fieldError('signaturePad1', '위임장과 동의서에 사용할 서명을 적어 주세요.');
   return true;
@@ -1142,7 +1197,6 @@ function validateHospitals() {
     if (!v('docEtc_' + i).trim()) return fieldError('docEtc_' + i, '발급받을 서류 이름을 입력해 주세요.');
     if (!v('treatPeriod_' + i).trim()) return fieldError('treatPeriod_' + i, '발급받을 기간을 입력해 주세요.');
   }
-  if (deliveryMethod === 'post' && !v('postAddress').trim()) return fieldError('postAddress', '등기 받을 주소를 입력해 주세요.');
   return true;
 }
 function v(id) { return (document.getElementById(id)||{}).value || ''; }
@@ -1151,6 +1205,7 @@ function getContactPhone() {
   return v('patientPhone').trim();
 }
 function validateContactFields() {
+  if (deliveryMethod === 'post' && !v('postAddress').trim()) return fieldError('postAddress', '등기 받을 주소를 입력해 주세요.');
   const phone = getContactPhone();
   if (!/^[0-9\s-]+$/.test(phone) || !/^01(?:0\d{8}|[16789]\d{7,8})$/.test(phone.replace(/[\s-]/g, ''))) {
     return fieldError('patientPhone', '문자 안내를 받을 휴대폰 번호를 확인해 주세요.');
@@ -1194,6 +1249,7 @@ function refreshFeePreview() {
   if (f.addPost) html += `<div class="fp-row"><span class="fp-key">당일 빠른 등기</span><span class="fp-val">+20,000원</span></div>`;
   rows.innerHTML = html;
   const total = f.total.toLocaleString() + '원';
+  document.getElementById('hospitalFeeTotal').textContent = f.base.toLocaleString() + '원';
   document.getElementById('feeTotal').textContent = total;
   const reviewTotal = document.getElementById('reviewFeeTotal');
   if (reviewTotal) reviewTotal.textContent = total;
@@ -1491,7 +1547,6 @@ function handleUpload(input) {
   clearFieldError('uploadArea');
   const selection = ++idCardSelection;
   cancelIdRecognition();
-  if (signaturePad && typeof signaturePad.clear === 'function') signaturePad.clear();
   ['patientName', 'patientBirth', 'patientAddress'].forEach(function(id) { document.getElementById(id).value = ''; });
   document.getElementById('identityNameField').hidden = true;
   document.getElementById('ocrStatus').textContent = '';
@@ -1524,6 +1579,17 @@ function handleUpload(input) {
   function accept(accepted) {
     if (selection !== idCardSelection) return;
     clearFieldError('uploadArea');
+    if (hasAttachedPhoto) {
+      if (signaturePad && !signaturePad.isEmpty()) {
+        signaturePad.clear();
+        document.getElementById('signatureHint').textContent = '사진을 변경했어요. 다시 서명해 주세요.';
+      }
+      document.getElementById('sameDepositor').checked = false;
+      document.getElementById('diffDepositor').checked = false;
+      document.getElementById('depositorName').value = '';
+      toggleDepositor();
+    }
+    hasAttachedPhoto = true;
     idCardFileObj = accepted;
     // OCR reads the original pixels; the smaller copy is only for submission.
     idCardOcrFileObj = file;
@@ -1657,7 +1723,7 @@ function extractIdInfo(done) {
   idRecognitionBusy = true;
   input.disabled = true;
   document.getElementById('manualIdentityEntry').hidden = false;
-  if (status) status.textContent = '신분증을 읽고 있어요. 연락처를 입력해 주세요.';
+  if (status) status.textContent = '신분증을 읽고 있어요. 아래에 서명해 주세요.';
   job.promise.then(function(result) {
     if (selection !== idCardSelection || activeIdRecognition !== job) return;
     const name = result.nameStatus !== 'conflict' && validIdentityName(result.name) ? normalizedIdentityName(result.name) : '';
@@ -1738,7 +1804,7 @@ function copyIntakeAccount(button) {
 
 function submitForm() {
   if (submissionBusy || submissionComplete) return;
-  if (!validateHospitals() || !validateApplicant()) return;
+  if (!validateHospitals() || !validateContactFields() || !validateApplicant() || !validateDepositor()) return;
   if (submissionUncertain && !confirm('이전 신청이 접수됐을 수 있어요. 먼저 접수 상태를 확인해 주세요.\n접수번호: ' + submissionOrderId + '\n\n다시 전송할까요? 중복 접수될 수 있어요.')) return;
 
   const confirmedName = normalizedIdentityName(v('patientName'));
@@ -1849,7 +1915,7 @@ function submitForm() {
       document.getElementById('receiptMeta').textContent = res.receiptNo !== res.orderId ? '접수번호: ' + res.receiptNo : '';
       document.getElementById('successFee').textContent = res.baseAmount.toLocaleString() + '원';
       document.getElementById('successDepositor').textContent = depositorName;
-      document.getElementById('successDelivery').textContent = payload.deliveryMethod === 'email' ? '서류 수령: ' + payload.email : '서류 수령: 빠른 등기';
+      document.getElementById('successDelivery').textContent = payload.deliveryMethod === 'email' ? '수령 방법: 이메일 · ' + payload.email : '수령 방법: 빠른 등기';
       const waiting = res.state === 'waiting_payment';
       document.getElementById('successBank').style.display = waiting ? '' : 'none';
       document.getElementById('successNext').style.display = waiting || res.state === 'paid' ? '' : 'none';
