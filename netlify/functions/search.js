@@ -2,13 +2,21 @@
 // 네이버 검색결과의 가공·혼합 및 개발자센터 검색 API 의존을 제거한다.
 // 신청 화면 응답 스키마 {ok, places:[{name,address,lat,lng,tel,category,source}]} 유지.
 
+const HIRA_TIMEOUT_MS = 3500;
+const CACHE_LIMIT = 256;
+const RESULT_TTL_MS = 15 * 60 * 1000;
+const EMPTY_TTL_MS = 30 * 1000;
+const results = new Map();
+const pending = new Map();
+
 exports.handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Content-Type': 'application/json; charset=utf-8',
-    'Cache-Control': 'no-store'
+    'Cache-Control': 'no-store',
+    'Netlify-Vary': 'query=q'
   };
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers, body: '' };
   if (event.httpMethod !== 'GET') return resp(headers, { ok: false, error: '허용되지 않은 요청' }, 405);
@@ -19,11 +27,10 @@ exports.handler = async (event) => {
   if (!process.env.HIRA_API_KEY) return resp(headers, { ok: false, error: '병원 검색 설정을 확인해 주세요' }, 503);
 
   try {
-    const normalized = normalizeHospitalName(query);
-    let places = await searchHIRA(normalized);
-    if (!places.length && normalized !== query) places = await searchHIRA(query);
-    return resp({ ...headers, 'Cache-Control': 'public, max-age=60',
-      'Netlify-CDN-Cache-Control': 'public, durable, s-maxage=' + (places.length ? 3600 : 60)
+    // 약칭도 정식명으로 한 번만 조회한다. 결과가 없으면 화면에서 직접 입력할 수 있다.
+    const places = await lookupHospital(normalizeHospitalName(query));
+    return resp({ ...headers, 'Cache-Control': 'public, max-age=' + (places.length ? 300 : 30),
+      'Netlify-CDN-Cache-Control': 'public, durable, s-maxage=' + (places.length ? 21600 : 30)
     }, { ok: true, places });
   } catch (err) {
     console.error('[병원 검색 실패]', err.message);
@@ -33,6 +40,27 @@ exports.handler = async (event) => {
 
 function resp(headers, data, statusCode = 200) {
   return { statusCode, headers, body: JSON.stringify(data) };
+}
+
+// 동일 정식명은 약칭/띄어쓰기 변형과 동시 요청에서도 재사용한다.
+// 성공한 공공 병원 목록만 보관하고, 장애/타임아웃은 즉시 재시도 가능하게 둔다.
+async function lookupHospital(query) {
+  const cached = results.get(query);
+  if (cached) {
+    results.delete(query);
+    if (cached.expires > Date.now()) {
+      results.set(query, cached);
+      return cached.places;
+    }
+  }
+  if (pending.has(query)) return pending.get(query);
+  const request = searchHIRA(query).then(places => {
+    results.set(query, { places, expires: Date.now() + (places.length ? RESULT_TTL_MS : EMPTY_TTL_MS) });
+    if (results.size > CACHE_LIMIT) results.delete(results.keys().next().value);
+    return places;
+  }).finally(() => pending.delete(query));
+  pending.set(query, request);
+  return request;
 }
 
 // 흔히 쓰는 약칭은 즉시 정식명으로 검색한다. 그 외 입력은 그대로 조회한다.
@@ -59,7 +87,7 @@ async function searchHIRA(query) {
     + '?serviceKey=' + encodeURIComponent(process.env.HIRA_API_KEY)
     + '&yadmNm=' + encodeURIComponent(query)
     + '&numOfRows=20&pageNo=1&_type=json';
-  const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+  const res = await fetch(url, { signal: AbortSignal.timeout(HIRA_TIMEOUT_MS) });
   if (!res.ok) throw new Error('HIRA HTTP ' + res.status);
   const data = await res.json();
   if (data?.response?.header?.resultCode !== '00') {

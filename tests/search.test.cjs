@@ -1,6 +1,12 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const { handler } = require('../netlify/functions/search.js');
+const searchModule = require.resolve('../netlify/functions/search.js');
+let handler;
+test.beforeEach(() => {
+  // Each case owns a warm-function cache and provider stub.
+  delete require.cache[searchModule];
+  ({ handler } = require(searchModule));
+});
 
 function hira(items, code = '00') {
   return { response: { header: { resultCode: code }, body: { items: { item: items } } } };
@@ -106,6 +112,107 @@ test('a spaced Bundang hospital alias goes directly to the intended campus', asy
   const result = JSON.parse((await run('분당 서울대 병원')).body);
   assert.deepEqual(names, ['분당서울대학교병원']);
   assert.equal(result.places[0].name, '분당서울대학교병원');
+});
+
+test('an alias with no result makes one lookup rather than retrying raw input', async () => {
+  process.env.HIRA_API_KEY = 'test-key';
+  const names = [];
+  global.fetch = async url => {
+    names.push(new URL(url).searchParams.get('yadmNm'));
+    return { ok: true, json: async () => hira([]) };
+  };
+  const res = await run('서울대병원');
+  assert.deepEqual(names, ['서울대학교병원']);
+  assert.deepEqual(JSON.parse(res.body), {ok:true,places:[]});
+  assert.match(res.headers['Netlify-CDN-Cache-Control'], /s-maxage=30$/);
+});
+
+test('aliases and concurrent callers share the same lookup and warm cache', async () => {
+  process.env.HIRA_API_KEY = 'test-key';
+  let calls = 0;
+  let complete;
+  const waiting = new Promise(resolve => { complete = resolve; });
+  global.fetch = async () => {
+    calls++;
+    await waiting;
+    return { ok:true,json:async()=>hira({yadmNm:'서울대학교병원',addr:'서울특별시 종로구'}) };
+  };
+  const first = run('서울대병원');
+  const second = run('서울대학교병원');
+  complete();
+  const [a,b] = await Promise.all([first, second]);
+  const c = await run('서울대 병원');
+  assert.equal(calls,1);
+  assert.equal(a.body,b.body);
+  assert.equal(a.body,c.body);
+  assert.equal(c.headers['Netlify-Vary'],'query=q');
+  assert.equal(c.headers['Cache-Control'],'public, max-age=300');
+  assert.match(c.headers['Netlify-CDN-Cache-Control'], /s-maxage=21600$/);
+});
+
+test('empty cache expires quickly and never becomes a permanent negative result', async () => {
+  process.env.HIRA_API_KEY = 'test-key';
+  let calls = 0;
+  const now = Date.now;
+  let simulated = now();
+  Date.now = () => simulated;
+  try {
+    global.fetch = async () => ({ok:true,json:async()=>hira(++calls === 1 ? [] : {yadmNm:'새병원',addr:'서울특별시'})});
+    assert.deepEqual(JSON.parse((await run('새병원')).body).places,[]);
+    simulated += 29000;
+    assert.deepEqual(JSON.parse((await run('새병원')).body).places,[]);
+    assert.equal(calls,1);
+    simulated += 1001;
+    assert.equal(JSON.parse((await run('새병원')).body).places[0].name,'새병원');
+    assert.equal(calls,2);
+  } finally {
+    Date.now = now;
+  }
+});
+
+test('provider failure uses a 3.5-second deadline, remains uncached, and permits a retry', async () => {
+  process.env.HIRA_API_KEY = 'test-key';
+  const timeout = AbortSignal.timeout;
+  const durations = [];
+  let calls = 0;
+  AbortSignal.timeout = milliseconds => {
+    durations.push(milliseconds);
+    return timeout(milliseconds);
+  };
+  try {
+    global.fetch = async (_url, options) => {
+      assert.ok(options.signal instanceof AbortSignal);
+      if (++calls === 1) throw new Error('simulated provider timeout');
+      return {ok:true,json:async()=>hira({yadmNm:'재시도병원',addr:'서울특별시'})};
+    };
+    const failed = await run('재시도병원');
+    assert.equal(failed.statusCode,503);
+    assert.equal(failed.headers['Cache-Control'],'no-store');
+    assert.equal(failed.headers['Netlify-CDN-Cache-Control'],undefined);
+    assert.equal(JSON.parse((await run('재시도병원')).body).places[0].name,'재시도병원');
+    assert.equal(calls,2);
+    assert.deepEqual(durations,[3500,3500]);
+  } finally {
+    AbortSignal.timeout = timeout;
+  }
+});
+
+test('warm cache stays bounded and does not evict recently used entries first', async () => {
+  process.env.HIRA_API_KEY = 'test-key';
+  const calls = [];
+  global.fetch = async url => {
+    const name = new URL(url).searchParams.get('yadmNm');
+    calls.push(name);
+    return {ok:true,json:async()=>hira({yadmNm:name,addr:'테스트 주소'})};
+  };
+  for (let i=0;i<256;i++) await run('테스트병원'+i);
+  await run('테스트병원0');
+  assert.equal(calls.length,256);
+  await run('테스트병원256');
+  await run('테스트병원0');
+  assert.equal(calls.length,257);
+  await run('테스트병원1');
+  assert.equal(calls.length,258);
 });
 
 test('malformed provider bodies and unusable nonempty results are failures, not cached empty results', async () => {

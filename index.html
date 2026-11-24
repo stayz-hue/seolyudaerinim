@@ -494,8 +494,6 @@ textarea{resize:none;min-height:76px;}
 .hosp-item:active,.hosp-item:hover{background:var(--amber-pale);}
 .hosp-item-name{font-size:18.23px;font-weight:600;color:var(--t1);margin-bottom:2px;}
 .hosp-item-addr{font-size:15.53px;color:var(--t3);}
-.hosp-cat-badge{display:inline-block;font-size:13.5px;font-weight:600;color:var(--amber);background:var(--amber-pale);padding:2px 8px;border-radius:10px;margin-left:6px;vertical-align:middle;}
-.hosp-item-tel{margin-left:8px;color:var(--t3);font-size:14.18px;}
 .hosp-manual-addr{margin-top:6px;}
 .hosp-manual-addr input{padding:13px 14px;border:1.5px dashed var(--amber);border-radius:var(--r);background:var(--amber-pale);}
 .hosp-selected-badge{
@@ -712,27 +710,19 @@ canvas#signaturePad1{
   .fp-total-val{font-size:19px;}
 }
 </style>
-<script src="id-ocr.js?v=20261123-audit" defer></script>
 <style>
-#screen2 .fscroll,#screen3 .fscroll,#screen4 .fscroll{padding-top:12px}
+#screen2 .fscroll,#screen4 .fscroll,#screen5 .fscroll{padding-top:12px}
 #screen2 .field{margin-bottom:16px}
 #screen2 .upload-area{padding:18px;margin-bottom:8px}
 #screen2 .upload-title{font-size:17px}
 #screen2 .upload-sub{font-size:13px}
-.identity-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
 .kakao-contact{display:block;text-align:center;background:#fee500;color:#191919;text-decoration:none;padding:15px;border-radius:12px;font-size:16px;font-weight:700;margin-top:16px}
-.manual-id{background:none;border:0;color:var(--amber);padding:8px 0;margin-bottom:12px;font:inherit;cursor:pointer}
-.identity-grid>.field:last-child{grid-column:1/-1}
-.compact-check{display:flex;align-items:center;gap:9px;font-size:14px;line-height:1.5;margin:8px 0 20px;cursor:pointer}
-.compact-check input{width:19px!important;height:19px;flex-shrink:0;accent-color:var(--amber)}
-.compact-status{font-size:13px;color:var(--t3);line-height:1.5;margin:0 0 16px}
-.compact-heading{font-size:17px;margin:16px 0 10px}
 #screen2 .sig-wrap{margin-bottom:12px}
 #screen2 input:not([type=checkbox]){font-size:16px;min-width:0}
 #screen2 .field-label{font-size:15px}
 #screen4 .ur-title{font-size:17px}
 </style>
-<link rel="stylesheet" href="/design.css?v=20261124-three-steps">
+<link rel="stylesheet" href="/design.css?v=20261124-photo-fast">
 </head>
 <body>
 <!-- Lucide 0.468.0, ISC. See vendor/lucide-LICENSE.txt. -->
@@ -744,6 +734,8 @@ canvas#signaturePad1{
     <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>
   </symbol>
   <symbol id="icon-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+  <symbol id="icon-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></symbol>
+  <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="icon-message-circle" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></symbol>
   <symbol id="icon-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
 </svg>
@@ -832,90 +824,84 @@ canvas#signaturePad1{
       <a class="kakao-contact" href="https://pf.kakao.com/_XxjhEX/chat" target="_blank" rel="noopener noreferrer">카카오톡 문의</a>
     </div>
 
-    <section class="form-screen" id="screen4" aria-labelledby="stepTitle4">
+    <input type="hidden" id="agentName" value="배승휴">
+
+    <div class="form-screen" id="screen4">
       <div class="fhdr">
-        <div class="sd-step-label"><button type="button" class="sd-back" onclick="goToStep(0)">← 처음으로</button><strong>1 / 3</strong></div>
+        <div class="sd-step-label"><button type="button" class="sd-back" onclick="goToStep(0)"><svg class="sd-icon" aria-hidden="true" focusable="false"><use href="#icon-arrow-left"/></svg>처음으로</button><strong>1 / 3</strong></div>
         <div class="progress" id="progressBar4" aria-hidden="true"></div>
-        <h1 class="step-title" id="stepTitle4" tabindex="-1">병원과 발급 서류</h1>
+        <div class="step-meta"><h1 id="stepTitle4" class="step-title" tabindex="-1">병원과 발급 서류</h1></div>
       </div>
       <div class="fscroll">
         <div id="hospitalBlocks"></div>
-        <button type="button" id="addHospitalButton" class="sd-add-hospital" onclick="addHospital()"><span>＋ 병원 추가</span><small id="addHospitalPrice">+25,000원</small></button>
+        <button type="button" id="addHospitalButton" class="sd-add-hospital" onclick="addHospital()"><span class="sd-add-hospital-label"><svg class="sd-icon" aria-hidden="true" focusable="false"><use href="#icon-plus"/></svg><span>병원 추가</span></span><small id="addHospitalPrice">+25,000원</small></button>
       </div>
       <div class="bottom">
         <div class="fee-preview" aria-live="polite">
-          <div class="fp-total"><span class="fp-total-label">병원 대행료</span><span class="fp-total-val" id="hospitalFeeTotal">25,000원</span></div>
-          <p class="sd-field-note">서류 발행비 별도</p>
+          <div class="fp-total">
+            <span class="fp-total-label">병원 대행료</span>
+            <span class="fp-total-val" id="feeTotal">25,000원</span>
+          </div><p class="sd-field-note">서류 발행비 별도</p>
         </div>
         <button type="button" class="btn-next" onclick="nextStep(4)">다음 · 수령 방법</button>
       </div>
-    </section>
+    </div>
 
-    <section class="form-screen" id="screen3" aria-labelledby="stepTitle3">
+    <div class="form-screen" id="screen5">
       <div class="fhdr">
-        <div class="sd-step-label"><button type="button" class="sd-back" onclick="goToStep(4)">← 병원 정보</button><strong>2 / 3</strong></div>
-        <div class="progress" id="progressBar3" aria-hidden="true"></div>
-        <h1 class="step-title" id="stepTitle3" tabindex="-1">수령 방법과 연락처</h1>
+        <div class="sd-step-label"><button type="button" class="sd-back" onclick="goToStep(4)"><svg class="sd-icon" aria-hidden="true" focusable="false"><use href="#icon-arrow-left"/></svg>병원 정보</button><strong>2 / 3</strong></div>
+        <div class="progress" id="progressBar5" aria-hidden="true"></div>
+        <div class="step-meta"><h1 id="stepTitle5" class="step-title" tabindex="-1">수령 방법과 연락처</h1></div>
       </div>
       <div class="fscroll">
         <fieldset class="sd-delivery-choice"><legend class="field-label">수령 방법</legend><div class="sd-delivery-grid">
           <button type="button" class="sd-option" id="delivery_email" aria-pressed="true" onclick="setDelivery('email')"><span class="delivery-radio"></span><span class="sd-option-copy"><strong>이메일</strong><small>무료</small></span></button>
           <button type="button" class="sd-option" id="delivery_post" aria-pressed="false" onclick="setDelivery('post')"><span class="delivery-radio"></span><span class="sd-option-copy"><strong>빠른 등기</strong><small>+20,000원</small></span></button>
-        </div><div id="postAddrBox" style="display:none;margin-top:12px"><label class="field-label" for="postAddress">받을 주소</label><input id="postAddress" maxlength="500" placeholder="등기 받을 주소" autocomplete="street-address"></div></fieldset>
-        <div class="field">
-          <label class="field-label" for="patientPhone">연락받을 휴대폰 번호 <span class="req">*</span></label>
-          <input type="tel" id="patientPhone" maxlength="30" autocomplete="tel" required placeholder="010-0000-0000">
+        </div></fieldset>
+        <div class="field" id="emailBox">
+          <label class="field-label" for="email">서류 받을 이메일 <span class="req">*</span></label>
+          <input type="email" id="email" maxlength="254" autocomplete="email" autocapitalize="none" spellcheck="false" required placeholder="name@example.com">
+        </div>
+        <div class="field" id="postAddrBox" hidden>
+          <label class="field-label" for="postAddress">등기 받을 주소 <span class="req">*</span></label>
+          <input type="text" id="postAddress" maxlength="500" autocomplete="street-address" placeholder="도로명 주소와 상세주소">
         </div>
         <div class="field">
-          <label class="field-label" for="email">서류 받을 이메일 <span class="req" id="emailRequired">*</span></label>
-          <input type="email" id="email" autocomplete="email" autocapitalize="none" spellcheck="false" maxlength="254" required placeholder="name@example.com">
-          <div id="emailHint" hidden style="font-size:13px;color:var(--t3);margin-top:7px;line-height:1.6;">서류를 받을 이메일이에요. 주소를 확인해 주세요.</div>
+          <label class="field-label" for="patientPhone">연락받을 휴대폰 번호 <span class="req">*</span></label>
+          <input type="tel" id="patientPhone" maxlength="30" autocomplete="tel" required placeholder="010-0000-0000" aria-describedby="phoneUseHint">
+          <p class="sd-field-note" id="phoneUseHint">본인 명의로 입금하면 이 번호로 현금영수증을 처리해요.</p>
         </div>
       </div>
       <div class="bottom">
         <div class="fee-preview" aria-live="polite">
-          <div class="fp-rows" id="feeRows" hidden></div>
-          <div class="fp-total">
-            <span class="fp-total-label">대행료·배송비 합계</span>
-            <span class="fp-total-val" id="feeTotal">25,000원</span>
-          </div><p class="sd-field-note">서류 발행비 별도</p>
+          <div class="fp-total"><span class="fp-total-label">대행료·배송비 합계</span><span class="fp-total-val" id="deliveryFeeTotal">25,000원</span></div>
+          <p class="sd-field-note">서류 발행비 별도</p>
         </div>
-        <button type="button" class="btn-next" onclick="nextStep(3)">다음 · 신분증과 서명</button>
+        <button type="button" class="btn-next" onclick="nextStep(5)">다음 · 신분증과 서명</button>
       </div>
-    </section>
+    </div>
 
-    <section class="form-screen" id="screen2" aria-labelledby="stepTitle2">
+    <div class="form-screen" id="screen2">
       <div class="fhdr">
-        <div class="sd-step-label"><button type="button" class="sd-back" onclick="goToStep(3)">← 수령 방법</button><strong>3 / 3</strong></div>
+        <div class="sd-step-label"><button type="button" class="sd-back" onclick="goToStep(5)"><svg class="sd-icon" aria-hidden="true" focusable="false"><use href="#icon-arrow-left"/></svg>수령 방법</button><strong>3 / 3</strong></div>
         <div class="progress" id="progressBar2" aria-hidden="true"></div>
-        <h1 class="step-title" id="stepTitle2" tabindex="-1">신분증 첨부와 서명</h1>
+        <div class="step-meta"><h1 id="stepTitle2" class="step-title" tabindex="-1">신분증 첨부와 서명</h1></div>
       </div>
       <div class="fscroll">
-        <!-- 업로드 전 -->
-        <div class="upload-area" id="uploadArea" role="button" tabindex="0" aria-label="신분증 사진 선택" onclick="if(event.target.id!=='idCardFile') document.getElementById('idCardFile').click()" onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();document.getElementById('idCardFile').click()}">
-          <input type="file" id="idCardFile" accept="image/*" onchange="handleUpload(this)">
-          <div class="upload-title" id="uploadTitle">신분증 사진 올리기</div>
-          <div class="upload-sub" id="uploadSub">신분증 이름을 자동으로 읽어요.</div>
+        <div class="field">
+          <button type="button" class="upload-area" id="uploadArea" onclick="document.getElementById('idCardFile').click()" aria-describedby="uploadSub">
+            <span class="upload-title" id="uploadTitle">신분증 사진 첨부</span>
+            <span class="req" aria-label="필수">*</span>
+          </button>
+          <input type="file" id="idCardFile" accept="image/*" onchange="handleUpload(this)" hidden>
+          <p class="upload-sub" id="uploadSub" role="status"></p>
         </div>
-
-        <p id="ocrStatus" role="status" aria-live="polite" class="compact-status"></p>
-        <button type="button" id="manualIdentityEntry" class="sd-text-action" onclick="enterIdentityNameManually()" hidden>이름 직접 입력</button>
-        <div id="identityResult" class="sd-identity" hidden><div class="sd-identity-copy"><strong id="identityDisplay"></strong><span>신분증 이름</span></div><button type="button" class="sd-text-action" onclick="editIdentityName()">수정</button></div>
-        <div class="field" id="identityNameField" hidden>
-          <label class="field-label" for="patientName">신분증 이름 <span class="req">*</span></label>
-          <input type="text" id="patientName" maxlength="40" autocomplete="off" spellcheck="false" placeholder="신분증에 적힌 이름" oninput="syncIdentityDisplay()" aria-describedby="identityNameHint">
-          <div id="identityNameHint" style="font-size:13px;color:var(--t3);margin-top:7px;line-height:1.6;"></div>
-          <button type="button" onclick="retryIdRecognition()" style="margin-top:8px;border:0;background:none;color:var(--amber);font:inherit;text-decoration:underline;">사진에서 다시 읽기</button>
-        </div>
-        <input type="hidden" id="patientBirth">
-        <input type="hidden" id="patientAddress">
-
         <div class="sig-wrap">
           <div class="sig-bar">
             <span class="sig-hint" id="signatureHint">위임장·동의서 서명</span>
             <button class="sig-clear" onclick="clearSig()">다시 쓰기</button>
           </div>
-          <canvas id="signaturePad1" aria-label="위임장 및 동의서 서명" tabindex="-1" style="display:block;width:100%;height:116px;background:var(--base);cursor:crosshair;touch-action:none;"></canvas>
+          <canvas id="signaturePad1" aria-label="위임장 및 동의서 서명" tabindex="-1" style="display:block;width:100%;height:140px;background:var(--base);cursor:crosshair;touch-action:none;"></canvas>
           <p class="sd-field-note">빈 칸에 서명해 주세요.</p>
         </div>
       </div>
@@ -925,34 +911,34 @@ canvas#signaturePad1{
           <p class="sd-field-note">서류 발행비 별도</p>
         </div>
         <p class="intake-notice">입금 확인 후 진행 · 단순 변심 환불 불가</p>
-        <button type="button" id="openPayer" class="btn-next submit" aria-haspopup="dialog" aria-controls="payerDialog" onclick="nextStep(2)">신청하기</button>
+        <button type="button" id="openPayerButton" class="btn-next submit" aria-haspopup="dialog" aria-controls="payerDialog" onclick="nextStep(2)">신청하고 입금 안내 받기</button>
       </div>
-    </section>
+    </div>
 
-    <input type="hidden" id="agentName" value="배승휴">
-
-    <dialog id="payerDialog" aria-labelledby="payerTitle">
-      <form method="dialog" onsubmit="event.preventDefault();window.confirmPayer()">
-        <h2 id="payerTitle">누구 이름으로 입금하시나요?</h2>
-        <fieldset class="sd-payer-choices" aria-labelledby="payerTitle">
-          <label class="sd-payer-choice">
-            <input type="radio" name="payerMode" id="sameDepositor" required onchange="toggleDepositor()">
-            <span>신분증 명의로 입금 <strong id="depositorDefault"></strong></span>
-          </label>
-          <label class="sd-payer-choice">
-            <input type="radio" name="payerMode" id="diffDepositor" required aria-controls="depositorCustom" onchange="toggleDepositor()">
-            <span>다른 이름으로 입금</span>
-          </label>
-        </fieldset>
-        <div class="field" id="depositorCustom" hidden>
-          <label class="field-label" for="depositorName">입금자 이름</label>
-          <input type="text" id="depositorName" maxlength="40" autocomplete="off" placeholder="통장에 표시될 이름">
+    <dialog id="payerDialog" class="sd-payer-dialog" aria-labelledby="payerTitle" aria-describedby="payerHint" oncancel="event.preventDefault(); closePayerDialog()">
+      <div class="sd-dialog-body">
+        <div class="sd-dialog-heading">
+          <h2 id="payerTitle" tabindex="-1" autofocus>누구 명의로 입금하시나요?</h2>
+          <button type="button" class="sd-dialog-close" onclick="closePayerDialog()">닫기</button>
         </div>
-        <div class="sd-payer-actions">
-          <button type="button" id="cancelPayer" class="sd-secondary" onclick="closePayerDialog()">돌아가기</button>
-          <button type="submit" id="confirmPayerButton" class="btn-next submit">신청 확정</button>
+        <p id="payerHint" class="sd-field-note">입금 명의를 선택하면 신청이 완료돼요.</p>
+        <div class="sd-dialog-actions" id="payerChoices">
+          <button type="button" id="selfPayerButton" class="sd-primary" onclick="submitForm(false)">신분증 명의로 입금 · 신청 완료</button>
+          <button type="button" id="otherPayerButton" class="sd-secondary" onclick="showPayerChoice(true)">다른 명의로 입금</button>
         </div>
-      </form>
+        <div id="depositorCustom" hidden>
+          <button type="button" class="sd-back" onclick="showPayerChoice(false)"><svg class="sd-icon" aria-hidden="true" focusable="false"><use href="#icon-arrow-left"/></svg>입금자 선택</button>
+          <div class="field">
+            <label class="field-label" for="depositorName">입금자명 <span class="req">*</span></label>
+            <input type="text" id="depositorName" maxlength="40" autocomplete="off" placeholder="통장에 표시될 이름">
+          </div>
+          <div class="field">
+            <label class="field-label" for="receiptPhone">현금영수증 받을 휴대폰 번호 <span class="req">*</span></label>
+            <input type="tel" id="receiptPhone" maxlength="30" autocomplete="off" placeholder="010-0000-0000">
+          </div>
+          <button type="button" id="confirmOtherPayerButton" class="sd-primary" onclick="submitForm(true)">이 명의로 신청 완료</button>
+        </div>
+      </div>
     </dialog>
 
   </div><!-- /formArea -->
@@ -966,14 +952,15 @@ canvas#signaturePad1{
 let hospitalCount = 1;
 let signaturePad  = null;
 let idCardFileObj = null;
-let idCardOcrFileObj = null;
-let idCardSelection = 0;
-let idCardLoading = false;
 let hasAttachedPhoto = false;
+let idCardSelection = 0;
+let idCardObjectURL = null;
+let idCardLoading = false;
 let submissionBusy = false;
 let submissionComplete = false;
 let submissionOrderId = '';
 let submissionUncertain = false;
+let attemptedSubmissionKey = '';
 let deliveryMethod = 'email'; // email | post
 
 // 병원 검색 또는 직접 입력에서 받은 이름과 주소를 보관한다.
@@ -982,12 +969,23 @@ let searchTimers   = {};   // debounce용
 const hospitalSearchCache = new Map();
 const hospitalSearchPending = new Map();
 
-function fetchHospitalResults(query) {
-  var cached = hospitalSearchCache.get(query);
-  if (cached && Date.now() - cached.time < 300000) return Promise.resolve(cached.result);
-  if (hospitalSearchPending.has(query)) return hospitalSearchPending.get(query);
+function cachedHospitalResults(query) {
+  const cached = hospitalSearchCache.get(query);
+  return cached && Date.now() - cached.time < (cached.result.places.length ? 300000 : 30000) ? cached.result : null;
+}
+function cancelHospitalSearch(idx) {
+  const pending = hospitalSearchPending.get(idx);
+  if (pending) { hospitalSearchPending.delete(idx); pending.controller.abort(); }
+}
+function fetchHospitalResults(query, idx) {
+  const cached = cachedHospitalResults(query);
+  if (cached) return Promise.resolve(cached);
+  const previous = hospitalSearchPending.get(idx);
+  if (previous && previous.query === query) return previous.promise;
+  cancelHospitalSearch(idx);
   const controller = new AbortController();
-  const timeout = setTimeout(function() { controller.abort(); }, 20000);
+  const timeout = setTimeout(function() { controller.abort(); }, 4500);
+  const entry = {query, controller, promise:null};
   var request = Promise.resolve().then(function() {
       return fetch('/.netlify/functions/search?q=' + encodeURIComponent(query), { signal: controller.signal });
     })
@@ -996,74 +994,45 @@ function fetchHospitalResults(query) {
       return r.json();
     })
     .then(function(res) {
+      if (controller.signal.aborted) throw new Error('Hospital search cancelled');
       if (!res || res.ok !== true || !Array.isArray(res.places)) throw new Error('Hospital search unavailable');
       if (hospitalSearchCache.size >= 50) hospitalSearchCache.delete(hospitalSearchCache.keys().next().value);
       hospitalSearchCache.set(query, { time: Date.now(), result: res });
       return res;
     })
-    .finally(function() { clearTimeout(timeout); hospitalSearchPending.delete(query); });
-  hospitalSearchPending.set(query, request);
+    .finally(function() { clearTimeout(timeout); if (hospitalSearchPending.get(idx) === entry) hospitalSearchPending.delete(idx); });
+  entry.promise = request;
+  hospitalSearchPending.set(idx, entry);
   return request;
 }
 
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwcOjgmyqA4D7PP1AzYp05sNLsBWcdqbnqcKh9acXwJNeqzaS6e3Il08DzTPxz41R77/exec';
 
-/* ================================================
-   입금자명 토글
-   ================================================ */
-
-
-/* ================================================
-   NAVIGATION
-   ================================================ */
-const intakeSteps = [4, 3, 2];
 const periodDrafts = {};
-function syncIdentityDisplay() {
-  const name = v('patientName');
-  document.getElementById('identityDisplay').textContent = name;
-  document.getElementById('identityResult').hidden = !name;
-  document.getElementById('depositorDefault').textContent = name;
-}
-function editIdentityName() {
-  const field = document.getElementById('identityNameField');
-  field.hidden = !field.hidden;
-  if (!field.hidden) document.getElementById('patientName').focus();
-}
-function toggleDepositor() {
-  clearFieldError('depositorName');
-  const different = document.getElementById('diffDepositor').checked;
-  document.getElementById('depositorCustom').hidden = !different;
-  document.getElementById('depositorName').required = different;
-  clearFieldError('sameDepositor');
-  if (different) document.getElementById('depositorName').focus();
-}
 function openPayerDialog() {
   const dialog = document.getElementById('payerDialog');
-  if (dialog.open || submissionBusy || submissionComplete) return;
-  if (!validateHospitals() || !validateContactFields() || !validateApplicant()) return;
-  clearFieldError();
-  syncIdentityDisplay();
+  if (submissionBusy || submissionComplete || dialog.open) return;
+  if (!validateHospitals() || !validateDelivery() || !validateApplicant()) return;
+  showPayerChoice(false);
   dialog.showModal();
 }
-function closePayerDialog() {
-  clearFieldError();
-  document.getElementById('payerDialog').close();
-  document.getElementById('openPayer').focus();
-}
-function validateDepositor() {
-  return !document.getElementById('diffDepositor').checked || validIdentityName(v('depositorName')) ||
-    fieldError('depositorName', '입금자 이름을 확인해 주세요.');
-}
-function confirmPayer() {
-  const dialog = document.getElementById('payerDialog');
-  if (!dialog.open || submissionBusy || submissionComplete) return;
-  if (!document.getElementById('sameDepositor').checked && !document.getElementById('diffDepositor').checked) {
-    fieldError('sameDepositor', '입금 명의를 선택해 주세요.');
-    return;
+function showPayerChoice(different) {
+  clearFieldError('depositorName');
+  clearFieldError('receiptPhone');
+  document.getElementById('payerChoices').hidden = different;
+  document.getElementById('depositorCustom').hidden = !different;
+  document.getElementById('depositorName').required = different;
+  document.getElementById('receiptPhone').required = different;
+  if (document.getElementById('payerDialog').open) {
+    document.getElementById(different ? 'depositorName' : 'otherPayerButton').focus();
   }
-  if (!validateDepositor()) return;
-  closePayerDialog();
-  submitForm();
+}
+function closePayerDialog() {
+  const dialog = document.getElementById('payerDialog');
+  if (!dialog.open) return;
+  clearFieldError();
+  dialog.close();
+  document.getElementById('openPayerButton').focus();
 }
 function togglePeriod(i) {
   clearFieldError('treatPeriod_' + i);
@@ -1088,7 +1057,6 @@ function toggleLegalInformation() {
 }
 function goToStep(n) {
   clearFieldError();
-  if (n === 5 || n === 6) n = 2;
   setLegalInformation(false);
   document.getElementById('app').classList.toggle('sd-home', n === 0);
   document.getElementById('screen0').style.display   = n === 0 ? 'flex' : 'none';
@@ -1096,7 +1064,7 @@ function goToStep(n) {
   document.getElementById('formArea').style.flexDirection = 'column';
   document.getElementById('formArea').style.flex = '1';
 
-  for (const step of intakeSteps) {
+  for (const step of [4, 5, 2]) {
     document.getElementById('screen' + step).classList.toggle('active', step === n);
   }
   if (n !== 0) updateProgress(n);
@@ -1107,18 +1075,17 @@ function goToStep(n) {
     refreshFeePreview();
   }
   if (n === 2) {
-    syncIdentityDisplay();
     setTimeout(initSig, 200);
   }
 
-  if (n > 0) document.getElementById('stepTitle' + n).focus({preventScroll:true});
+  if (n) document.getElementById('stepTitle' + n).focus({preventScroll:true});
   window.scrollTo(0, 0);
 }
 
 function nextStep(from) {
   try {
-    if (from === 4 && validateHospitals()) goToStep(3);
-    if (from === 3 && validateContactFields()) goToStep(2);
+    if (from === 4 && validateHospitals()) goToStep(5);
+    if (from === 5 && validateDelivery()) goToStep(2);
     if (from === 2) openPayerDialog();
   } catch (e) {
     alert('오류가 발생했어요. 입력 내용을 확인하거나 새로고침해 주세요.\n오류: ' + (e && e.message ? e.message : e));
@@ -1127,8 +1094,9 @@ function nextStep(from) {
 }
 
 function updateProgress(current) {
-  const pos = intakeSteps.indexOf(current) + 1;
-  const total = intakeSteps.length;
+  const ORDER = [4, 5, 2];
+  const pos = ORDER.indexOf(current) + 1;
+  const total = ORDER.length;
   const allBars = document.querySelectorAll('.progress');
   allBars.forEach(pb => {
     pb.innerHTML = '';
@@ -1157,6 +1125,7 @@ function fieldError(id, message) {
   clearFieldError();
   const field = document.getElementById(id);
   const screen = field.closest('.form-screen');
+  if (screen && document.getElementById('payerDialog').open) closePayerDialog();
   if (screen && !screen.classList.contains('active')) goToStep(Number(screen.id.slice(6)));
   const error = document.createElement('p');
   error.id = 'field-error';
@@ -1180,9 +1149,14 @@ function validatePhoto() {
   return true;
 }
 function validateApplicant() {
-  if (!validatePhoto() || !validateIdentityName()) return false;
+  if (!validatePhoto()) return false;
   if (!signaturePad && typeof SignaturePad === 'undefined') return fieldError('signaturePad1', '서명 기능을 불러오지 못했어요. 페이지를 다시 열어 주세요.');
   if (!signaturePad || signaturePad.isEmpty()) return fieldError('signaturePad1', '위임장과 동의서에 사용할 서명을 적어 주세요.');
+  return true;
+}
+function validatePayer() {
+  if (!validDepositorName(v('depositorName'))) return fieldError('depositorName', '입금자 이름을 확인해 주세요.');
+  if (!isMobileNumber(v('receiptPhone').trim())) return fieldError('receiptPhone', '현금영수증 받을 휴대폰 번호를 확인해 주세요.');
   return true;
 }
 function validateHospitals() {
@@ -1199,19 +1173,23 @@ function validateHospitals() {
   }
   return true;
 }
+function validateDelivery() {
+  if (deliveryMethod === 'email' && !validateDeliveryEmail()) return false;
+  if (deliveryMethod === 'post' && !v('postAddress').trim()) return fieldError('postAddress', '등기 받을 주소를 입력해 주세요.');
+  if (!isMobileNumber(getContactPhone())) return fieldError('patientPhone', '문자 안내를 받을 휴대폰 번호를 확인해 주세요.');
+  return true;
+}
 function v(id) { return (document.getElementById(id)||{}).value || ''; }
 
 function getContactPhone() {
   return v('patientPhone').trim();
 }
-function validateContactFields() {
-  if (deliveryMethod === 'post' && !v('postAddress').trim()) return fieldError('postAddress', '등기 받을 주소를 입력해 주세요.');
-  const phone = getContactPhone();
-  if (!/^[0-9\s-]+$/.test(phone) || !/^01(?:0\d{8}|[16789]\d{7,8})$/.test(phone.replace(/[\s-]/g, ''))) {
-    return fieldError('patientPhone', '문자 안내를 받을 휴대폰 번호를 확인해 주세요.');
-  }
+function isMobileNumber(phone) {
+  return /^[0-9\s-]+$/.test(phone) && /^01(?:0\d{8}|[16789]\d{7,8})$/.test(phone.replace(/[\s-]/g, ''));
+}
+function validateDeliveryEmail() {
   const email = v('email').trim();
-  if ((deliveryMethod === 'email' && !email) || (email && (email.length > 254 || !/^[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~]+(?:\.[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~]+)*@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+$/.test(email)))) {
+  if (!email || email.length > 254 || !/^[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~]+(?:\.[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~]+)*@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+$/.test(email)) {
     return fieldError('email', '서류를 받을 이메일 주소를 확인해 주세요.');
   }
   return true;
@@ -1228,12 +1206,10 @@ function setDelivery(method) {
   clearFieldError('email');
   document.getElementById('delivery_email').setAttribute('aria-pressed', String(method === 'email'));
   document.getElementById('delivery_post').setAttribute('aria-pressed', String(method === 'post'));
-  document.getElementById('postAddrBox').style.display = method === 'post' ? 'block' : 'none';
+  document.getElementById('postAddrBox').hidden = method !== 'post';
+  document.getElementById('postAddress').required = method === 'post';
+  document.getElementById('emailBox').hidden = method !== 'email';
   document.getElementById('email').required = method === 'email';
-  document.getElementById('emailRequired').style.display = method === 'email' ? '' : 'none';
-  const emailHint = document.getElementById('emailHint');
-  emailHint.hidden = method === 'email';
-  emailHint.textContent = method === 'post' ? '등기로 받으면 이메일은 생략해도 돼요.' : '';
   refreshFeePreview();
 }
 function calcFee() {
@@ -1243,16 +1219,12 @@ function calcFee() {
 }
 
 function refreshFeePreview() {
-  const f = calcFee();
-  const rows = document.getElementById('feeRows');
-  let html = `<div class="fp-row"><span class="fp-key">대행 — 병원 ${hospitalCount}곳</span><span class="fp-val">${f.base.toLocaleString()}원</span></div>`;
-  if (f.addPost) html += `<div class="fp-row"><span class="fp-key">당일 빠른 등기</span><span class="fp-val">+20,000원</span></div>`;
-  rows.innerHTML = html;
-  const total = f.total.toLocaleString() + '원';
-  document.getElementById('hospitalFeeTotal').textContent = f.base.toLocaleString() + '원';
-  document.getElementById('feeTotal').textContent = total;
-  const reviewTotal = document.getElementById('reviewFeeTotal');
-  if (reviewTotal) reviewTotal.textContent = total;
+  const fee = calcFee();
+  const total = fee.total.toLocaleString() + '원';
+  document.getElementById('feeTotal').textContent = fee.base.toLocaleString() + '원';
+  for (const id of ['deliveryFeeTotal', 'reviewFeeTotal']) {
+    document.getElementById(id).textContent = total;
+  }
   const addButton = document.getElementById('addHospitalButton');
   const addPrice = document.getElementById('addHospitalPrice');
   if (addButton) addButton.disabled = hospitalCount >= 10;
@@ -1289,7 +1261,14 @@ function hospitalBlockHTML(i) {
             <label class="field-label" for="docEtc_${i}">발급 서류 <span class="req">*</span></label>
             <input type="text" id="docEtc_${i}" maxlength="500" placeholder="예: 진단서, 진료비내역서, 영상CD">
           </div>
-          <div class="field"><label class="field-label" for="treatPeriod_${i}">발급 기간</label><div class="sd-period-field"><span id="periodAll_${i}">전체 기간</span><input class="sd-input" type="text" id="treatPeriod_${i}" maxlength="300" value="전체 기간" placeholder="예: 2025.01 ~ 2026.03" hidden><label class="sd-period-check"><input type="checkbox" id="periodToggle_${i}" onchange="togglePeriod(${i})"><span>기간 지정</span></label></div></div>
+          <div class="field sd-period-group">
+            <div class="sd-field-heading">
+              <label class="field-label" for="treatPeriod_${i}">발급 기간</label>
+              <label class="sd-period-check"><input type="checkbox" id="periodToggle_${i}" onchange="togglePeriod(${i})"><span>기간 지정</span></label>
+            </div>
+            <span id="periodAll_${i}">전체 기간</span>
+            <input class="sd-input" type="text" id="treatPeriod_${i}" maxlength="300" value="전체 기간" placeholder="예: 2025.01 ~ 2026.03" hidden>
+          </div>
         </div>
       </div>`;
 }
@@ -1316,6 +1295,7 @@ function addHospital() {
   hospitalCoords.push(null);
   appendHospitalBlock(hospitalCount);
   refreshFeePreview();
+  document.getElementById('hospital_' + hospitalCount).focus();
 }
 
 function removeHospital(index) {
@@ -1325,6 +1305,7 @@ function removeHospital(index) {
   const kept = [];
   for (let i = 1; i <= hospitalCount; i++) {
     clearTimeout(searchTimers[i]);
+    cancelHospitalSearch(i);
     if (i === index) continue;
     kept.push({
       values: ['hospital_', 'treatPeriod_', 'reason_', 'docEtc_', 'hospAddr_'].map(prefix => v(prefix + i)),
@@ -1378,9 +1359,7 @@ function onHospInput(idx) {
     closeDropdown(idx);
     return;
   }
-  var cached = hospitalSearchCache.get(q);
-  if (cached && Date.now() - cached.time < 300000) { searchHospital(q, idx); return; }
-  searchTimers[idx] = setTimeout(function() { searchHospital(q, idx); }, 250);
+  searchHospital(q, idx, cachedHospitalResults(q) ? 0 : 180);
 }
 
 function onHospFocus(idx) {
@@ -1390,11 +1369,13 @@ function onHospFocus(idx) {
   if (q.length >= 2) searchHospital(q, idx);
 }
 
-function searchHospital(query, idx) {
+function searchHospital(query, idx, delay = 0) {
   const drop = document.getElementById('hospDrop_' + idx);
   if (!drop || v('hospital_' + idx).trim() !== query) return;
+  const token = {};
+  drop.searchToken = token;
   function isCurrent() {
-    return drop.classList.contains('show') && document.getElementById('hospDrop_' + idx) === drop && v('hospital_' + idx).trim() === query;
+    return drop.searchToken === token && drop.classList.contains('show') && document.getElementById('hospDrop_' + idx) === drop && v('hospital_' + idx).trim() === query;
   }
   const manual = document.createElement('button');
   manual.type = 'button';
@@ -1411,74 +1392,42 @@ function searchHospital(query, idx) {
   }
   drop.classList.add('show');
   showStatus('검색 중…');
-  fetchHospitalResults(query)
-    .then(function(res) {
-      if (!isCurrent()) return;
-      if (!res.places.length) {
-        showStatus('검색 결과 없음');
-        return;
-      }
-      drop.textContent = '';
-      res.places.forEach(function(place) {
-        var div = document.createElement('div');
-        div.className = 'hosp-item';
-        // 심평원 종별 배지
-        var category = '';
-        if (typeof place.category === 'string' && place.category) {
-          var catText = place.category;
-          if (catText.includes('>')) {
-            var parts = catText.split('>');
-            catText = parts[parts.length - 1].trim();
-          }
-          if (/상급종합|종합병원|병원|의원|치과|한의원/.test(catText)) {
-            category = catText;
-          }
-        }
-        const nameEl = document.createElement('div');
-        nameEl.className = 'hosp-item-name';
-        nameEl.textContent = String(place.name || '');
-        if (category) {
-          const badgeEl = document.createElement('span');
-          badgeEl.className = 'hosp-cat-badge';
-          badgeEl.textContent = category;
-          nameEl.appendChild(badgeEl);
-        }
-        const addressEl = document.createElement('div');
-        addressEl.className = 'hosp-item-addr';
-        addressEl.textContent = String(place.address || '');
-        if (place.tel) {
-          const telEl = document.createElement('span');
-          telEl.className = 'hosp-item-tel';
-          telEl.textContent = String(place.tel);
-          addressEl.appendChild(telEl);
-        }
-        div.appendChild(nameEl);
-        div.appendChild(addressEl);
-        div.onclick = function(e) {
-          if (!isCurrent()) return;
-          e.stopPropagation();
-          selectHospital(idx, {
-            place_name: place.name,
-            y: place.lat,
-            x: place.lng,
-            road_address_name: place.address,
-            address_name: place.address
-          });
-        };
-        div.setAttribute('role', 'button');
-        div.tabIndex = 0;
-        div.onkeydown = function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); div.onclick(e); document.getElementById('hospital_' + idx).focus(); } };
-        drop.appendChild(div);
-      });
-      drop.appendChild(manual);
-      var source = document.createElement('div');
-      source.className = 'hosp-searching';
-      source.textContent = '병원 정보: 건강보험심사평가원 공공데이터';
-      drop.appendChild(source);
-    })
-    .catch(function() {
-      if (isCurrent()) showStatus('검색 실패');
-    });
+  function runSearch() {
+    delete searchTimers[idx];
+    if (!isCurrent()) return;
+    fetchHospitalResults(query, idx)
+      .then(function(res) {
+        if (!isCurrent()) return;
+        if (!res.places.length) { showStatus('검색 결과 없음'); return; }
+        drop.textContent = '';
+        res.places.forEach(function(place) {
+          const item = document.createElement('button');
+          item.type = 'button';
+          item.className = 'hosp-item';
+          const name = document.createElement('span');
+          name.className = 'hosp-item-name';
+          name.textContent = String(place.name || '');
+          const address = document.createElement('span');
+          address.className = 'hosp-item-addr';
+          address.textContent = String(place.address || '');
+          item.appendChild(name);
+          item.appendChild(address);
+          item.onclick = function(e) {
+            if (!isCurrent()) return;
+            e.stopPropagation();
+            selectHospital(idx, {
+              place_name: place.name, y: place.lat, x: place.lng,
+              road_address_name: place.address, address_name: place.address
+            });
+          };
+          drop.appendChild(item);
+        });
+        drop.appendChild(manual);
+      })
+      .catch(function() { if (isCurrent()) showStatus('검색 실패'); });
+  }
+  if (delay) searchTimers[idx] = setTimeout(runSearch, delay);
+  else runSearch();
 }
 
 function selectHospital(idx, place) {
@@ -1530,8 +1479,11 @@ function updateManualHospitalAddress(idx) {
 }
 
 function closeDropdown(idx) {
+  clearTimeout(searchTimers[idx]);
+  delete searchTimers[idx];
+  cancelHospitalSearch(idx);
   var d = document.getElementById('hospDrop_' + idx);
-  if (d) d.classList.remove('show');
+  if (d) { d.searchToken = null; d.classList.remove('show'); }
 }
 function closeAllDropdowns(e) {
   for (var i = 1; i <= hospitalCount; i++) {
@@ -1546,17 +1498,11 @@ function handleUpload(input) {
   if (submissionBusy || submissionComplete) return;
   clearFieldError('uploadArea');
   const selection = ++idCardSelection;
-  cancelIdRecognition();
-  ['patientName', 'patientBirth', 'patientAddress'].forEach(function(id) { document.getElementById(id).value = ''; });
-  document.getElementById('identityNameField').hidden = true;
-  document.getElementById('ocrStatus').textContent = '';
-  document.getElementById('identityResult').hidden = true;
-  syncIdentityDisplay();
+  releaseObjectURL();
   const file = input.files[0];
   // 같은 사진을 다시 선택해도 파일 선택 이벤트가 발생하게 한다.
   input.value = '';
   idCardFileObj = null;
-  idCardOcrFileObj = null;
   idCardLoading = true;
   const area = document.getElementById('uploadArea');
   if (area) area.classList.remove('has-file');
@@ -1565,10 +1511,15 @@ function handleUpload(input) {
   const uploadSub = document.getElementById('uploadSub');
   uploadSub.textContent = '';
 
+  function releaseObjectURL() {
+    if (!idCardObjectURL) return;
+    URL.revokeObjectURL(idCardObjectURL);
+    idCardObjectURL = null;
+  }
   function fail() {
     if (selection !== idCardSelection) return;
+    releaseObjectURL();
     idCardFileObj = null;
-    idCardOcrFileObj = null;
     idCardLoading = false;
     input.value = '';
     uploadTitle.textContent = '신분증 사진 다시 올리기';
@@ -1579,30 +1530,19 @@ function handleUpload(input) {
   function accept(accepted) {
     if (selection !== idCardSelection) return;
     clearFieldError('uploadArea');
-    if (hasAttachedPhoto) {
-      if (signaturePad && !signaturePad.isEmpty()) {
-        signaturePad.clear();
-        document.getElementById('signatureHint').textContent = '사진을 변경했어요. 다시 서명해 주세요.';
-      }
-      document.getElementById('sameDepositor').checked = false;
-      document.getElementById('diffDepositor').checked = false;
-      document.getElementById('depositorName').value = '';
-      toggleDepositor();
-    }
-    hasAttachedPhoto = true;
+    const needsNewSignature = hasAttachedPhoto && signaturePad && !signaturePad.isEmpty();
+    if (needsNewSignature) signaturePad.clear();
     idCardFileObj = accepted;
-    // OCR reads the original pixels; the smaller copy is only for submission.
-    idCardOcrFileObj = file;
+    hasAttachedPhoto = true;
     idCardLoading = false;
     if (area) area.classList.add('has-file');
-    uploadTitle.textContent = '사진 변경';
-    extractIdInfo(function() {});
+    uploadTitle.textContent = '신분증 사진 변경';
+    uploadSub.textContent = needsNewSignature ? '사진을 변경했어요. 다시 서명해 주세요.' : '사진을 첨부했어요.';
   }
   if ((file.type && !file.type.startsWith('image/')) || !file.size) { fail(); return; }
-  const reader = new FileReader();
-  reader.onerror = fail;
-  reader.onabort = fail;
-  reader.onload = function(e) {
+  const maxBytes = 4 * 1024 * 1024;
+
+  function decodeImage(source) {
     if (selection !== idCardSelection) return;
     const img = new Image();
     img.onerror = fail;
@@ -1611,7 +1551,6 @@ function handleUpload(input) {
       const width = img.naturalWidth, height = img.naturalHeight;
       if (!width || !height) { fail(); return; }
       const longestSide = Math.max(width, height);
-      const maxBytes = 4 * 1024 * 1024;
       const originalIsAccepted = (file.type === 'image/jpeg' && img.src.startsWith('data:image/jpeg;base64,/9j/'))
         || (file.type === 'image/png' && img.src.startsWith('data:image/png;base64,iVBORw0KGgo'));
       if (longestSide <= 1600 && file.size <= maxBytes && originalIsAccepted) { accept(file); return; }
@@ -1624,6 +1563,7 @@ function handleUpload(input) {
         ctx.fillStyle = '#fff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        releaseObjectURL();
         canvas.toBlob(function(blob) {
           if (selection !== idCardSelection) return;
           if (!blob || !blob.size || blob.size > maxBytes || !['image/jpeg','image/png'].includes(blob.type)) { fail(); return; }
@@ -1632,124 +1572,31 @@ function handleUpload(input) {
         }, 'image/jpeg', 0.85);
       } catch (err) { fail(); }
     };
-    img.src = e.target.result;
-  };
-  try { reader.readAsDataURL(file); } catch (err) { fail(); }
+    img.src = source;
+  }
+  try {
+    const mustConvert = file.size > maxBytes || !['image/jpeg', 'image/png'].includes(file.type);
+    if (mustConvert && typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
+      idCardObjectURL = URL.createObjectURL(file);
+      decodeImage(idCardObjectURL);
+    } else {
+      const reader = new FileReader();
+      reader.onerror = reader.onabort = fail;
+      reader.onload = e => decodeImage(e.target.result);
+      reader.readAsDataURL(file);
+    }
+  } catch (err) { fail(); }
 }
 
-/* ================================================
-   신분증 자동 추출 — 기기 내 OCR
-   ================================================ */
-let activeIdRecognition = null;
-let idRecognitionBusy = false;
-let identityOcrName = '';
-let identityOcrStatus = 'missing';
-function normalizedIdentityName(value) {
+function normalizedDepositorName(value) {
   const name = String(value || '').normalize('NFKC').replace(/\s+/g, ' ').trim();
   return /^[가-힣 ]+$/.test(name) ? name.replace(/ /g, '') : name;
 }
-function validIdentityName(value) {
-  const name = normalizedIdentityName(value);
+function validDepositorName(value) {
+  const name = normalizedDepositorName(value);
   if (/^(신청인|신청인이름|고객|고객명|환자|환자명|성명|이름|홍길동예시|확인필요|발급일|발급일자|주소|주민등록증|운전면허증|대한민국)$/.test(name)) return false;
   return /^[가-힣]{2,10}$/.test(name.replace(/ /g, '')) || /^[A-Za-z][A-Za-z .'-]{1,38}[A-Za-z]$/.test(name);
 }
-function validateIdentityName() {
-  if (idRecognitionBusy) {
-    return fieldError('manualIdentityEntry', '신분증을 읽고 있어요. 기다리거나 이름을 직접 입력해 주세요.');
-  }
-  const name = normalizedIdentityName(v('patientName'));
-  if (!validIdentityName(name)) {
-    document.getElementById('identityNameField').hidden = false;
-    return fieldError('patientName', '신분증에 적힌 이름을 입력해 주세요.');
-  }
-  document.getElementById('patientName').value = name;
-  return true;
-}
-function retryIdRecognition() {
-  if (!idCardFileObj || idRecognitionBusy || submissionBusy || submissionComplete) return;
-  ['patientName', 'patientBirth', 'patientAddress'].forEach(function(id) { document.getElementById(id).value = ''; });
-  extractIdInfo(function() {});
-}
-function cancelIdRecognition() {
-  clearFieldError('manualIdentityEntry');
-  const job = activeIdRecognition;
-  activeIdRecognition = null;
-  idRecognitionBusy = false;
-  document.getElementById('patientName').disabled = false;
-  document.getElementById('manualIdentityEntry').hidden = true;
-  if (job) job.cancel();
-}
-function enterIdentityNameManually() {
-  if (!idCardFileObj || idCardLoading || submissionBusy || submissionComplete) return;
-  cancelIdRecognition();
-  identityOcrName = '';
-  identityOcrStatus = 'missing';
-  document.getElementById('identityNameField').hidden = false;
-  document.getElementById('ocrStatus').textContent = '신분증 사진에 적힌 이름을 입력해 주세요.';
-  syncIdentityDisplay();
-  document.getElementById('patientName').focus();
-}
-function extractIdInfo(done) {
-  done = typeof done === 'function' ? done : function() {};
-  const status = document.getElementById('ocrStatus');
-  const field = document.getElementById('identityNameField');
-  const input = document.getElementById('patientName');
-  cancelIdRecognition();
-  identityOcrName = '';
-  identityOcrStatus = 'missing';
-  field.hidden = true;
-  document.getElementById('identityResult').hidden = true;
-  input.disabled = false;
-  if (!idCardFileObj || !window.SeoryuIdOCR || typeof window.SeoryuIdOCR.recognize !== 'function') {
-    field.hidden = !idCardFileObj;
-    if (status) status.textContent = idCardFileObj ? '이름을 읽지 못했어요. 사진을 보고 입력해 주세요.' : '';
-    done(); return;
-  }
-  const selection = idCardSelection;
-  const fields = ['patientName','patientBirth','patientAddress'];
-  const initial = fields.map(v);
-  let job;
-  try {
-    job = window.SeoryuIdOCR.recognize(idCardOcrFileObj || idCardFileObj, function(p) {
-      if (job && activeIdRecognition === job && status) status.textContent = '신분증 이름을 확인하고 있어요…';
-    });
-    if (!job || !job.promise || typeof job.cancel !== 'function') throw new Error('ocr_unavailable');
-  } catch (err) {
-    field.hidden = false;
-    if (status) status.textContent = '이름을 읽지 못했어요. 사진을 보고 입력해 주세요.';
-    done(); return;
-  }
-  activeIdRecognition = job;
-  idRecognitionBusy = true;
-  input.disabled = true;
-  document.getElementById('manualIdentityEntry').hidden = false;
-  if (status) status.textContent = '신분증을 읽고 있어요. 아래에 서명해 주세요.';
-  job.promise.then(function(result) {
-    if (selection !== idCardSelection || activeIdRecognition !== job) return;
-    const name = result.nameStatus !== 'conflict' && validIdentityName(result.name) ? normalizedIdentityName(result.name) : '';
-    identityOcrName = name;
-    identityOcrStatus = result.nameStatus || (name ? 'single' : 'missing');
-    [name,result.birth,result.address].forEach(function(value,i) {
-      // Never overwrite edits made while OCR was running.
-      if (value && v(fields[i]) === initial[i]) document.getElementById(fields[i]).value = value;
-    });
-    field.hidden = !!name;
-    syncIdentityDisplay();
-    if (status) status.textContent = name ? '' : '이름이 또렷하지 않아요. 이름을 입력하거나 사진을 다시 올려 주세요.';
-  }).catch(function() {
-    if (selection === idCardSelection && activeIdRecognition === job && status) { field.hidden=false; status.textContent = '이름을 읽지 못했어요. 사진을 보고 입력해 주세요.'; }
-  }).finally(function() {
-    if (activeIdRecognition === job) {
-      clearFieldError('manualIdentityEntry');
-      activeIdRecognition = null;
-      idRecognitionBusy = false;
-      input.disabled = false;
-      document.getElementById('manualIdentityEntry').hidden = true;
-    }
-    done();
-  });
-}
-
 /* ================================================
    STEP 6 — 서명
    ================================================ */
@@ -1766,7 +1613,10 @@ function initSig() {
   // The delayed setup can run after the customer has returned to hospital details.
   // Wait for the next visible visit instead of retaining an unusable empty pad.
   if (rect.width <= 0 || rect.height <= 0) return;
-  canvas.addEventListener('pointerdown', () => clearFieldError(canvas.id));
+  canvas.addEventListener('pointerdown', () => {
+    clearFieldError(canvas.id);
+    if (idCardFileObj) document.getElementById('uploadSub').textContent = '사진을 첨부했어요.';
+  });
   canvas.width  = rect.width * dpr;
   canvas.height = rect.height * dpr;
   const ctx = canvas.getContext('2d');
@@ -1802,16 +1652,21 @@ function copyIntakeAccount(button) {
   } catch (err) { fallback(); }
 }
 
-function submitForm() {
-  if (submissionBusy || submissionComplete) return;
-  if (!validateHospitals() || !validateContactFields() || !validateApplicant() || !validateDepositor()) return;
-  if (submissionUncertain && !confirm('이전 신청이 접수됐을 수 있어요. 먼저 접수 상태를 확인해 주세요.\n접수번호: ' + submissionOrderId + '\n\n다시 전송할까요? 중복 접수될 수 있어요.')) return;
+function submitForm(differentDepositor) {
+  const dialog = document.getElementById('payerDialog');
+  if (!dialog.open || submissionBusy || submissionComplete) return;
+  if (differentDepositor !== !document.getElementById('depositorCustom').hidden) return;
+  if (!validateHospitals() || !validateDelivery() || !validateApplicant()) return;
+  if (differentDepositor && !validatePayer()) return;
 
-  const confirmedName = normalizedIdentityName(v('patientName'));
-  cancelIdRecognition();
+  if (/^deploy-preview-\d+--grand-raindrop-d7f7de\.netlify\.app$/.test(window.location.hostname)) {
+    closePayerDialog();
+    alert('미리보기가 끝났어요. 실제 신청은 운영 사이트에서 접수해 주세요.');
+    return;
+  }
+
   const orderId = submissionOrderId || ('SRY' + crypto.randomUUID());
   submissionOrderId = orderId;
-  var depositorName = document.getElementById('diffDepositor').checked ? normalizedIdentityName(v('depositorName')) : confirmedName;
   const hospitals = Array.from({length:hospitalCount}, (_, index) => {
     const i = index + 1;
     return {
@@ -1827,16 +1682,13 @@ function submitForm() {
   const extraNote = extraHospitals.length ? ['[추가 병원 정보]', ...extraHospitals].join('\n') : '';
   const payload = {
     action: 'sendMail',
-    schemaVersion: 3,
+    schemaVersion: 4,
     orderId,
-    patientName: confirmedName,
-    patientBirth: v('patientBirth'),
     patientPhone: v('patientPhone'),
-    patientAddress: v('patientAddress'),
     contactPhone: getContactPhone().replace(/[\s-]/g, ''),
-    email: v('email').trim(),
+    email: deliveryMethod === 'email' ? v('email').trim() : '',
     agentName: v('agentName'),
-    depositorName,
+    differentDepositor,
     hospitalName: hospitals.map(hospital => hospital.name).join(' / '),
     treatmentPeriod: first.period,
     treatmentStart: first.period,
@@ -1850,16 +1702,23 @@ function submitForm() {
     urgentFlags: Array(hospitalCount).fill(false),
     deliveryMethod,
     postAddress: deliveryMethod === 'post' ? v('postAddress').trim() : '',
-    signature: signaturePad.toDataURL().split(',')[1],
-    identityReview: {
-      version: 1,
-      name: confirmedName,
-      confirmed: true,
-      source: identityOcrName === confirmedName ? 'ocr_reviewed' : 'manual_reviewed',
-      ocrStatus: identityOcrStatus
-    }
+    signature: signaturePad.toDataURL().split(',')[1]
   };
+  if (differentDepositor) {
+    payload.depositorName = normalizedDepositorName(v('depositorName'));
+    payload.receiptPhone = v('receiptPhone').replace(/[\s-]/g, '');
+  }
 
+  // An uncertain retry must refer to the same file selection and exact application.
+  const submissionKey = JSON.stringify([idCardSelection, payload]);
+  if (submissionUncertain) {
+    if (submissionKey !== attemptedSubmissionKey) {
+      alert('이전 신청이 접수됐을 수 있어요. 내용을 변경하려면 접수번호로 문의해 주세요.\n접수번호: ' + orderId);
+      return;
+    }
+    if (!confirm('이전 신청이 접수됐을 수 있어요. 같은 접수번호와 내용으로 다시 확인할까요?\n접수번호: ' + orderId)) return;
+  }
+  dialog.close();
   submissionBusy = true;
   document.querySelectorAll('.btn-next.submit').forEach(function(button) { button.disabled = true; });
   document.getElementById('screen2').classList.remove('active');
@@ -1869,17 +1728,20 @@ function submitForm() {
   function restoreForm(uncertain, errorMessage) {
     submissionBusy = false;
     submissionUncertain = uncertain || previouslyUncertain;
+    if (!submissionUncertain) attemptedSubmissionKey = '';
     document.querySelectorAll('.btn-next.submit').forEach(function(button) { button.disabled = false; });
     document.getElementById('loading').classList.remove('show');
     document.getElementById('success').classList.remove('show');
     // Do not navigate through initSig(): the customer's existing signature stays intact.
     document.getElementById('screen2').classList.add('active');
+    document.getElementById('openPayerButton').focus();
     var message = errorMessage || (uncertain ? '접수 결과를 확인하지 못했어요.' : '신분증 사진을 읽지 못해 전송하지 않았어요. 사진을 다시 선택해 주세요.');
     if (submissionUncertain) message += '\n\n이전 신청은 이미 접수됐을 수 있어요. 다시 신청하기 전에 문의해 주세요.\n접수번호: ' + orderId;
     alert(message);
   }
 
   function sendData(idB64) {
+    attemptedSubmissionKey = submissionKey;
     payload.idCardBase64 = idB64;
     payload.idCardMime = submittedFile.type;
     payload.idCardName = submittedFile.name.length <= 200 ? submittedFile.name : (submittedFile.type === 'image/jpeg' ? 'id.jpg' : 'id.png');
@@ -1902,20 +1764,18 @@ function submitForm() {
         return;
       }
       if (!res || res.ok !== true || res.orderId !== orderId || typeof res.receiptNo !== 'string' || !res.receiptNo.trim() || !Number.isSafeInteger(res.baseAmount) || res.baseAmount <= 0 || !['waiting_payment', 'paid', 'delivered', 'cancelled'].includes(res.state)) throw new Error('Unconfirmed receipt');
-      // A server that echoes names must agree with the reviewed submission.
-      ['patientName', 'depositorName'].forEach(function(key) {
-        if (Object.prototype.hasOwnProperty.call(res, key) && normalizedIdentityName(res[key]) !== (key === 'depositorName' ? depositorName : confirmedName)) throw new Error('Identity mismatch');
-      });
+      if (differentDepositor && Object.hasOwn(res, 'depositorName') && normalizedDepositorName(res.depositorName) !== payload.depositorName) throw new Error('Depositor mismatch');
       submissionComplete = true;
       submissionBusy = false;
       submissionUncertain = false;
+      attemptedSubmissionKey = '';
       document.getElementById('loading').classList.remove('show');
       document.getElementById('success').classList.add('show');
       document.getElementById('receiptNum').textContent = res.orderId;
       document.getElementById('receiptMeta').textContent = res.receiptNo !== res.orderId ? '접수번호: ' + res.receiptNo : '';
       document.getElementById('successFee').textContent = res.baseAmount.toLocaleString() + '원';
-      document.getElementById('successDepositor').textContent = depositorName;
-      document.getElementById('successDelivery').textContent = payload.deliveryMethod === 'email' ? '수령 방법: 이메일 · ' + payload.email : '수령 방법: 빠른 등기';
+      document.getElementById('successDepositor').textContent = differentDepositor ? payload.depositorName : '신분증 명의';
+      document.getElementById('successDelivery').textContent = payload.deliveryMethod === 'email' ? '서류 수령: ' + payload.email : '서류 수령: 빠른 등기';
       const waiting = res.state === 'waiting_payment';
       document.getElementById('successBank').style.display = waiting ? '' : 'none';
       document.getElementById('successNext').style.display = waiting || res.state === 'paid' ? '' : 'none';
@@ -1980,12 +1840,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     <div style="margin-bottom:14px;">
       <strong style="color:var(--t2);">1. 수집 항목</strong><br>
-      성명, 생년월일, 환자 연락처, 연락받을 휴대폰, 이메일, 주소, 신분증 사본, 서명, 발급 요청 의료기관 및 진료 정보
+      신분증 사본에 기재된 성명·생년월일·주소, 연락받을 휴대폰 번호, 수령 이메일 또는 등기 주소, 서명, 발급 요청 의료기관 및 진료 정보, 별도 입금자명과 현금영수증용 휴대폰 번호
     </div>
 
     <div style="margin-bottom:14px;">
       <strong style="color:var(--t2);">2. 수집 목적</strong><br>
-      의무기록 발급 대행 업무 수행 (대리 발급 신청 시 의료기관 제출용), 진행·비용 안내 및 서류 전달
+      의무기록 발급 대행과 의료기관 제출, 진행·비용 안내, 서류 전달, 입금 확인 및 현금영수증 처리
     </div>
 
     <div style="margin-bottom:14px;">
